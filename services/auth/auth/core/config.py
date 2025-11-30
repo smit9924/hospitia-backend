@@ -1,7 +1,7 @@
 from pydantic_settings import BaseSettings, SettingsConfigDict
 from pathlib import Path
 from os import path
-from pydantic import PostgresDsn
+from pydantic import PostgresDsn, computed_field
 
 BASE_DIR: Path = Path(__file__).resolve().parent.parent
 
@@ -16,12 +16,15 @@ class Settings(BaseSettings):
 
 
     # Postgres
-    POSTGRES_SERVER: str
-    POSTGRES_PORT: int
-    POSTGRES_DB: str
-    POSTGRES_USER: str
-    POSTGRES_PASSWORD: str
+    # Ignore Pylance type checks here. These fields are populated by Pydantic Settings at runtime,
+    # and the application should fail loudly if any required environment variable is missing.
+    POSTGRES_SERVER: str = ... # type: ignore
+    POSTGRES_PORT: int = ... # type: ignore
+    POSTGRES_DB: str = ... # type: ignore
+    POSTGRES_USER: str = ... # type: ignore
+    POSTGRES_PASSWORD: str = ... # type: ignore
 
+    @computed_field
     @property
     def SQLALCHEMY_DATABASE_URI(self) -> PostgresDsn:
         return PostgresDsn.build(
