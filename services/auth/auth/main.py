@@ -5,7 +5,6 @@ from auth.core.config import settings
 
 app = FastAPI()
 
-print('SQLALCHEMY_DATABASE_URI: ', settings.SQLALCHEMY_DATABASE_URI)
 @app.get("/")
 async def root():
     return {"message": "Hello World"}
