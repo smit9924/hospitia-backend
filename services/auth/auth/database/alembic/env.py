@@ -20,14 +20,12 @@ if config.config_file_name is not None:
 from auth.database.models import *
 
 # Load application settings (used to read the database URL).
-from auth.main import settings
+from auth.core.config import settings
 
 # Alembic uses this metadata to detect schema changes during autogeneration.
 # SQLModel.metadata contains all registered SQLModel table definitions.
 target_metadata = SQLModel.metadata
 
-print("target metadata: ")
-print(target_metadata)
 
 # other values from the config, defined by the needs of env.py,
 # can be acquired:
