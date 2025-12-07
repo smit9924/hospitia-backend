@@ -1,6 +1,7 @@
 from fastapi import APIRouter
 
 from auth.api.routes import login, users
+
 # from auth.core.config import settings
 
 api_router = APIRouter()

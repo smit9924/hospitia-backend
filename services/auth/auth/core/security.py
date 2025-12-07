@@ -1,7 +1,5 @@
 from passlib.context import CryptContext
 
-from auth.core.config import settings
-
 pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
 
 

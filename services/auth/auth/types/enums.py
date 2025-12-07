@@ -1,5 +1,6 @@
 from enum import Enum
 
+
 class AuthType(Enum):
     """
     Authentication method types supported by the system.

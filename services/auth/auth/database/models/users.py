@@ -1,8 +1,11 @@
-from pydantic import EmailStr
-from sqlmodel import Field, Integer, Boolean
-from .base import SQLModel
 import uuid
+
+from pydantic import EmailStr
+from sqlmodel import Boolean, Field, Integer
+
 from auth.types.enums import AuthType, UserType
+
+from .base import SQLModel
 
 
 # Database model, database table inferred from class name
