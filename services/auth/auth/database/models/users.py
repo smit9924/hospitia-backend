@@ -28,6 +28,9 @@ class Users(SQLModel, table=True):
         User's email address. Used for authentication and communication.
         Must be unique and valid email format. Maximum 255 characters.
         Indexed for fast lookups.
+    username : str
+        Unique username chosen by the user for login and display purposes.
+        Maximum 255 characters. Indexed for fast lookups.
     first_name : str | None, optional
         User's first name. Maximum 255 characters.
     last_name : str | None, optional
@@ -85,6 +88,7 @@ class Users(SQLModel, table=True):
     id: int | None = Field(default=None, primary_key=True, index=True)
     guid: uuid.UUID = Field(default_factory=uuid.uuid4, unique=True, nullable=False, index=True)
     email: EmailStr = Field(unique=True, index=True, max_length=255)
+    username: str = Field(unique=True, index=True, max_length=255)
     first_name: str | None = Field(default=None, max_length=255)
     last_name: str | None = Field(default=None, max_length=255)
     password: str | None = Field(default=None, max_length=255)
