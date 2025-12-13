@@ -95,7 +95,7 @@ class Users(SQLModel, table=True):
     auth_type: AuthType = Field(default=AuthType.MANUAL, nullable=False, sa_type=Integer)
     role: UserType = Field(default=UserType.CUSTOMER, nullable=False, sa_type=Integer)
     is_active: bool = Field(default=False, nullable=False, sa_type=Boolean)
-    is_deleted: bool = False
+    is_deleted: bool = Field(default=False, nullable=False, sa_type=Boolean)
 
 
 # List all database model classes defined in this file.
