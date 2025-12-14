@@ -1,7 +1,7 @@
-from enum import Enum
+from enum import IntEnum
 
 
-class AuthType(Enum):
+class AuthType(IntEnum):
     """
     Authentication method types supported by the system.
 
@@ -29,7 +29,7 @@ class AuthType(Enum):
     X = 4
 
 
-class UserType(Enum):
+class UserType(IntEnum):
     """
     User role types for role-based access control (RBAC).
 

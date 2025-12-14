@@ -1,6 +1,38 @@
-from passlib.context import CryptContext
+from datetime import UTC, datetime
 
-pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
+from bcrypt import checkpw, gensalt, hashpw
+from jwt import encode
+
+from auth.core.config import settings
+
+
+def create_jwt_access_token(*, subject: dict | None) -> str:
+    """
+    Create a JSON Web Token (JWT) access token for a given subject.
+
+    Description
+    -----------
+        Build and encode a JWT containing the subject and an expiration
+        claim using the application's JWT settings.
+
+    Parameters
+    ----------
+        subject (dict | None) : Optional dictionary of subject claims (e.g., {"user_id": 123} or {"email": "user@example.com"}).
+
+    Returns:
+        str -- Encoded JWT access token as a string.
+    """
+    expire = datetime.now(UTC) + settings.JWT_ACCESS_TOKEN_EXPIRE_MINUTES_TIMEDELTA
+    to_encode = {
+        "exp": expire,
+        "sub": subject
+    }
+    jwt_token = encode(
+        to_encode,
+        settings.JWT_ENCRYPTION_SECRET_KEY,
+        settings.JWT_ENCRYPTION_ALGORITHM,
+    )
+    return jwt_token
 
 
 def verify_password(plain_password: str, hashed_password: str) -> bool:

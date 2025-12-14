@@ -86,13 +86,13 @@ class Users(SQLModel, table=True):
     """
 
     id: int | None = Field(default=None, primary_key=True, index=True)
-    guid: uuid.UUID = Field(default_factory=uuid.uuid4, unique=True, nullable=False, index=True)
+    guid: uuid.UUID | None = Field(default_factory=uuid.uuid4, unique=True, nullable=False, index=True)
     email: EmailStr = Field(unique=True, index=True, max_length=255)
     username: str = Field(unique=True, index=True, max_length=255)
     first_name: str | None = Field(default=None, max_length=255)
     last_name: str | None = Field(default=None, max_length=255)
     password: str | None = Field(default=None, max_length=255)
-    auth_type: AuthType = Field(default=AuthType.MANUAL, nullable=False, sa_type=Integer)
+    auth_type: AuthType = Field(default=AuthType.MANUAL.value, nullable=False, sa_type=Integer)
     role: UserType = Field(default=UserType.CUSTOMER, nullable=False, sa_type=Integer)
     is_active: bool = Field(default=False, nullable=False, sa_type=Boolean)
     is_deleted: bool = Field(default=False, nullable=False, sa_type=Boolean)
