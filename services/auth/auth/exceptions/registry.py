@@ -14,6 +14,18 @@ from auth.exceptions.handlers.validation_exception_handlers import (
 
 
 def register_exception_handlers(app: FastAPI) -> None:
+    """
+    Register custom validation exception handlers with the FastAPI application.
+
+    Parameters
+    ----------
+    app : FastAPI
+        The FastAPI application instance.
+
+    Returns
+    -------
+    None
+    """
     app.add_exception_handler(UserWithEmailAlreadyExistsException, user_with_email_already_exists_exception_handler)
     app.add_exception_handler(UserWithUsernameAlreadyExistsException, user_with_username_already_exists_exception_handler)
     app.add_exception_handler(InvalidEmailException, invalid_email_exception_handler)

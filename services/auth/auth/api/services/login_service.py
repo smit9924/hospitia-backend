@@ -42,6 +42,12 @@ def authenticate_manual_user(*, session: Session, email_or_username: str, passwo
             The email address or username of the user attempting to log in.
         password : str
             The plain text password provided by the user for authentication.
+
+    Returns
+    -------
+    Users | None
+        The authenticated user instance if the credentials are valid;
+        otherwise, ``None``.
     """
     user = get_user_by_email_or_username(session=session, email_or_username=email_or_username)
     if not user:
