@@ -1,11 +1,12 @@
 from fastapi import APIRouter
 
 from auth.api.dependencies import SessionDep
-from auth.api.services.user_service import create_user
+from auth.api.services.user_service import validate_and_create_user
 from auth.core.security import create_jwt_access_token
 from auth.database.models.users import Users
 from auth.schemas.auth_schemas import Token
 from auth.schemas.user_schemas import UserSignup
+from auth.types.enums import AuthType, UserType
 
 router = APIRouter(tags=["users"])
 
@@ -23,11 +24,12 @@ async def signup(session: SessionDep, user_signup: UserSignup) -> Token:
     user = Users(
         email=user_signup.email,
         username=user_signup.username,
-        password=user_signup.password
+        password=user_signup.password,
+        auth_type=AuthType.MANUAL,
+        role=UserType.OWNER,
     )
 
-    user_validated = Users.model_validate(user)
-    created_user = create_user(session, user_validated)
+    created_user = validate_and_create_user(session, user)
 
     access_token = create_jwt_access_token(
         subject=
