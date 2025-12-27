@@ -1,3 +1,8 @@
+from typing import Any
+
+from auth.types.error_codes import ErrorCodes
+
+
 class BaseException(Exception):
     """
     Base class for all custom application exceptions.
@@ -9,4 +14,11 @@ class BaseException(Exception):
     Having a shared base exception allows us to apply common behavior, attributes,
     or handling logic across all custom exceptions in a single place in the future.
     """
-    pass
+
+    def __init__(self, field: str, input: str, errorCode: ErrorCodes, data: Any, message: str) -> None:
+        self. field = field
+        self.input = input
+        self.errorCode = errorCode
+        self.data = data
+        self.message = message
+        super().__init__(message)

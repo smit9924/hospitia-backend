@@ -1,18 +1,46 @@
-from fastapi import Request
+from fastapi import Request, status
 from fastapi.responses import JSONResponse
+
 from auth.exceptions.definitions.validation_exceptions import (
-    UserWithEmailAlreadyExistsException,
-    UserWithUsernameAlreadyExistsException,
-    InvalidEmailException,
+    PublicEmailNotAllowedException,
 )
-
-def  user_with_email_already_exists_exception_handler(request: Request, exc: UserWithEmailAlreadyExistsException):
-    return JSONResponse({"error": exc.message}, status_code=401)
+from auth.schemas.common_schemas import ApiErrorResponse
 
 
-def user_with_username_already_exists_exception_handler(request: Request, exc: UserWithUsernameAlreadyExistsException):
-    pass
+def  public_email_not_allowed_exception_handler(_request: Request, exc: PublicEmailNotAllowedException) -> JSONResponse:
+    """
+    Handle the exception raised when a public email domain is used where a
+    business or organization email address is required.
 
+    Description
+    -----------
+        Generates a standardized API error response when a request fails
+        due to the use of a disallowed public email domain, enforcing
+        application-specific email domain policies.
 
-def invalid_email_exception_handler(request: Request, exc: InvalidEmailException) -> None:
-    pass
+    Parameters
+    ----------
+        request : Request
+            The incoming FastAPI request object.
+        exc : PublicEmailNotAllowedException
+            Exception containing the validation error message.
+
+    Returns
+    -------
+        JSONResponse
+            HTTP 409 Conflict response with a structured error payload
+            describing the business rule violation.
+    """
+
+    response = ApiErrorResponse (
+        data=exc.data,
+        field=exc.field,
+        input=exc.input,
+        errorCode=exc.errorCode,
+        message=exc.message,
+    )
+
+    return JSONResponse(
+        status_code=status.HTTP_409_CONFLICT,
+        content=response.model_dump(),
+    )

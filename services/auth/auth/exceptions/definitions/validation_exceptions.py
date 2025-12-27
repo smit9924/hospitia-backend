@@ -1,23 +1,20 @@
-# This file will contain all the exceptions related to the validation
+from typing import Any
+
 from auth.exceptions.definitions.base import BaseException
+from auth.types.error_codes import ErrorCodes
 
 
-class UserWithEmailAlreadyExistsException(BaseException):
-    """Raised when a user with the given email already exists."""
+class PublicEmailNotAllowedException(BaseException):
+    """
+    Raised when a public email domain is used where a business or organization
+    email address is required.
+    """
 
-    def __init__(self, message: str = "User with given email already exists.") -> None:
-        self.message = message
-
-
-class UserWithUsernameAlreadyExistsException(BaseException):
-    """Raised when a user with the given username already exists."""
-
-    def __init__(self, message: str = "User with given username alreadt exists.") -> None:
-        self.message = message
-
-
-class InvalidEmailException(BaseException):
-    """Raised when an email address is invalid."""
-
-    def __init__(self, message: str = "Invalid email.") -> None:
-        self.message = message
+    def __init__(
+        self,
+        field: str,
+        input: str,
+        data: Any = None,
+        message: str = "Public email domains are not allowed. Please use a business email address."
+    ) -> None:
+        super().__init__(field, input, ErrorCodes.PUBLIC_EMAIL_NOW_ALLOWED, data, message)
