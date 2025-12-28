@@ -11,7 +11,7 @@ from auth.schemas.auth_schemas import Token
 router = APIRouter(tags=["login"])
 
 
-@router.post("/login/access-token", response_model=Token)
+@router.post("/access-token", response_model=Token)
 async def login_access_token(session: SessionDep, form_data: Annotated[OAuth2PasswordRequestForm, Depends()]) -> Token:
     """
     Authenticate a user and issue an OAuth2 access token.

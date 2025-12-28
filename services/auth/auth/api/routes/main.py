@@ -5,8 +5,8 @@ from auth.api.routes import login, users
 # from auth.core.config import settings
 
 api_router = APIRouter()
-api_router.include_router(login.router)
-api_router.include_router(users.router)
+api_router.include_router(login.router, prefix="/login")
+api_router.include_router(users.router, prefix="/users")
 
 
 # if settings.ENVIRONMENT == "local":
