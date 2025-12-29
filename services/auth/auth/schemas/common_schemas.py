@@ -8,8 +8,6 @@ T = TypeVar("T")
 
 
 class ApiErrorResponse[T](BaseModel):
-    data: T
-    field: str
-    input: str
+    metadata: T
     message: str
     errorCode: ErrorCodes

@@ -17,4 +17,27 @@ class PublicEmailNotAllowedException(BaseException):
         data: Any = None,
         message: str = "Public email domains are not allowed. Please use a business email address."
     ) -> None:
-        super().__init__(field, input, ErrorCodes.PUBLIC_EMAIL_NOW_ALLOWED, data, message)
+        self. field = field
+        self.input = input
+        self.data = data
+        super().__init__(ErrorCodes.PUBLIC_EMAIL_NOW_ALLOWED, message)
+
+
+class UserWithEmailAlreadyExistsException(BaseException):
+    """Raised when a user with the given email already exists."""
+
+    def __init__(
+        self,
+        message: str = "A user with the provided email address already exists."
+    ) -> None:
+        super().__init__(ErrorCodes.USER_WITH_EMAIL_ALREADY_EXIST, message)
+
+
+class UserWithUsernameAlreadyExistsException(BaseException):
+    """Raised when a user with the given username already exists."""
+
+    def __init__(
+        self,
+        message: str = "A user with the provided username already exists."
+    ) -> None:
+        super().__init__(ErrorCodes.USER_WITH_USENAME_ALREADY_EXIST, message)

@@ -3,3 +3,5 @@ from enum import IntEnum
 
 class ErrorCodes(IntEnum):
     PUBLIC_EMAIL_NOW_ALLOWED = 1001
+    USER_WITH_EMAIL_ALREADY_EXIST = 1002
+    USER_WITH_USENAME_ALREADY_EXIST = 1003

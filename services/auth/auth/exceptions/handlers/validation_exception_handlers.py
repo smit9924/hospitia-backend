@@ -3,8 +3,11 @@ from fastapi.responses import JSONResponse
 
 from auth.exceptions.definitions.validation_exceptions import (
     PublicEmailNotAllowedException,
+    UserWithEmailAlreadyExistsException,
+    UserWithUsernameAlreadyExistsException,
 )
 from auth.schemas.common_schemas import ApiErrorResponse
+from auth.schemas.exception_data_schemas import PublicEmailNotAllowedExceptionMetadata
 
 
 def  public_email_not_allowed_exception_handler(_request: Request, exc: PublicEmailNotAllowedException) -> JSONResponse:
@@ -33,9 +36,83 @@ def  public_email_not_allowed_exception_handler(_request: Request, exc: PublicEm
     """
 
     response = ApiErrorResponse (
-        data=exc.data,
-        field=exc.field,
-        input=exc.input,
+        metadata = PublicEmailNotAllowedExceptionMetadata(
+            input=exc.input,
+            field=exc.field,
+            data=exc.data,
+        ),
+        errorCode=exc.errorCode,
+        message=exc.message,
+    )
+
+    return JSONResponse(
+        status_code=status.HTTP_409_CONFLICT,
+        content=response.model_dump(),
+    )
+
+def  user_with_email_already_exists_exception_handler(_request: Request, exc: UserWithEmailAlreadyExistsException) -> JSONResponse:
+    """
+    Handle the exception raised when a user already exists with the given
+    email address.
+
+    Description
+    -----------
+        Generate a standardized API error response when a user registration
+        attempt fails because the provided email address is
+        already registered in the system.
+
+    Parameters
+    ----------
+        _request : Request
+            The incoming FastAPI request object.
+        exc : UserWithEmailOrUsernameAlreadyExistsException
+            Exception containing the conflict error message.
+
+    Returns
+    -------
+        JSONResponse
+            HTTP 409 Conflict response with a structured error payload
+            describing the duplicate resource violation.
+    """
+
+    response = ApiErrorResponse (
+        metadata=None,
+        errorCode=exc.errorCode,
+        message=exc.message,
+    )
+
+    return JSONResponse(
+        status_code=status.HTTP_409_CONFLICT,
+        content=response.model_dump(),
+    )
+
+def  user_with_username_already_exists_exception_handler(_request: Request, exc: UserWithUsernameAlreadyExistsException) -> JSONResponse:
+    """
+    Handle the exception raised when a user already exists with the given
+    email address.
+
+    Description
+    -----------
+        Generate a standardized API error response when a user registration
+        attempt fails because the provided email address is
+        already registered in the system.
+
+    Parameters
+    ----------
+        _request : Request
+            The incoming FastAPI request object.
+        exc : UserWithEmailOrUsernameAlreadyExistsException
+            Exception containing the conflict error message.
+
+    Returns
+    -------
+        JSONResponse
+            HTTP 409 Conflict response with a structured error payload
+            describing the duplicate resource violation.
+    """
+
+    response = ApiErrorResponse (
+        metadata=None,
         errorCode=exc.errorCode,
         message=exc.message,
     )

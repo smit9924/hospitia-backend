@@ -21,7 +21,11 @@ async def login_access_token(session: SessionDep, form_data: Annotated[OAuth2Pas
     token is generated and returned for use in subsequent authenticated
     requests.
     """
-    authenticated_user = authenticate_manual_user(session=session, email_or_username=form_data.username, password=form_data.password)
+    authenticated_user = authenticate_manual_user(
+        session=session,
+        identifire=form_data.username,
+        password=form_data.password,
+    )
 
     if not authenticated_user:
         raise HTTPException(status_code=400, detail="Incorrect username or password")

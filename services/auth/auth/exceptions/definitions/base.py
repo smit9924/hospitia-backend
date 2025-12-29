@@ -1,4 +1,3 @@
-from typing import Any
 
 from auth.types.error_codes import ErrorCodes
 
@@ -15,10 +14,7 @@ class BaseException(Exception):
     or handling logic across all custom exceptions in a single place in the future.
     """
 
-    def __init__(self, field: str, input: str, errorCode: ErrorCodes, data: Any, message: str) -> None:
-        self. field = field
-        self.input = input
+    def __init__(self, errorCode: ErrorCodes, message: str) -> None:
         self.errorCode = errorCode
-        self.data = data
         self.message = message
         super().__init__(message)
