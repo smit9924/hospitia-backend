@@ -1,14 +1,15 @@
-import json
 from datetime import UTC, datetime
-from typing import Any
 
 from bcrypt import checkpw, gensalt, hashpw
-from jwt import decode, encode, InvalidTokenError
-
+from jwt import InvalidTokenError, decode, encode
 
 from auth.core.config import settings
-from auth.schemas.auth_schemas import JWTAccessTokenPayload, JWTSubject, ParsedJWTAccessTokenPayload
 from auth.exceptions.definitions.security_exceptions import UserUnauthorizedException
+from auth.schemas.auth_schemas import (
+    JWTAccessTokenPayload,
+    JWTSubject,
+    ParsedJWTAccessTokenPayload,
+)
 
 
 def create_jwt_access_token(*, subject: JWTSubject) -> str:
@@ -90,6 +91,36 @@ def get_password_hash(password: str) -> str:
 
 
 def decode_jwt_token(token: str) -> ParsedJWTAccessTokenPayload:
+    """
+    Decode and validate a JWT access token.
+
+    Description
+    -----------
+    Decodes the provided JWT access token using the configured encryption
+    key and algorithm, validates its claims, and converts the subject (`sub`)
+    claim into a strongly-typed schema.
+
+    Parameters
+    ----------
+    token : str
+        The encoded JWT access token.
+
+    Returns
+    -------
+    ParsedJWTAccessTokenPayload
+        A validated JWT payload containing the token expiration time,
+        raw subject claim, and a parsed subject model.
+
+    Raises
+    ------
+    InvalidTokenError
+        If the JWT is invalid, expired, malformed, or fails signature
+        verification. All PyJWT validation errors are propagated unchanged.
+
+    UserUnauthorizedException
+        If any unexpected error occurs during token decoding or payload
+        parsing, indicating an authentication failure.
+    """
     try:
         payload: dict = decode(
             jwt=token,

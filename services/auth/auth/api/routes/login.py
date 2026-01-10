@@ -6,7 +6,7 @@ from fastapi.security import OAuth2PasswordRequestForm
 from auth.api.dependencies import SessionDep
 from auth.api.services.login_service import authenticate_manual_user
 from auth.core.security import create_jwt_access_token
-from auth.schemas.auth_schemas import Token, JWTSubject
+from auth.schemas.auth_schemas import JWTSubject, Token
 
 router = APIRouter(tags=["login"])
 

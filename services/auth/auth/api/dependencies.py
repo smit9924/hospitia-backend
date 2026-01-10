@@ -8,6 +8,7 @@ from sqlmodel import Session
 from auth.core.config import settings
 from auth.core.security import decode_jwt_token
 from auth.database.db import engine
+from auth.schemas.auth_schemas import ParsedJWTAccessTokenPayload
 
 
 def get_session() -> Generator[Session]:
@@ -41,37 +42,30 @@ oauth2_flow = OAuth2PasswordBearer(tokenUrl=f"{settings.API_V1_STR}/login/access
 TokenDep = Annotated[str, Depends(oauth2_flow)]
 
 
-def validate_jwt_token(token: TokenDep):
+def validate_jwt_token(token: TokenDep, session: SessionDep) -> ParsedJWTAccessTokenPayload:
     """
-    Validate and decode a JWT access token.
+    Decode and validate a JWT access token and authorize the user by role.
 
     Description
     -----------
-    Attempts to decode and validate the provided JWT access token.
-    - If the token is valid, the decoded payload is returned.
-    - If a PyJWT-related validation error occurs, the exception is
-      propagated as-is so that registered JWT exception handlers
-      can generate the appropriate authentication response.
-    - Any unexpected exception is converted into a generic
-      authentication failure for security reasons.
+    Decodes the JWT access token and parses the payload into a
+    strongly-typed schema. On successful validation, the user is authorized
+    based on the role provided by the dependency.
 
     Parameters
     ----------
-    token : TokenDep
-        The JWT access token extracted from the request.
+    token : str
+        The encoded JWT access token.
 
     Returns
     -------
-    dict
-        The decoded JWT payload if the token is valid.
-
-    Raises
-    ------
-    InvalidTokenError
-        If the JWT is expired, malformed, or fails validation.
-    UserUnauthorizedException
-        If an unexpected error occurs during token validation.
+    ParsedJWTAccessTokenPayload
+        The validated JWT payload containing expiration details and the
+        parsed subject data.
     """
     return decode_jwt_token(token)
 
-TokenValidateDep = Annotated[str, Depends(validate_jwt_token)]
+
+
+# Dependencies to validate JWT token and authorize user based on role provided
+TokenValidateDep = Annotated[ParsedJWTAccessTokenPayload, Depends(validate_jwt_token)]

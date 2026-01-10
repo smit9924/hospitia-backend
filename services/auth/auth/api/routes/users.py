@@ -4,7 +4,7 @@ from auth.api.dependencies import SessionDep, TokenValidateDep
 from auth.api.services.user_service import validate_and_create_user
 from auth.core.security import create_jwt_access_token
 from auth.database.models.users import Users
-from auth.schemas.auth_schemas import Token, JWTSubject
+from auth.schemas.auth_schemas import JWTSubject, Token
 from auth.schemas.user_schemas import UserSignup
 from auth.types.enums import AuthType, UserType
 
@@ -45,5 +45,5 @@ async def signup(session: SessionDep, user_signup: UserSignup) -> Token:
 
 
 @router.get("/list")
-async def get_user_list(_token: TokenValidateDep):
+async def get_user_list(_token: TokenValidateDep, session: SessionDep):
     return "this is list of users"
