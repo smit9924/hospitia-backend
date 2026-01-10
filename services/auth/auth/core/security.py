@@ -2,14 +2,17 @@ from datetime import UTC, datetime
 
 from bcrypt import checkpw, gensalt, hashpw
 from jwt import InvalidTokenError, decode, encode
+from sqlmodel import Session, select
 
 from auth.core.config import settings
+from auth.database.models import Users
 from auth.exceptions.definitions.security_exceptions import UserUnauthorizedException
 from auth.schemas.auth_schemas import (
     JWTAccessTokenPayload,
     JWTSubject,
     ParsedJWTAccessTokenPayload,
 )
+from auth.types.enums import UserType
 
 
 def create_jwt_access_token(*, subject: JWTSubject) -> str:
@@ -144,5 +147,48 @@ def decode_jwt_token(token: str) -> ParsedJWTAccessTokenPayload:
     # Mask any unexpected error as a generic authentication failure
     # to avoid leaking internal implementation details.
     except Exception:
+        raise UserUnauthorizedException
+
+
+def authorize_user(
+    token_payload: ParsedJWTAccessTokenPayload,
+    session: Session,
+    roles: list[UserType],
+) -> None:
+    """
+    Authorize the authenticated user based on allowed roles.
+
+    Description
+    -----------
+    Validates that the user associated with the JWT payload exists in the
+    database and has a role included in the allowed roles list. If `roles`
+    is None, authorization is skipped and access is granted to all users.
+
+    Parameters
+    ----------
+    token_payload : ParsedJWTAccessTokenPayload
+        Parsed JWT payload containing authenticated user details.
+    session : Session
+        Database session used to fetch user information.
+    roles : list[UserType] | None, optional
+        List of roles allowed to access the resource. If None, access is
+        allowed for all authenticated users.
+
+    Returns
+    -------
+    None
+
+    Raises
+    ------
+    UserUnauthorizedException
+        If the user does not exist or does not have a permitted role.
+    """
+
+    stmt = select(Users).where(
+        Users.guid == token_payload.parsed_subject.user_guid
+    )
+    user = session.exec(stmt).first()
+
+    if not user or user.role not in roles:
         raise UserUnauthorizedException
 

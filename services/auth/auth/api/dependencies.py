@@ -1,14 +1,15 @@
 from collections.abc import Generator
-from typing import Annotated
+from typing import Annotated, Callable
 
 from fastapi import Depends
 from fastapi.security import OAuth2PasswordBearer
 from sqlmodel import Session
 
 from auth.core.config import settings
-from auth.core.security import decode_jwt_token
+from auth.core.security import authorize_user, decode_jwt_token
 from auth.database.db import engine
 from auth.schemas.auth_schemas import ParsedJWTAccessTokenPayload
+from auth.types.enums import UserType
 
 
 def get_session() -> Generator[Session]:
@@ -42,30 +43,65 @@ oauth2_flow = OAuth2PasswordBearer(tokenUrl=f"{settings.API_V1_STR}/login/access
 TokenDep = Annotated[str, Depends(oauth2_flow)]
 
 
-def validate_jwt_token(token: TokenDep, session: SessionDep) -> ParsedJWTAccessTokenPayload:
+def RoleValidationDep(
+    roles: list[UserType] | None = None,
+) -> Callable:
     """
-    Decode and validate a JWT access token and authorize the user by role.
+    Dependency factory for JWT validation and role-based authorization.
 
-    Description
-    -----------
-    Decodes the JWT access token and parses the payload into a
-    strongly-typed schema. On successful validation, the user is authorized
-    based on the role provided by the dependency.
+    Creates and returns a FastAPI dependency function that:
+    - Decodes and validates a JWT access token
+    - Authorizes the authenticated user against the provided role list
+
+    The returned dependency captures the `roles` argument via a closure,
+    allowing role requirements to be declared at route definition time
+    while keeping the authorization logic centralized and stateless.
 
     Parameters
     ----------
-    token : str
-        The encoded JWT access token.
+    roles : list[UserType] | None
+        List of allowed user roles. If None, only token validity is enforced.
 
     Returns
     -------
-    ParsedJWTAccessTokenPayload
-        The validated JWT payload containing expiration details and the
-        parsed subject data.
+    Callable
+        A FastAPI-compatible dependency function.
     """
-    return decode_jwt_token(token)
 
+    async def validate_jwt_token(
+        token: TokenDep,
+        session: SessionDep,
+    ) -> None:
+        """
+        Decode and validate a JWT access token and authorize the user by role.
 
+        Description
+        -----------
+        Decodes the JWT access token and parses the payload into a
+        strongly-typed schema. On successful validation, the user is authorized
+        based on the role provided by the dependency. If no roles are provided,
+        treat the route as public and skip token validation and role-based
+        authorization checks.
 
-# Dependencies to validate JWT token and authorize user based on role provided
-TokenValidateDep = Annotated[ParsedJWTAccessTokenPayload, Depends(validate_jwt_token)]
+        Parameters
+        ----------
+        token : str
+            The encoded JWT access token.
+
+        Returns
+        -------
+            None
+        """
+        if not roles:
+            # If no roles are provided, treat the route as public
+            # and skip role-based authorization checks
+            return
+
+        token_payload = decode_jwt_token(token)
+        authorize_user(
+            token_payload=token_payload,
+            session=session,
+            roles=roles,
+        )
+
+    return validate_jwt_token
