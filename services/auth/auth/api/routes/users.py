@@ -1,14 +1,14 @@
 from typing import Annotated
+
 from fastapi import APIRouter, Depends
 
-from auth.api.dependencies import SessionDep, RoleValidationDep
+from auth.api.dependencies import RoleValidationDep, SessionDep
 from auth.api.services.user_service import validate_and_create_user
 from auth.core.security import create_jwt_access_token
 from auth.database.models.users import Users
-from auth.schemas.auth_schemas import JWTSubject, Token
+from auth.schemas.auth_schemas import JWTSubject, ParsedJWTAccessTokenPayload, Token
 from auth.schemas.user_schemas import UserSignup
 from auth.types.enums import AuthType, UserType
-from auth.schemas.auth_schemas import ParsedJWTAccessTokenPayload
 
 router = APIRouter(tags=["users"])
 
@@ -50,7 +50,7 @@ async def signup(session: SessionDep, user_signup: UserSignup) -> Token:
 async def get_user_list(
     _token: Annotated[
         ParsedJWTAccessTokenPayload,
-        Depends(RoleValidationDep([UserType.ADMIN])),
+        Depends(RoleValidationDep([UserType.ADMIN, UserType.OWNER])),
     ],
 ):
     return "this is list of users"

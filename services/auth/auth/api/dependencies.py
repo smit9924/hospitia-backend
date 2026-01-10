@@ -1,5 +1,5 @@
-from collections.abc import Generator
-from typing import Annotated, Callable
+from collections.abc import Callable, Generator
+from typing import Annotated
 
 from fastapi import Depends
 from fastapi.security import OAuth2PasswordBearer
@@ -8,7 +8,6 @@ from sqlmodel import Session
 from auth.core.config import settings
 from auth.core.security import authorize_user, decode_jwt_token
 from auth.database.db import engine
-from auth.schemas.auth_schemas import ParsedJWTAccessTokenPayload
 from auth.types.enums import UserType
 
 
