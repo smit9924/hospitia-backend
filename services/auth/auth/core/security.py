@@ -1,7 +1,9 @@
+import json
 from datetime import UTC, datetime
+from typing import Any
 
 from bcrypt import checkpw, gensalt, hashpw
-from jwt import encode
+from jwt import decode, encode
 
 from auth.core.config import settings
 
@@ -25,12 +27,12 @@ def create_jwt_access_token(*, subject: dict | None) -> str:
     expire = datetime.now(UTC) + settings.JWT_ACCESS_TOKEN_EXPIRE_MINUTES_TIMEDELTA
     to_encode = {
         "exp": expire,
-        "sub": subject
+        "sub": json.dumps(subject) # Convert subject to a string since non-string values cause token validation failures
     }
     jwt_token = encode(
-        to_encode,
-        settings.JWT_ENCRYPTION_SECRET_KEY,
-        settings.JWT_ENCRYPTION_ALGORITHM,
+        payload=to_encode,
+        key=settings.JWT_ENCRYPTION_SECRET_KEY,
+        algorithm=settings.JWT_ENCRYPTION_ALGORITHM,
     )
     return jwt_token
 
@@ -80,3 +82,13 @@ def get_password_hash(password: str) -> str:
     password_hash_string = password_hash_byte.decode("utf-8")
 
     return password_hash_string
+
+
+def decode_jwt_token(token: str) -> Any:
+    decoded_payload = decode(
+        jwt=token,
+        key=settings.JWT_ENCRYPTION_SECRET_KEY,
+        algorithms=[settings.JWT_ENCRYPTION_ALGORITHM],
+    )
+    decoded_payload['sub'] = json.loads(decoded_payload['sub'])
+    return decoded_payload

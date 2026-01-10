@@ -1,6 +1,6 @@
 from fastapi import APIRouter
 
-from auth.api.dependencies import SessionDep
+from auth.api.dependencies import SessionDep, TokenValidateDep
 from auth.api.services.user_service import validate_and_create_user
 from auth.core.security import create_jwt_access_token
 from auth.database.models.users import Users
@@ -43,3 +43,8 @@ async def signup(session: SessionDep, user_signup: UserSignup) -> Token:
         access_token=access_token,
         token_type="bearer"
     )
+
+
+@router.get("/list")
+async def get_user_list(_token: TokenValidateDep):
+    return "this is list of users"
