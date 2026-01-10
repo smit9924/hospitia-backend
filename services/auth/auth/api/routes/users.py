@@ -4,7 +4,7 @@ from auth.api.dependencies import SessionDep, TokenValidateDep
 from auth.api.services.user_service import validate_and_create_user
 from auth.core.security import create_jwt_access_token
 from auth.database.models.users import Users
-from auth.schemas.auth_schemas import Token
+from auth.schemas.auth_schemas import Token, JWTSubject
 from auth.schemas.user_schemas import UserSignup
 from auth.types.enums import AuthType, UserType
 
@@ -32,11 +32,10 @@ async def signup(session: SessionDep, user_signup: UserSignup) -> Token:
     created_user = validate_and_create_user(session, user)
 
     access_token = create_jwt_access_token(
-        subject=
-        {
-            "user_guid": str(created_user.guid), # UUID is not JSON serializable, convert to string
-            "role": created_user.role,
-        }
+        subject=JWTSubject (
+            user_guid=str(created_user.guid), # UUID is not JSON serializable, convert to string
+            role=created_user.role,
+        )
     )
 
     return Token(

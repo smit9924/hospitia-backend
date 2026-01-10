@@ -3,12 +3,15 @@ from datetime import UTC, datetime
 from typing import Any
 
 from bcrypt import checkpw, gensalt, hashpw
-from jwt import decode, encode
+from jwt import decode, encode, InvalidTokenError
+
 
 from auth.core.config import settings
+from auth.schemas.auth_schemas import JWTAccessTokenPayload, JWTSubject, ParsedJWTAccessTokenPayload
+from auth.exceptions.definitions.security_exceptions import UserUnauthorizedException
 
 
-def create_jwt_access_token(*, subject: dict | None) -> str:
+def create_jwt_access_token(*, subject: JWTSubject) -> str:
     """
     Create a JSON Web Token (JWT) access token for a given subject.
 
@@ -25,12 +28,14 @@ def create_jwt_access_token(*, subject: dict | None) -> str:
         str -- Encoded JWT access token as a string.
     """
     expire = datetime.now(UTC) + settings.JWT_ACCESS_TOKEN_EXPIRE_MINUTES_TIMEDELTA
-    to_encode = {
-        "exp": expire,
-        "sub": json.dumps(subject) # Convert subject to a string since non-string values cause token validation failures
-    }
+
+    to_encode = JWTAccessTokenPayload(
+        exp=expire,
+        sub=subject.model_dump_json() # Convert subject to a string since non-string values cause token validation failures
+    )
+
     jwt_token = encode(
-        payload=to_encode,
+        payload=to_encode.model_dump(),
         key=settings.JWT_ENCRYPTION_SECRET_KEY,
         algorithm=settings.JWT_ENCRYPTION_ALGORITHM,
     )
@@ -84,11 +89,29 @@ def get_password_hash(password: str) -> str:
     return password_hash_string
 
 
-def decode_jwt_token(token: str) -> Any:
-    decoded_payload = decode(
-        jwt=token,
-        key=settings.JWT_ENCRYPTION_SECRET_KEY,
-        algorithms=[settings.JWT_ENCRYPTION_ALGORITHM],
-    )
-    decoded_payload['sub'] = json.loads(decoded_payload['sub'])
-    return decoded_payload
+def decode_jwt_token(token: str) -> ParsedJWTAccessTokenPayload:
+    try:
+        payload: dict = decode(
+            jwt=token,
+            key=settings.JWT_ENCRYPTION_SECRET_KEY,
+            algorithms=[settings.JWT_ENCRYPTION_ALGORITHM],
+        )
+
+        subject = JWTSubject.model_validate_json(payload["sub"])
+
+        return ParsedJWTAccessTokenPayload(
+            exp=payload["exp"],
+            sub=payload["sub"],
+            parsed_subject=subject,
+        )
+
+    # Propagate all PyJWT validation errors unchanged.
+    # InvalidTokenError is the base class for all JWT-related exceptions.
+    except InvalidTokenError:
+        raise
+
+    # Mask any unexpected error as a generic authentication failure
+    # to avoid leaking internal implementation details.
+    except Exception:
+        raise UserUnauthorizedException
+

@@ -3,13 +3,11 @@ from typing import Annotated
 
 from fastapi import Depends
 from fastapi.security import OAuth2PasswordBearer
-from jwt import InvalidTokenError
 from sqlmodel import Session
 
 from auth.core.config import settings
 from auth.core.security import decode_jwt_token
 from auth.database.db import engine
-from auth.exceptions.definitions.security_exceptions import UserUnauthorizedException
 
 
 def get_session() -> Generator[Session]:
@@ -74,17 +72,6 @@ def validate_jwt_token(token: TokenDep):
     UserUnauthorizedException
         If an unexpected error occurs during token validation.
     """
-    try:
-        return decode_jwt_token(token)
-
-    # Propagate all PyJWT validation errors unchanged.
-    # InvalidTokenError is the base class for all JWT-related exceptions.
-    except InvalidTokenError:
-        raise
-
-    # Mask any unexpected error as a generic authentication failure
-    # to avoid leaking internal implementation details.
-    except Exception:
-        raise UserUnauthorizedException
+    return decode_jwt_token(token)
 
 TokenValidateDep = Annotated[str, Depends(validate_jwt_token)]
