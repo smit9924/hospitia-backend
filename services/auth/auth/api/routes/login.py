@@ -1,6 +1,6 @@
 from typing import Annotated
 
-from fastapi import APIRouter, Depends, HTTPException
+from fastapi import APIRouter, Depends, HTTPException, status
 from fastapi.security import OAuth2PasswordRequestForm
 
 from auth.api.dependencies import SessionDep
@@ -28,9 +28,9 @@ async def login_access_token(session: SessionDep, form_data: Annotated[OAuth2Pas
     )
 
     if not authenticated_user:
-        raise HTTPException(status_code=400, detail="Incorrect username or password")
+        raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Incorrect username or password")
     elif not authenticated_user.is_active:
-        raise HTTPException(status_code=400, detail="Inactive user")
+        raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Inactive user")
 
     access_token = create_jwt_access_token(
         subject=JWTSubject (
