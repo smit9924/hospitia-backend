@@ -1,20 +1,26 @@
-from app.config import settings
+from notification.config import settings
 
 
 def setup_topology(channel) -> None:
     """
-    Declare exchange, queue and bindings.
-    Safe to call multiple times.
+    Declare RabbitMQ messaging topology.
+
+    Creates the required exchange, queue, and routing bindings
+    used by the notification system.
+    
+    Parameters
+    ----------
+    
+        channel : pika.channel.Channel
+            Active RabbitMQ channel to declare topology on.
     """
 
-    # Exchange for notifications
     channel.exchange_declare(
         exchange=settings.notification_exchange,
         exchange_type=settings.notification_exchange_type,
         durable=True,
     )
 
-    # Priority-enabled queue for email notifications
     channel.queue_declare(
         queue=settings.email_queue,
         durable=True,
@@ -23,7 +29,6 @@ def setup_topology(channel) -> None:
         },
     )
 
-    # Bind queue to exchange
     channel.queue_bind(
         exchange=settings.notification_exchange,
         queue=settings.email_queue,

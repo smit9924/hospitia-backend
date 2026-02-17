@@ -34,6 +34,17 @@ class Settings(BaseSettings):
     JWT_ENCRYPTION_ALGORITHM: str = ... # type: ignore
     JWT_ENCRYPTION_SECRET_KEY: str = ... # type: ignore
     JWT_ACCESS_TOKEN_EXPIRE_MINUTES: int = ... # type: ignore
+    JWT_REFRESH_TOKEN_EXPIRE_DAYS: int = ... # type: ignore
+
+    # RabbitMQ
+    RABBITMQ_HOST: str = ...  # type: ignore
+    RABBITMQ_PORT: int = ...  # type: ignore
+    RABBITMQ_USERNAME: str = ...  # type: ignore
+    RABBITMQ_PASSWORD: str = ...  # type: ignore
+
+    # Notification topology
+    NOTIFICATION_EXCHANGE: str = ...  # type: ignore
+    EMAIL_ROUTING_KEY: str = "email.send"
 
     @computed_field
     @property
@@ -68,6 +79,28 @@ class Settings(BaseSettings):
             Time duration for which a JWT access token remains valid.
         """
         return timedelta(minutes=self.JWT_ACCESS_TOKEN_EXPIRE_MINUTES)
+
+    @computed_field
+    @property
+    def JWT_REFRESH_TOKEN_EXPIRE_DAYS_TIMEDELTA(self) -> timedelta:
+        """
+        Return a timedelta representing the JWT refresh token lifetime.
+
+        description
+        -----------
+            Compute and return a `timedelta` object based on the
+            `JWT_REFRESH_TOKEN_EXPIRE_DAYS` setting.
+
+        parameters
+        ----------
+        None
+
+        Returns
+        -------
+        timedelta
+            Time duration for which a JWT refresh token remains valid.
+        """
+        return timedelta(days=self.JWT_REFRESH_TOKEN_EXPIRE_DAYS)
 
 
 settings = Settings()

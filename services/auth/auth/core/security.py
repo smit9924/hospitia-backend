@@ -8,9 +8,10 @@ from auth.core.config import settings
 from auth.database.models import Users
 from auth.exceptions.definitions.security_exceptions import UserUnauthorizedException
 from auth.schemas.auth_schemas import (
-    JWTAccessTokenPayload,
+    JWTPayload,
     JWTSubject,
-    ParsedJWTAccessTokenPayload,
+    ParsedJWTPayload,
+    TokenType,
 )
 from auth.types.enums import UserType
 
@@ -33,8 +34,43 @@ def create_jwt_access_token(*, subject: JWTSubject) -> str:
     """
     expire = datetime.now(UTC) + settings.JWT_ACCESS_TOKEN_EXPIRE_MINUTES_TIMEDELTA
 
-    to_encode = JWTAccessTokenPayload(
+    to_encode = JWTPayload(
         exp=expire,
+        type=TokenType.ACCESS,
+        sub=subject.model_dump_json() # Convert subject to a string since non-string values cause token validation failures
+    )
+
+    jwt_token = encode(
+        payload=to_encode.model_dump(),
+        key=settings.JWT_ENCRYPTION_SECRET_KEY,
+        algorithm=settings.JWT_ENCRYPTION_ALGORITHM,
+    )
+    return jwt_token
+
+def create_jwt_refresh_token(*, subject: JWTSubject) -> str:
+    """
+    Create a JSON Web Token (JWT) refresh token for a given subject.
+
+    Description
+    -----------
+        Build and encode a JWT containing the subject and an expiration
+        claim using the application's JWT settings.
+
+    Parameters
+    ----------
+        subject (dict | None) : Optional dictionary of subject claims (e.g., {"user_id": 123} or {"email": "user@example.com"}).
+
+    Returns
+        -------
+        str
+            Encoded JWT refresh token.
+
+    """
+    expire = datetime.now(UTC) + settings.JWT_REFRESH_TOKEN_EXPIRE_DAYS_TIMEDELTA
+
+    to_encode = JWTPayload(
+        exp=expire,
+        type=TokenType.REFRESH,
         sub=subject.model_dump_json() # Convert subject to a string since non-string values cause token validation failures
     )
 
@@ -93,7 +129,7 @@ def get_password_hash(password: str) -> str:
     return password_hash_string
 
 
-def decode_jwt_token(token: str) -> ParsedJWTAccessTokenPayload:
+def decode_jwt_token(token: str, expected_type: TokenType) -> ParsedJWTPayload:
     """
     Decode and validate a JWT access token.
 
@@ -131,12 +167,16 @@ def decode_jwt_token(token: str) -> ParsedJWTAccessTokenPayload:
             algorithms=[settings.JWT_ENCRYPTION_ALGORITHM],
         )
 
+        if TokenType(payload["type"]) != expected_type:
+            raise UserUnauthorizedException
+
         subject = JWTSubject.model_validate_json(payload["sub"])
 
-        return ParsedJWTAccessTokenPayload(
+        return ParsedJWTPayload(
             exp=payload["exp"],
             sub=payload["sub"],
             parsed_subject=subject,
+            type=payload["type"]
         )
 
     # Propagate all PyJWT validation errors unchanged.
@@ -151,7 +191,7 @@ def decode_jwt_token(token: str) -> ParsedJWTAccessTokenPayload:
 
 
 def authorize_user(
-    token_payload: ParsedJWTAccessTokenPayload,
+    token_payload: ParsedJWTPayload,
     session: Session,
     roles: list[UserType],
 ) -> None:

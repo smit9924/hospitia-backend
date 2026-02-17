@@ -1,4 +1,5 @@
 from collections.abc import Callable, Generator
+from tokenize import Token
 from typing import Annotated
 
 from fastapi import Depends
@@ -8,7 +9,7 @@ from sqlmodel import Session
 from auth.core.config import settings
 from auth.core.security import authorize_user, decode_jwt_token
 from auth.database.db import engine
-from auth.types.enums import UserType
+from auth.types.enums import TokenType, UserType
 
 
 def get_session() -> Generator[Session]:
@@ -96,7 +97,7 @@ def RoleValidationDep(
             # and skip role-based authorization checks
             return
 
-        token_payload = decode_jwt_token(token)
+        token_payload = decode_jwt_token(token, expected_type= TokenType.ACCESS)
         authorize_user(
             token_payload=token_payload,
             session=session,

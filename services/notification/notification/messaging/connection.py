@@ -1,11 +1,18 @@
-import time
 import pika
-from app.config import settings
+from notification.config import settings
 
 
-def create_connection(retries: int = 10, delay: int = 3) -> pika.BlockingConnection:
+def create_connection() -> pika.BlockingConnection:
     """
-    Create RabbitMQ connection with retry & backoff.
+    Create a blocking RabbitMQ connection.
+
+    Configures authentication and connection parameters
+    using application settings.
+
+    Returns
+    -------
+    pika.BlockingConnection
+        Active RabbitMQ connection instance.
     """
 
     credentials = pika.PlainCredentials(

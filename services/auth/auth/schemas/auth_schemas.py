@@ -2,7 +2,7 @@ from datetime import datetime
 
 from pydantic import BaseModel
 
-from auth.types.enums import UserType
+from auth.types.enums import TokenType, UserType
 
 
 class Token(BaseModel):
@@ -15,10 +15,13 @@ class Token(BaseModel):
     ----------
     access_token : str
         JWT access token used for authenticated requests.
+    refresh_token : str
+        JWT refresh token used to obtain new access tokens after expiration.
     token_type : str
         Token scheme used for authentication (e.g., "bearer").
     """
     access_token: str
+    refresh_token: str
     token_type: str
 
 
@@ -39,9 +42,9 @@ class JWTSubject(BaseModel):
     role: UserType
 
 
-class JWTAccessTokenPayload(BaseModel):
+class JWTPayload(BaseModel):
     """
-    Decoded JWT access token payload.
+    Decoded JWT token payload.
 
     Holds standard JWT claims required for token validation and processing.
 
@@ -51,14 +54,17 @@ class JWTAccessTokenPayload(BaseModel):
         Expiration timestamp of the token (UTC).
     sub : str
         Serialized subject containing user identity and role information.
+    type : str
+        Token type (e.g., "access" or "refresh") for distinguishing token purposes.
     """
     exp: datetime
     sub: str
+    type: TokenType
 
 
-class ParsedJWTAccessTokenPayload(JWTAccessTokenPayload):
+class ParsedJWTPayload(JWTPayload):
     """
-    JWT access token payload with parsed subject data.
+    JWT token payload with parsed subject data.
 
     Extends the base JWT payload by converting the serialized subject (`sub`)
     claim into a strongly-typed subject model for easier access and
