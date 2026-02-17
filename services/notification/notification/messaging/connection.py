@@ -1,5 +1,5 @@
 import pika
-from notification.config import settings
+from backend.services.notification.notification.core.config import settings
 
 
 def create_connection() -> pika.BlockingConnection:
