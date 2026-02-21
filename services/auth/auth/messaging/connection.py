@@ -1,5 +1,5 @@
 import pika
-from notification.core.config import settings
+from auth.core.config import settings
 
 
 def create_connection() -> pika.BlockingConnection:
@@ -16,15 +16,14 @@ def create_connection() -> pika.BlockingConnection:
     """
 
     credentials = pika.PlainCredentials(
-        settings.rabbitmq_username,
-        settings.rabbitmq_password,
+        settings.RABBITMQ_USERNAME,
+        settings.RABBITMQ_PASSWORD,
     )
 
     params = pika.ConnectionParameters(
-        host=settings.rabbitmq_host,
-        port=settings.rabbitmq_port,
+        host=settings.RABBITMQ_HOST,
+        port=settings.RABBITMQ_PORT,
         credentials=credentials,
-        heartbeat=60,
     )
 
     return pika.BlockingConnection(params)

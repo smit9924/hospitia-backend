@@ -8,8 +8,8 @@ from pika.adapters.blocking_connection import BlockingChannel
 from notification.messaging.connection import create_connection
 from notification.messaging.topology import setup_topology
 from notification.schemas.event import NotificationEvent
-from backend.services.notification.notification.types.enums import Channel
-from backend.services.notification.notification.core.config import settings
+from notification.types.enums import Channel
+from notification.core.config import settings
 
 from notification.channels.email.handler import handle as email_handler
 from typing import cast
@@ -32,7 +32,7 @@ def run_consumer() -> None:
     - Acknowledge successfully processed messages.
     - Reject invalid or failed messages without requeueing.
     """
-
+    log.info("Connecting to RabbitMQ...")
     connection = create_connection()
     channel = connection.channel()
 
@@ -41,7 +41,7 @@ def run_consumer() -> None:
     def on_message(ch:BlockingChannel, method: Basic.Deliver, properties: BasicProperties, body: bytes):
         """
         RabbitMQ message callback.
-        
+
         Workflow
         --------
         - Deserialize incoming JSON message.

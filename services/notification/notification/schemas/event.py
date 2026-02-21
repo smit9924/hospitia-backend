@@ -1,7 +1,7 @@
 from pydantic import BaseModel, Field
 from typing import Dict, Any
 
-from backend.services.notification.notification.types.enums import Channel, Priority
+from notification.types.enums import Channel, Priority
 
 class NotificationEvent(BaseModel):
     """

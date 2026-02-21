@@ -2,7 +2,7 @@ import smtplib
 from email.mime.multipart import MIMEMultipart
 from email.mime.text import MIMEText
 
-from backend.services.notification.notification.core.config import settings
+from notification.core.config import settings
 
 
 def send_email(

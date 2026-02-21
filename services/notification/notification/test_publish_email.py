@@ -1,7 +1,7 @@
 import json
 import pika
 
-from backend.services.notification.notification.core.config import settings
+from notification.core.config import settings
 
 def publish_test_email():
     credentials = pika.PlainCredentials(

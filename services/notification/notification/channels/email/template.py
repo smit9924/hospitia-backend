@@ -1,5 +1,8 @@
 from jinja2 import Environment, FileSystemLoader, select_autoescape
 from pathlib import Path
+import logging
+
+log = logging.getLogger(__name__)
 
 TEMPLATE_DIR = Path(__file__).parent / "templates"
 
@@ -26,4 +29,7 @@ def render_template(name: str, data: dict) -> str:
     """
     
     template = env.get_template(f"{name}.html")
+    log.debug(f"Rendering template '{name}' with data: {data}")
     return template.render(**data)
+
+

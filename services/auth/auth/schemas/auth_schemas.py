@@ -77,3 +77,33 @@ class ParsedJWTPayload(JWTPayload):
     """
 
     parsed_subject: JWTSubject
+
+class ForgotPasswordRequest(BaseModel):
+    """
+    Schema for forgot password request.
+
+    Represents the payload required to initiate a password reset process.
+
+    Attributes
+    ----------
+    email : str
+        The email address of the user requesting a password reset.
+    """
+    email: str
+
+class ResetPasswordRequest(BaseModel):
+    """
+    Schema for reset password request.
+
+    Represents the payload required to complete a password reset process.
+
+    Attributes
+    ----------
+    token : str
+        The password reset token sent to the user's email.
+    new_password : str
+        The new password that the user wants to set.
+    """
+    token: str
+    new_password: str
+

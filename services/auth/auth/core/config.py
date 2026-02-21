@@ -46,6 +46,10 @@ class Settings(BaseSettings):
     NOTIFICATION_EXCHANGE: str = ...  # type: ignore
     EMAIL_ROUTING_KEY: str = "email.send"
 
+    FRONTEND_BASE_URL: str = ... # type: ignore
+
+    RESET_TOKEN_EXPIRE_MINUTES: int = 15
+
     @computed_field
     @property
     def SQLALCHEMY_DATABASE_URI(self) -> PostgresDsn:

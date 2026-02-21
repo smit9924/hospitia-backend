@@ -2,7 +2,7 @@ from pydantic_settings import BaseSettings, SettingsConfigDict
 from os import path
 from pathlib import Path
 
-SERVICE_ROOT = Path(__file__).resolve().parent.parent  # notification/
+SERVICE_ROOT = Path(__file__).resolve().parents[2]
 
 class Settings(BaseSettings):
     model_config = SettingsConfigDict(

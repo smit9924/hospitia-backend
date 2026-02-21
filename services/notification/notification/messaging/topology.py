@@ -1,4 +1,4 @@
-from backend.services.notification.notification.core.config import settings
+from notification.core.config import settings
 
 
 def setup_topology(channel) -> None:

@@ -11,7 +11,6 @@ app = FastAPI(
     exception_handlers=exception_handlers,
 )
 
-
 @app.get("/")
 async def root():
     return {"message": "Hello World"}

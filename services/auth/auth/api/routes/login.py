@@ -4,9 +4,9 @@ from fastapi import APIRouter, Depends, HTTPException
 from fastapi.security import OAuth2PasswordRequestForm
 
 from auth.api.dependencies import SessionDep, decode_jwt_token
-from auth.api.services.login_service import authenticate_manual_user
+from auth.api.services.login_service import authenticate_manual_user, forgot_password_user, reset_password_user
 from auth.core.security import (create_jwt_access_token, create_jwt_refresh_token)
-from auth.schemas.auth_schemas import JWTSubject, Token, TokenType
+from auth.schemas.auth_schemas import ForgotPasswordRequest, JWTSubject, Token, TokenType, ResetPasswordRequest
 
 router = APIRouter(tags=["login"])
 
@@ -82,4 +82,41 @@ async def refresh_access_token(session: SessionDep, refresh_token: str) -> Token
         access_token=new_access_token,
         refresh_token=new_refresh_token,
         token_type="bearer"
+    )
+
+@router.post("/forgot-password")
+async def forgot_password(
+    session: SessionDep,
+    payload: ForgotPasswordRequest
+):
+    """
+    Handle user requests for password reset.
+
+    This endpoint initiates the password reset process by accepting a user's
+    email address or username. It verifies the existence of the user and,
+    if found, triggers the sending of a password reset email containing a
+    secure, time-limited token. This allows users to securely reset their
+    passwords without exposing sensitive information.
+    """
+    forgot_password_user(session=session, email=payload.email)
+    return {"message": "A reset link has been sent to your email "}
+
+@router.post("/reset-password")
+async def reset_password(
+    session: SessionDep,
+    payload: ResetPasswordRequest
+):
+    """
+    Handle user requests to reset their password.
+
+    This endpoint accepts a secure token and a new password. It validates the
+    token to ensure it is valid, not expired, and has not been used. If the
+    token is valid, the user's password is updated to the new password, and
+    the token is marked as used to prevent reuse. This allows users to securely
+    reset their passwords while ensuring that tokens cannot be exploited.
+    """
+    reset_password_user(
+        session=session,
+        reset_token=payload.token,
+        new_password=payload.new_password,
     )

@@ -3,8 +3,8 @@ from datetime import UTC, datetime
 from bcrypt import checkpw, gensalt, hashpw
 from jwt import InvalidTokenError, decode, encode
 from sqlmodel import Session, select
-
-from auth.core.config import settings
+import secrets
+from auth.core.config import settings, timedelta
 from auth.database.models import Users
 from auth.exceptions.definitions.security_exceptions import UserUnauthorizedException
 from auth.schemas.auth_schemas import (
@@ -232,3 +232,38 @@ def authorize_user(
     if not user or user.role not in roles:
         raise UserUnauthorizedException
 
+def generate_secure_token() -> tuple[str, datetime]:
+    """
+    Generate a secure random token for password reset or similar purposes.
+
+    Returns
+    -------
+    tuple[str, datetime]
+        A tuple containing the securely generated random token and its expiration time.
+    """
+    reset_token = secrets.token_urlsafe(48)
+    expire_time = datetime.now(UTC) + timedelta(minutes=settings.RESET_TOKEN_EXPIRE_MINUTES)
+    return reset_token, expire_time
+
+def hash_secure_token(token: str) -> str:
+    """
+    Hash a secure token using bcrypt.
+
+    Parameters
+    ----------
+    token : str
+        The plaintext token to hash.
+
+    Returns
+    -------
+    str
+        The bcrypt-hashed token as a UTF-8 decoded string (includes salt).
+    """
+    token_hash_byte = hashpw(
+        bytes(token, encoding="utf-8"),
+        gensalt(),
+    )
+
+    token_hash_string = token_hash_byte.decode("utf-8")
+
+    return token_hash_string
