@@ -1,30 +1,58 @@
+from pika.adapters.blocking_connection import BlockingChannel
 import pika
 from notification.core.config import settings
 
 
-def create_connection() -> pika.BlockingConnection:
-    """
-    Create a blocking RabbitMQ connection.
+class RabbitMQClient:
+    """Singleton RabbitMQ client for managing connection and channel."""
+    _connection = None
+    _channel = None
 
-    Configures authentication and connection parameters
-    using application settings.
+    @classmethod
+    def get_connection(cls) -> pika.BlockingConnection:
+        """
+        Get or create a RabbitMQ connection.
 
-    Returns
-    -------
-    pika.BlockingConnection
-        Active RabbitMQ connection instance.
-    """
+        Returns
+        -------
+            pika.BlockingConnection: Active RabbitMQ connection.
+        """
+        if cls._connection is None or cls._connection.is_closed:
+            credentials = pika.PlainCredentials(
+                settings.rabbitmq_username,
+                settings.rabbitmq_password,
+            )
+            params = pika.ConnectionParameters(
+                host=settings.rabbitmq_host,
+                port=settings.rabbitmq_port,
+                credentials=credentials,
+            )
+            cls._connection = pika.BlockingConnection(params)
+        
+        return cls._connection
 
-    credentials = pika.PlainCredentials(
-        settings.rabbitmq_username,
-        settings.rabbitmq_password,
-    )
-
-    params = pika.ConnectionParameters(
-        host=settings.rabbitmq_host,
-        port=settings.rabbitmq_port,
-        credentials=credentials,
-        heartbeat=60,
-    )
-
-    return pika.BlockingConnection(params)
+    @classmethod
+    def get_channel(cls) -> BlockingChannel:
+        """
+        Get or create a RabbitMQ channel.
+        
+        Returns
+        -------
+            BlockingChannel: Active RabbitMQ channel.
+        """
+        if cls._channel is None or cls._channel.is_closed:
+            connection = cls.get_connection()
+            cls._channel = connection.channel()
+        return cls._channel
+    
+    @classmethod
+    def stop_consumer(cls):
+        """Gracefully stop the consumer by closing the RabbitMQ connection."""
+        if cls._channel and cls._channel.is_open:
+            cls._channel.stop_consuming()
+    
+    @classmethod
+    def close_connection(cls):
+        """Close the RabbitMQ connection and channel."""
+        if cls._connection and cls._connection.is_open:
+            cls._connection.close()

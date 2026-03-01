@@ -1,4 +1,5 @@
 import logging
+from notification.schemas.event import NotificationEvent
 from notification.channels.email.sender import send_email
 from notification.channels.email.template import render_template
 from notification.schemas.email import EmailPayload
@@ -6,7 +7,7 @@ from notification.schemas.email import EmailPayload
 log = logging.getLogger(__name__)
 
 
-def handle(payload: dict) -> None:
+def handle(event: NotificationEvent) -> None:
     """
     Process an email notification event.
 
@@ -26,7 +27,7 @@ def handle(payload: dict) -> None:
     ValidationError
         If payload structure does not match EmailPayload schema.
     """
-    email = EmailPayload(**payload)
+    email = EmailPayload(**event.payload)
 
     html = render_template(
         email.template,

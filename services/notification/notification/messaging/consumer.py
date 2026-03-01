@@ -5,7 +5,7 @@ from pika.spec import Basic, BasicProperties
 
 from pika.adapters.blocking_connection import BlockingChannel
 
-from notification.messaging.connection import create_connection
+from notification.messaging.connection import RabbitMQClient
 from notification.messaging.topology import setup_topology
 from notification.schemas.event import NotificationEvent
 from notification.types.enums import Channel
@@ -33,8 +33,8 @@ def run_consumer() -> None:
     - Reject invalid or failed messages without requeueing.
     """
     log.info("Connecting to RabbitMQ...")
-    connection = create_connection()
-    channel = connection.channel()
+
+    channel = RabbitMQClient.get_channel()
 
     setup_topology(channel)
 
@@ -64,7 +64,7 @@ def run_consumer() -> None:
             if not handler:
                 raise ValueError(f"No handler for channel {event.channel}")
 
-            handler(event.payload)
+            handler(event)
 
             ch.basic_ack(delivery_tag=cast(int,method.delivery_tag))
 
@@ -76,8 +76,6 @@ def run_consumer() -> None:
                 delivery_tag=cast(int,method.delivery_tag),
                 requeue=False,
             )
-
-    channel.basic_qos(prefetch_count=1)
 
     channel.basic_consume(
         queue=settings.email_queue,
