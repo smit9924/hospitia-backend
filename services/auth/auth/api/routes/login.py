@@ -88,7 +88,7 @@ async def refresh_access_token(session: SessionDep, refresh_token: str) -> Token
 async def forgot_password(
     session: SessionDep,
     payload: ForgotPasswordRequest
-):
+) -> dict[str, str]:
     """
     Handle user requests for password reset.
 
@@ -105,7 +105,7 @@ async def forgot_password(
 async def reset_password(
     session: SessionDep,
     payload: ResetPasswordRequest
-):
+)   -> dict[str, str]:
     """
     Handle user requests to reset their password.
 
@@ -120,3 +120,5 @@ async def reset_password(
         reset_token=payload.token,
         new_password=payload.new_password,
     )
+
+    return {"message": "Password has been reset successfully"}

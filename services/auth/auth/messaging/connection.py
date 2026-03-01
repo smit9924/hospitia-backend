@@ -1,29 +1,36 @@
 import pika
 from auth.core.config import settings
+from pika.adapters.blocking_connection import BlockingChannel
 
+class RabbitMQClient:
+    _connection = None
 
-def create_connection() -> pika.BlockingConnection:
-    """
-    Create a blocking RabbitMQ connection.
+    @classmethod
+    def get_connection(cls) -> pika.BlockingConnection:
+        # Check if connection exists and is open
+        if cls._connection is None or cls._connection.is_closed:
+            credentials = pika.PlainCredentials(
+                settings.RABBITMQ_USERNAME,
+                settings.RABBITMQ_PASSWORD,
+            )
+            params = pika.ConnectionParameters(
+                host=settings.RABBITMQ_HOST,
+                port=settings.RABBITMQ_PORT,
+                credentials=credentials,
+            )
+            cls._connection = pika.BlockingConnection(params)
+        
+        return cls._connection
 
-    Configures authentication and connection parameters
-    using application settings.
+    @classmethod
+    def get_channel(cls) -> BlockingChannel:
+        """Channels are lightweight; you can create them as needed 
+        from the singleton connection."""
+        connection = cls.get_connection()
+        return connection.channel()
 
-    Returns
-    -------
-    pika.BlockingConnection
-        Active RabbitMQ connection instance.
-    """
-
-    credentials = pika.PlainCredentials(
-        settings.RABBITMQ_USERNAME,
-        settings.RABBITMQ_PASSWORD,
-    )
-
-    params = pika.ConnectionParameters(
-        host=settings.RABBITMQ_HOST,
-        port=settings.RABBITMQ_PORT,
-        credentials=credentials,
-    )
-
-    return pika.BlockingConnection(params)
+    @classmethod
+    def close_connection(cls):
+        "Call this when the application is shutting down to cleanly close the RabbitMQ connection."
+        if cls._connection and cls._connection.is_open:
+            cls._connection.close()

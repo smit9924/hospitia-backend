@@ -1,15 +1,13 @@
 import json
+from auth.messaging.connection import RabbitMQClient
 import pika
-from auth.messaging.connection import create_connection
 from auth.core.config import settings
 
 
 def publish_message(message: dict) -> None:
-    connection = create_connection()
-    channel = connection.channel()
+    channel = RabbitMQClient.get_channel()
 
-    try:
-        channel.basic_publish(
+    channel.basic_publish(
             exchange=settings.NOTIFICATION_EXCHANGE,
             routing_key=settings.EMAIL_ROUTING_KEY,
             body=json.dumps(message),
@@ -18,5 +16,3 @@ def publish_message(message: dict) -> None:
                 content_type="application/json",
             ),
         )
-    finally:
-        connection.close()

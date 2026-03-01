@@ -1,12 +1,11 @@
+from csv import Error
 from datetime import UTC, datetime
 import json
 from turtle import reset
 from auth.database.models.secure_token import SecureToken
 from auth.messaging.publisher import publish_message
-import pika
-from auth.messaging.connection import create_connection
-from sqlmodel import Session, select, update, update
-
+from auth.schemas.common_schemas import ApiErrorResponse, ErrorCodes
+from sqlmodel import Session, select
 from auth.api.services.user_service import get_password_hash, get_user_by_email_or_username
 from auth.core.security import generate_secure_token, hash_secure_token, settings, verify_password
 from auth.database.models.users import Users
@@ -67,10 +66,6 @@ def forgot_password_user(*, session: Session, email: str) -> None:
         email : str
             The email address of the user requesting a password reset.
 
-    Returns
-    -------
-    dict
-        A message indicating that a reset link has been sent to the provided email address.
     """
     user = get_user_by_email_or_username(session=session, identifire=email)
 
@@ -108,7 +103,6 @@ def forgot_password_user(*, session: Session, email: str) -> None:
     
     message = {
         "channel": "email",
-        "priority": 5,
         "payload": {
             "to": [email],
             "subject": "Password Reset Link",
@@ -139,10 +133,6 @@ def reset_password_user(*, session: Session, reset_token: str, new_password: str
             The password reset token provided by the user.
         new_password : str
             The new plain text password that the user wants to set.
-    Returns
-    -------
-    dict
-        A message indicating that the password has been reset successfully.
     """
     token_hash = hash_secure_token(reset_token)
     now = datetime.now(UTC)
@@ -160,7 +150,11 @@ def reset_password_user(*, session: Session, reset_token: str, new_password: str
         return
 
     if record.used or record.expires_at <= now:
-        return
+        ApiErrorResponse(
+            metadata=None,
+            message="Invalid or expired token",
+            errorCode=ErrorCodes.INVALIDTOKEN
+        )
 
     user = session.get(Users, record.user_id)
     if user is None:
@@ -169,11 +163,7 @@ def reset_password_user(*, session: Session, reset_token: str, new_password: str
     user.password = get_password_hash(new_password)
     record.used = True
 
-    log.info(f"Resetting password for user_id={user.id} using token_id={record.id}")
-
     session.add(user)
     session.add(record)
     session.commit()
-
-    log.info(f"Password reset successful for user_id={user.id} using token_id={record.id}") 
 
