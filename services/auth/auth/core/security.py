@@ -147,7 +147,7 @@ def decode_jwt_token(token: str, expected_type: TokenType) -> ParsedJWTPayload:
 
     Returns
     -------
-    ParsedJWTAccessTokenPayload
+    ParsedJWTPayload
         A validated JWT payload containing the token expiration time,
         raw subject claim, and a parsed subject model.
 
