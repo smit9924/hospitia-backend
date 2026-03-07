@@ -1,8 +1,9 @@
 import logging
-from notification.schemas.event import NotificationEvent
+
 from notification.channels.email.sender import send_email
 from notification.channels.email.template import render_template
 from notification.schemas.email import EmailPayload
+from notification.schemas.event import NotificationEvent
 
 log = logging.getLogger(__name__)
 

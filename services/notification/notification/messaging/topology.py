@@ -7,10 +7,10 @@ def setup_topology(channel) -> None:
 
     Creates the required exchange, queue, and routing bindings
     used by the notification system.
-    
+
     Parameters
     ----------
-    
+
         channel : pika.channel.Channel
             Active RabbitMQ channel to declare topology on.
     """

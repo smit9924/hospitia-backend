@@ -1,14 +1,14 @@
-from enum import Enum
+from enum import IntEnum, StrEnum
 
 
-class Channel(str, Enum):
+class Channel(StrEnum):
     """
     Supported notification delivery channels.
     """
     EMAIL = "email"
 
 
-class Priority(int, Enum):
+class Priority(IntEnum):
     """
     Message priority levels.
 

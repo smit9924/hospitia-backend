@@ -5,7 +5,7 @@ class TemplateNotFoundError(NotificationBaseException):
     """
     Raised when the requested Jinja2 template file does not exist
     in the templates directory.
-    
+
     Parameters
     ----------
     template_name : str

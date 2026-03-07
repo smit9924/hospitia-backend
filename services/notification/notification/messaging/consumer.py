@@ -1,18 +1,16 @@
 import json
 import logging
-
-from pika.spec import Basic, BasicProperties
+from typing import cast
 
 from pika.adapters.blocking_connection import BlockingChannel
+from pika.spec import Basic, BasicProperties
 
+from notification.channels.email.handler import handle as email_handler
+from notification.core.config import settings
 from notification.messaging.connection import RabbitMQClient
 from notification.messaging.topology import setup_topology
 from notification.schemas.event import NotificationEvent
 from notification.types.enums import Channel
-from notification.core.config import settings
-
-from notification.channels.email.handler import handle as email_handler
-from typing import cast
 
 log = logging.getLogger(__name__)
 

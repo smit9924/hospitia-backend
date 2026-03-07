@@ -1,5 +1,6 @@
+from typing import Any
+
 from pydantic import BaseModel, EmailStr
-from typing import List, Dict, Any
 
 
 class EmailPayload(BaseModel):
@@ -17,7 +18,7 @@ class EmailPayload(BaseModel):
     data : Dict[str, Any]
         Dynamic template variables injected during rendering.
     """
-    to: List[EmailStr]
+    to: list[EmailStr]
     subject: str
     template: str
-    data: Dict[str, Any]
+    data: dict[str, Any]

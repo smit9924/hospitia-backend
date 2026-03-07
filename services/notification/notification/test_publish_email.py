@@ -1,7 +1,9 @@
 import json
+
 import pika
 
 from notification.core.config import settings
+
 
 def publish_test_email():
     credentials = pika.PlainCredentials(
@@ -42,7 +44,6 @@ def publish_test_email():
         ),
     )
 
-    print("✅ Message published")
     connection.close()
 
 

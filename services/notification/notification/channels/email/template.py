@@ -1,6 +1,7 @@
-from jinja2 import Environment, FileSystemLoader, select_autoescape
-from pathlib import Path
 import logging
+from pathlib import Path
+
+from jinja2 import Environment, FileSystemLoader, select_autoescape
 
 log = logging.getLogger(__name__)
 
@@ -27,7 +28,7 @@ def render_template(name: str, data: dict) -> str:
     str
         Rendered HTML content.
     """
-    
+
     template = env.get_template(f"{name}.html")
     log.debug(f"Rendering template '{name}' with data: {data}")
     return template.render(**data)

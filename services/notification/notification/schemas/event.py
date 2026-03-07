@@ -1,7 +1,9 @@
+from typing import Any
+
 from pydantic import BaseModel, Field
-from typing import Dict, Any
 
 from notification.types.enums import Channel, Priority
+
 
 class NotificationEvent(BaseModel):
     """
@@ -24,4 +26,4 @@ class NotificationEvent(BaseModel):
         default=Priority.NORMAL,
         description="Message priority (0-10)",
     )
-    payload: Dict[str, Any]
+    payload: dict[str, Any]

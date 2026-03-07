@@ -1,8 +1,10 @@
 import logging
 import signal
 import sys
+
 from notification.messaging.connection import RabbitMQClient
 from notification.messaging.consumer import run_consumer
+
 
 def shutdown_handler(signum, frame):
     """Signal handler for graceful shutdown."""
@@ -28,4 +30,4 @@ if __name__ == "__main__":
         RabbitMQClient.close_connection()
         logging.info("notification consumer shutdown complete.")
         sys.exit(0)
-        
+
