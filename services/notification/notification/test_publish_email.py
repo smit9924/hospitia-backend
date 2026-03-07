@@ -11,11 +11,14 @@ def publish_test_email():
         settings.rabbitmq_password,
     )
 
+    # Pika internally expects arguments typed as type[_DEFAULT], which causes
+    # type-checking conflicts with the provided settings values. Therefore,
+    # type checking is ignored for these parameters.
     connection = pika.BlockingConnection(
         pika.ConnectionParameters(
-            host=settings.rabbitmq_host,
-            port=settings.rabbitmq_port,
-            credentials=credentials,
+            host=settings.rabbitmq_host, #type: ignore[arg-type]
+            port=settings.rabbitmq_port, #type: ignore[arg-type]
+            credentials=credentials, #type: ignore[arg-type]
         )
     )
 

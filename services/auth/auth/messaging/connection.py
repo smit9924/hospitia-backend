@@ -15,10 +15,14 @@ class RabbitMQClient:
                 settings.RABBITMQ_USERNAME,
                 settings.RABBITMQ_PASSWORD,
             )
+
+            # Pika internally expects arguments typed as type[_DEFAULT], which causes
+            # type-checking conflicts with the provided settings values. Therefore,
+            # type checking is ignored for these parameters.
             params = pika.ConnectionParameters(
-                host=settings.RABBITMQ_HOST,
-                port=settings.RABBITMQ_PORT,
-                credentials=credentials,
+                host=settings.RABBITMQ_HOST, #type: ignore[arg-type]
+                port=settings.RABBITMQ_PORT, #type: ignore[arg-type]
+                credentials=credentials, #type: ignore[arg-type]
             )
             cls._connection = pika.BlockingConnection(params)
 
