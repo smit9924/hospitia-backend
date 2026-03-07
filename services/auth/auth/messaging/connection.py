@@ -1,6 +1,8 @@
 import pika
-from auth.core.config import settings
 from pika.adapters.blocking_connection import BlockingChannel
+
+from auth.core.config import settings
+
 
 class RabbitMQClient:
     _connection = None
@@ -19,12 +21,12 @@ class RabbitMQClient:
                 credentials=credentials,
             )
             cls._connection = pika.BlockingConnection(params)
-        
+
         return cls._connection
 
     @classmethod
     def get_channel(cls) -> BlockingChannel:
-        """Channels are lightweight; you can create them as needed 
+        """Channels are lightweight; you can create them as needed
         from the singleton connection."""
         connection = cls.get_connection()
         return connection.channel()

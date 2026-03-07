@@ -1,9 +1,10 @@
+import secrets
 from datetime import UTC, datetime
 
 from bcrypt import checkpw, gensalt, hashpw
 from jwt import InvalidTokenError, decode, encode
 from sqlmodel import Session, select
-import secrets
+
 from auth.core.config import settings, timedelta
 from auth.database.models import Users
 from auth.exceptions.definitions.security_exceptions import UserUnauthorizedException

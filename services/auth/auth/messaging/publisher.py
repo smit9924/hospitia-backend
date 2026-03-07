@@ -1,7 +1,9 @@
 import json
-from auth.messaging.connection import RabbitMQClient
+
 import pika
+
 from auth.core.config import settings
+from auth.messaging.connection import RabbitMQClient
 
 
 def publish_message(message: dict) -> None:

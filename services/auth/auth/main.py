@@ -1,10 +1,8 @@
-from auth.messaging.connection import RabbitMQClient
 from fastapi import FastAPI
 
 from auth.api.routes.main import api_router
 from auth.core.config import settings
 from auth.exceptions.registry import get_exception_handlers
-from contextlib import asynccontextmanager
 
 exception_handlers = get_exception_handlers()
 

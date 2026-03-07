@@ -1,16 +1,23 @@
-from csv import Error
+import logging
 from datetime import UTC, datetime
-import json
-from turtle import reset
+
+from sqlmodel import Session, select
+
+from auth.api.services.user_service import (
+    get_password_hash,
+    get_user_by_email_or_username,
+)
+from auth.core.security import (
+    generate_secure_token,
+    hash_secure_token,
+    settings,
+    verify_password,
+)
 from auth.database.models.secure_token import SecureToken
+from auth.database.models.users import Users
 from auth.messaging.publisher import publish_message
 from auth.schemas.common_schemas import ApiErrorResponse, ErrorCodes
-from sqlmodel import Session, select
-from auth.api.services.user_service import get_password_hash, get_user_by_email_or_username
-from auth.core.security import generate_secure_token, hash_secure_token, settings, verify_password
-from auth.database.models.users import Users
 from auth.types.enums import AuthType
-import logging
 
 log = logging.getLogger(__name__)
 
@@ -72,7 +79,7 @@ def forgot_password_user(*, session: Session, email: str) -> None:
     if not user:
         # For security, do not reveal whether the email exists in the system
         return
-    
+
     token, expire_time = generate_secure_token()
 
     if(user.id is None):
@@ -84,9 +91,9 @@ def forgot_password_user(*, session: Session, email: str) -> None:
     # invalidate old tokens
     stmt = select(SecureToken).where(
         SecureToken.user_id == user.id,
-        SecureToken.used == False
+        (not SecureToken.used)
     )
-    
+
     for record in session.exec(stmt):
         record.used = True
 
@@ -100,7 +107,7 @@ def forgot_password_user(*, session: Session, email: str) -> None:
     session.commit()
 
     reset_link = f"{settings.FRONTEND_BASE_URL}/reset-password?token={token}"
-    
+
     message = {
         "channel": "email",
         "payload": {

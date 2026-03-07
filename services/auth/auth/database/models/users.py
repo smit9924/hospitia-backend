@@ -2,7 +2,7 @@ import uuid
 
 from pydantic import EmailStr
 from sqlmodel import Boolean, Field, Integer
-from typing import Optional
+
 from auth.types.enums import AuthType, UserType
 
 from .base import SQLModel

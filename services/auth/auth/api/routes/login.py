@@ -4,9 +4,19 @@ from fastapi import APIRouter, Depends, HTTPException
 from fastapi.security import OAuth2PasswordRequestForm
 
 from auth.api.dependencies import SessionDep, decode_jwt_token
-from auth.api.services.login_service import authenticate_manual_user, forgot_password_user, reset_password_user
-from auth.core.security import (create_jwt_access_token, create_jwt_refresh_token)
-from auth.schemas.auth_schemas import ForgotPasswordRequest, JWTSubject, Token, TokenType, ResetPasswordRequest
+from auth.api.services.login_service import (
+    authenticate_manual_user,
+    forgot_password_user,
+    reset_password_user,
+)
+from auth.core.security import create_jwt_access_token, create_jwt_refresh_token
+from auth.schemas.auth_schemas import (
+    ForgotPasswordRequest,
+    JWTSubject,
+    ResetPasswordRequest,
+    Token,
+    TokenType,
+)
 
 router = APIRouter(tags=["login"])
 
@@ -53,7 +63,7 @@ async def login_access_token(session: SessionDep, form_data: Annotated[OAuth2Pas
     )
 
 @router.post("/refresh-token", response_model=Token)
-async def refresh_access_token(session: SessionDep, refresh_token: str) -> Token:
+async def refresh_access_token(refresh_token: str) -> Token:
     """
     Refresh an expired access token using a valid refresh token.
 

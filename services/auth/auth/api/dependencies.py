@@ -1,5 +1,4 @@
 from collections.abc import Callable, Generator
-from tokenize import Token
 from typing import Annotated
 
 from fastapi import Depends
