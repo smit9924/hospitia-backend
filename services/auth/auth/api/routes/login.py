@@ -51,7 +51,7 @@ async def login_access_token(session: SessionDep, form_data: Annotated[OAuth2Pas
 
     refresh_token = create_jwt_refresh_token(
         subject=JWTSubject (
-            user_guid=str(authenticated_user.guid), # UUID is not JSON serializable, convert to
+            user_guid=str(authenticated_user.guid), # UUID is not JSON serializable, convert to string
             role=authenticated_user.role,
         )
     )
