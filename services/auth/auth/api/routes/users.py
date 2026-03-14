@@ -3,7 +3,7 @@ from typing import Annotated
 from fastapi import APIRouter, Depends
 
 from auth.api.dependencies import RoleValidationDep, SessionDep
-from auth.api.routes.login import create_jwt_refresh_token
+from auth.core.security import create_jwt_refresh_token
 from auth.api.services.user_service import validate_and_create_user
 from auth.core.security import create_jwt_access_token
 from auth.database.models.users import Users
