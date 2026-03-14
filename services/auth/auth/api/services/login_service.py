@@ -13,7 +13,7 @@ from auth.core.security import (
     settings,
     verify_password,
 )
-from auth.database.models.secure_token import SecureToken
+from auth.database.models.security import SecureToken
 from auth.database.models.users import Users
 from auth.messaging.publisher import publish_message
 from auth.schemas.common_schemas import ApiErrorResponse, ErrorCodes
