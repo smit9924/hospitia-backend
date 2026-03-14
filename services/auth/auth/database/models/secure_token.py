@@ -43,7 +43,7 @@ class SecureToken(SQLModel, table=True):
     - Designed to support future flows such as email verification or account recovery.
     """
 
-    __tablename__ = "secure_token"
+    __tablename__ = "secure_token" # type: ignore
 
     # Composite index optimized for validation queries
     __table_args__ = (
