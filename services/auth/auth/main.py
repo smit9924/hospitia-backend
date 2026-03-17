@@ -1,4 +1,5 @@
 from fastapi import FastAPI
+from fastapi.middleware.cors import CORSMiddleware
 
 from auth.api.routes.main import api_router
 from auth.core.config import settings
@@ -17,6 +18,14 @@ exception_handlers = get_exception_handlers()
 app = FastAPI(
     exception_handlers=exception_handlers,
     # lifespan=lifespan
+)
+
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=settings.ALLOWED_ORIGINS,
+    allow_credentials=settings.ALLOWED_CREDENTIALS,
+    allow_methods=settings.ALLOWED_METHODS,
+    allow_headers=settings.ALLOWED_HEADERS,
 )
 
 @app.get("/")

@@ -23,6 +23,12 @@ class Settings(BaseSettings):
     # Ignore Pylance type checks here. These fields are populated by Pydantic Settings at runtime,
     # and the application should fail loudly if any required environment variable is missing.
 
+    # CORS
+    ALLOWED_ORIGINS: list[str] = ... # type: ignore
+    ALLOWED_CREDENTIALS: bool = ... # type: ignore
+    ALLOWED_METHODS: list[str] = ... # type: ignore
+    ALLOWED_HEADERS: list[str] = ... # type: ignore
+
     # Postgres configuration
     POSTGRES_SERVER: str = ... # type: ignore
     POSTGRES_PORT: int = ... # type: ignore
