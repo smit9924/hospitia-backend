@@ -14,7 +14,11 @@ from jwt import (
     MissingRequiredClaimError,
 )
 
-from auth.exceptions.definitions.security_exceptions import UserUnauthorizedException
+from auth.exceptions.definitions.security_exceptions import (
+    InvalidCredentialsException,
+    UserInactiveException,
+    UserUnauthorizedException,
+)
 from auth.exceptions.definitions.validation_exceptions import (
     PublicEmailNotAllowedException,
     UserWithEmailAlreadyExistsException,
@@ -24,8 +28,10 @@ from auth.exceptions.handlers.security_exceptions_handlers import (
     decode_error_exception_handler,
     expired_signature_error_exception_handler,
     immature_signature_error_exception_handler,
+    inactive_user_exception_handler,
     invalid_algorithm_error_exception_handler,
     invalid_audience_error_exception_handler,
+    invalid_credentials_exception_handler,
     invalid_issued_at_error_exception_handler,
     invalid_issuer_error_exception_handler,
     invalid_key_error_exception_handler,
@@ -54,6 +60,8 @@ def get_exception_handlers() -> dict[Any, Any]:
 
         # Register CUSTOM SECURITY EXCEPTION handlers
         UserUnauthorizedException: user_unauthorized_exception_handler,
+        InvalidCredentialsException: invalid_credentials_exception_handler,
+        UserInactiveException: inactive_user_exception_handler,
 
         # Register PYJWT SECURITY EXCEPTION handlers
         ExpiredSignatureError: expired_signature_error_exception_handler,
