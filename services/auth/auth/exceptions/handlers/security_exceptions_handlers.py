@@ -14,7 +14,11 @@ from jwt import (
     MissingRequiredClaimError,
 )
 
-from auth.exceptions.definitions.security_exceptions import UserUnauthorizedException
+from auth.exceptions.definitions.security_exceptions import (
+    InvalidCredentialsException,
+    UserInactiveException,
+    UserUnauthorizedException,
+)
 from auth.schemas.common_schemas import ApiErrorResponse
 from auth.types.error_codes import ErrorCodes
 
@@ -465,5 +469,80 @@ def decode_error_exception_handler(
 
     return JSONResponse(
         status_code=status.HTTP_401_UNAUTHORIZED,
+        content=response.model_dump(),
+    )
+
+
+def invalid_credentials_exception_handler(
+    _request: Request,
+    exc: InvalidCredentialsException,
+) -> JSONResponse:
+    """
+    Handle invalid credential authentication failures.
+
+    Description
+    -----------
+    Generates a standardized API error response when authentication
+    fails due to incorrect username/email or password.
+
+    Parameters
+    ----------
+    _request : Request
+        The incoming FastAPI request object.
+    exc : InvalidCredentialsException
+        Exception raised when provided credentials are invalid.
+
+    Returns
+    -------
+    JSONResponse
+        HTTP 401 Unauthorized response indicating authentication failure.
+    """
+
+    response = ApiErrorResponse(
+        metadata=None,
+        errorCode=ErrorCodes.INVALID_CREDENTIALS,
+        message=exc.message,
+    )
+
+    return JSONResponse(
+        status_code=status.HTTP_401_UNAUTHORIZED,
+        content=response.model_dump(),
+    )
+
+
+def inactive_user_exception_handler(
+    _request: Request,
+    exc: UserInactiveException,
+) -> JSONResponse:
+    """
+    Handle inactive user access attempts.
+
+    Description
+    -----------
+    Generates a standardized API error response when a user attempts
+    to access the system while their account is inactive, disabled,
+    or not yet activated.
+
+    Parameters
+    ----------
+    _request : Request
+        The incoming FastAPI request object.
+    exc : UserInactiveException
+        Exception raised when an inactive user attempts authentication.
+
+    Returns
+    -------
+    JSONResponse
+        HTTP 403 Forbidden response indicating the user account is inactive.
+    """
+
+    response = ApiErrorResponse(
+        metadata=None,
+        errorCode=ErrorCodes.USER_INACTIVE,
+        message=exc.message,
+    )
+
+    return JSONResponse(
+        status_code=status.HTTP_403_FORBIDDEN,
         content=response.model_dump(),
     )
