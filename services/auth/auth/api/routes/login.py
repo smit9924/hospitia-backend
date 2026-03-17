@@ -1,6 +1,6 @@
 from typing import Annotated
 
-from fastapi import APIRouter, Depends, HTTPException
+from fastapi import APIRouter, Depends
 from fastapi.security import OAuth2PasswordRequestForm
 
 from auth.api.dependencies import SessionDep, decode_jwt_token
@@ -10,6 +10,10 @@ from auth.api.services.login_service import (
     reset_password_user,
 )
 from auth.core.security import create_jwt_access_token, create_jwt_refresh_token
+from auth.exceptions.definitions.security_exceptions import (
+    InvalidCredentialsException,
+    UserInactiveException,
+)
 from auth.schemas.auth_schemas import (
     ForgotPasswordRequest,
     JWTSubject,
@@ -38,9 +42,9 @@ async def login_access_token(session: SessionDep, form_data: Annotated[OAuth2Pas
     )
 
     if not authenticated_user:
-        raise HTTPException(status_code=400, detail="Incorrect username or password")
+        raise InvalidCredentialsException()
     elif not authenticated_user.is_active:
-        raise HTTPException(status_code=400, detail="Inactive user")
+        raise UserInactiveException()
 
     access_token = create_jwt_access_token(
         subject=JWTSubject (
