@@ -5,6 +5,7 @@ from auth.core.security import get_password_hash
 from auth.database.models.users import Users
 from auth.exceptions.definitions.validation_exceptions import (
     UserWithEmailAlreadyExistsException,
+    UserWithUsernameAlreadyExistsException,
 )
 
 
@@ -96,7 +97,7 @@ def validate_and_create_user(session: Session, user: Users) -> Users:
 
     user_existing_with_username = get_user_by_username(session=session, username=user.username)
     if user_existing_with_username:
-        raise UserWithEmailAlreadyExistsException()
+        raise UserWithUsernameAlreadyExistsException()
 
     if user_validated.password:
         user_validated.password = get_password_hash(user_validated.password)
