@@ -1,11 +1,11 @@
 from datetime import datetime
 
-from pydantic import BaseModel
-
 from auth.types.enums import TokenType, UserType
 
+from .base_schemas import BaseSchema
 
-class Token(BaseModel):
+
+class Token(BaseSchema):
     """
     Authentication token response schema.
 
@@ -15,17 +15,23 @@ class Token(BaseModel):
     ----------
     access_token : str
         JWT access token used for authenticated requests.
+    access_token_expiry : datetime
+        Expiration timestamp of the access token (UTC).
     refresh_token : str
         JWT refresh token used to obtain new access tokens after expiration.
+    refresh_token_expiry : datetime
+        Expiration timestamp of the refresh token (UTC).
     token_type : str
         Token scheme used for authentication (e.g., "bearer").
     """
     access_token: str
+    access_token_expiry: datetime
     refresh_token: str
+    refresh_token_expiry: datetime
     token_type: str
 
 
-class JWTSubject(BaseModel):
+class JWTSubject(BaseSchema):
     """
     Subject information embedded within a JWT access token.
 
@@ -42,7 +48,7 @@ class JWTSubject(BaseModel):
     role: UserType
 
 
-class JWTPayload(BaseModel):
+class JWTPayload(BaseSchema):
     """
     Decoded JWT token payload.
 
@@ -78,7 +84,7 @@ class ParsedJWTPayload(JWTPayload):
 
     parsed_subject: JWTSubject
 
-class ForgotPasswordRequest(BaseModel):
+class ForgotPasswordRequest(BaseSchema):
     """
     Schema for forgot password request.
 
@@ -91,7 +97,7 @@ class ForgotPasswordRequest(BaseModel):
     """
     email: str
 
-class ResetPasswordRequest(BaseModel):
+class ResetPasswordRequest(BaseSchema):
     """
     Schema for reset password request.
 

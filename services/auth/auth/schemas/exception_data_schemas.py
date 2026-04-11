@@ -1,10 +1,10 @@
 from typing import TypeVar
 
-from pydantic import BaseModel
+from .base_schemas import BaseSchema
 
 T = TypeVar("T")
 
-class PublicEmailNotAllowedExceptionMetadata[T](BaseModel):
+class PublicEmailNotAllowedExceptionMetadata[T](BaseSchema):
     field: str
     input: str
     data: T

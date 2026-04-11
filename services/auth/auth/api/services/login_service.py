@@ -3,11 +3,14 @@ from datetime import UTC, datetime
 
 from sqlmodel import Session, select
 
+from auth.api.dependencies import SessionDep
 from auth.api.services.user_service import (
     get_password_hash,
     get_user_by_email_or_username,
 )
 from auth.core.security import (
+    create_jwt_access_token,
+    create_jwt_refresh_token,
     generate_secure_token,
     hash_secure_token,
     settings,
@@ -15,11 +18,61 @@ from auth.core.security import (
 )
 from auth.database.models.security import SecureToken
 from auth.database.models.users import Users
+from auth.exceptions.definitions.security_exceptions import (
+    InvalidCredentialsException,
+    UserInactiveException,
+)
 from auth.messaging.publisher import publish_message
+from auth.schemas.auth_schemas import (
+    JWTSubject,
+    Token,
+)
 from auth.schemas.common_schemas import ApiErrorResponse, ErrorCodes
 from auth.types.enums import AuthType
 
 log = logging.getLogger(__name__)
+
+def login(*, session: SessionDep, username: str, password: str) -> Token:
+    """
+    Authenticate a user and issue an OAuth2 access token.
+
+    Validates the provided username/email and password using the OAuth2
+    password grant flow. If authentication is successful, a JWT access
+    token is generated and returned for use in subsequent authenticated
+    requests.
+    """
+    authenticated_user = authenticate_manual_user(
+        session=session,
+        identifire=username,
+        password=password,
+    )
+
+    if not authenticated_user:
+        raise InvalidCredentialsException()
+    elif not authenticated_user.is_active:
+        raise UserInactiveException()
+
+    access_token, access_token_expiry = create_jwt_access_token(
+        subject=JWTSubject (
+            user_guid=str(authenticated_user.guid), # UUID is not JSON serializable, convert to string
+            role=authenticated_user.role,
+        )
+    )
+
+    refresh_token, refresh_token_expiry = create_jwt_refresh_token(
+        subject=JWTSubject (
+            user_guid=str(authenticated_user.guid), # UUID is not JSON serializable, convert to string
+            role=authenticated_user.role,
+        )
+    )
+
+    return Token(
+        access_token=access_token,
+        access_token_expiry=access_token_expiry,
+        refresh_token=refresh_token,
+        refresh_token_expiry=refresh_token_expiry,
+        token_type="bearer"
+    )
 
 def authenticate_manual_user(*, session: Session, identifire: str, password: str) -> Users | None:
     """

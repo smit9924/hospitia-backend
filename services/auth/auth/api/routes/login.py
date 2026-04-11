@@ -5,15 +5,11 @@ from fastapi.security import OAuth2PasswordRequestForm
 
 from auth.api.dependencies import SessionDep, decode_jwt_token
 from auth.api.services.login_service import (
-    authenticate_manual_user,
     forgot_password_user,
+    login,
     reset_password_user,
 )
 from auth.core.security import create_jwt_access_token, create_jwt_refresh_token
-from auth.exceptions.definitions.security_exceptions import (
-    InvalidCredentialsException,
-    UserInactiveException,
-)
 from auth.schemas.auth_schemas import (
     ForgotPasswordRequest,
     JWTSubject,
@@ -24,47 +20,39 @@ from auth.schemas.auth_schemas import (
 
 router = APIRouter(tags=["login"])
 
-
-@router.post("/access-token", response_model=Token)
-async def login_access_token(session: SessionDep, form_data: Annotated[OAuth2PasswordRequestForm, Depends()]) -> Token:
+@router.post("", response_model=Token)
+async def login_user(session: SessionDep, form_data: Annotated[OAuth2PasswordRequestForm, Depends()]) -> Token:
     """
     Authenticate a user and issue an OAuth2 access token.
-
-    Validates the provided username/email and password using the OAuth2
-    password grant flow. If authentication is successful, a JWT access
-    token is generated and returned for use in subsequent authenticated
-    requests.
     """
-    authenticated_user = authenticate_manual_user(
+    token = login(
         session=session,
-        identifire=form_data.username,
+        username=form_data.username,
         password=form_data.password,
     )
 
-    if not authenticated_user:
-        raise InvalidCredentialsException()
-    elif not authenticated_user.is_active:
-        raise UserInactiveException()
+    return token
 
-    access_token = create_jwt_access_token(
-        subject=JWTSubject (
-            user_guid=str(authenticated_user.guid), # UUID is not JSON serializable, convert to string
-            role=authenticated_user.role,
-        )
+
+@router.post("/access-token", response_model=Token, response_model_by_alias=False)
+async def login_access_token(session: SessionDep, form_data: Annotated[OAuth2PasswordRequestForm, Depends()]) -> Token:
+    """
+    Authenticate a user and return an OAuth2 access token.
+
+    Notes:
+    ------
+    - This endpoint follows OAuth2 specifications, which require certain fields
+    to use standard naming conventions(specifically in camel-case).
+    - It is kept separate primarily for compatibility with Swagger UI and
+    OAuth2 form-based authentication flow.
+    """
+    token = login(
+        session=session,
+        username=form_data.username,
+        password=form_data.password,
     )
 
-    refresh_token = create_jwt_refresh_token(
-        subject=JWTSubject (
-            user_guid=str(authenticated_user.guid), # UUID is not JSON serializable, convert to string
-            role=authenticated_user.role,
-        )
-    )
-
-    return Token(
-        access_token=access_token,
-        refresh_token=refresh_token,
-        token_type="bearer"
-    )
+    return token
 
 @router.post("/refresh-token", response_model=Token)
 async def refresh_access_token(refresh_token: str) -> Token:
@@ -78,14 +66,14 @@ async def refresh_access_token(refresh_token: str) -> Token:
     """
     parsed_payload = decode_jwt_token(refresh_token, expected_type=TokenType.REFRESH)
 
-    new_access_token = create_jwt_access_token(
+    new_access_token, new_access_token_expiry = create_jwt_access_token(
         subject=JWTSubject (
             user_guid=parsed_payload.parsed_subject.user_guid,
             role=parsed_payload.parsed_subject.role,
         )
     )
 
-    new_refresh_token = create_jwt_refresh_token(
+    new_refresh_token, new_refresh_token_expiry = create_jwt_refresh_token(
         subject=JWTSubject (
             user_guid=parsed_payload.parsed_subject.user_guid,
             role=parsed_payload.parsed_subject.role,
@@ -94,7 +82,9 @@ async def refresh_access_token(refresh_token: str) -> Token:
 
     return Token(
         access_token=new_access_token,
+        access_token_expiry=new_access_token_expiry,
         refresh_token=new_refresh_token,
+        refresh_token_expiry=new_refresh_token_expiry,
         token_type="bearer"
     )
 

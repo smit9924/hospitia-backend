@@ -17,7 +17,7 @@ from auth.schemas.auth_schemas import (
 from auth.types.enums import UserType
 
 
-def create_jwt_access_token(*, subject: JWTSubject) -> str:
+def create_jwt_access_token(*, subject: JWTSubject) -> tuple[str, datetime]:
     """
     Create a JSON Web Token (JWT) access token for a given subject.
 
@@ -46,9 +46,9 @@ def create_jwt_access_token(*, subject: JWTSubject) -> str:
         key=settings.JWT_ENCRYPTION_SECRET_KEY,
         algorithm=settings.JWT_ENCRYPTION_ALGORITHM,
     )
-    return jwt_token
+    return jwt_token, expire
 
-def create_jwt_refresh_token(*, subject: JWTSubject) -> str:
+def create_jwt_refresh_token(*, subject: JWTSubject) -> tuple[str, datetime]:
     """
     Create a JSON Web Token (JWT) refresh token for a given subject.
 
@@ -80,7 +80,7 @@ def create_jwt_refresh_token(*, subject: JWTSubject) -> str:
         key=settings.JWT_ENCRYPTION_SECRET_KEY,
         algorithm=settings.JWT_ENCRYPTION_ALGORITHM,
     )
-    return jwt_token
+    return jwt_token, expire
 
 
 def verify_password(plain_password: str, hashed_password: str) -> bool:
