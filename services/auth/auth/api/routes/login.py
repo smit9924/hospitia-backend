@@ -10,6 +10,7 @@ from auth.api.services.login_service import (
     reset_password_user,
 )
 from auth.core.security import create_jwt_access_token, create_jwt_refresh_token
+from auth.doc.security_exceptions_doc import SECURITY_EXCEPTION_DOC
 from auth.schemas.auth_schemas import (
     ForgotPasswordRequest,
     JWTSubject,
@@ -20,7 +21,7 @@ from auth.schemas.auth_schemas import (
 
 router = APIRouter(tags=["login"])
 
-@router.post("", response_model=Token)
+@router.post("", response_model=Token, responses={**SECURITY_EXCEPTION_DOC["UserInactiveException"], **SECURITY_EXCEPTION_DOC["InvalidCredentialsException"],})
 async def login_user(session: SessionDep, form_data: Annotated[OAuth2PasswordRequestForm, Depends()]) -> Token:
     """
     Authenticate a user and issue an OAuth2 access token.
@@ -34,7 +35,7 @@ async def login_user(session: SessionDep, form_data: Annotated[OAuth2PasswordReq
     return token
 
 
-@router.post("/access-token", response_model=Token, response_model_by_alias=False)
+@router.post("/access-token", response_model=Token, response_model_by_alias=False, responses={**SECURITY_EXCEPTION_DOC["UserInactiveException"], **SECURITY_EXCEPTION_DOC["InvalidCredentialsException"],})
 async def login_access_token(session: SessionDep, form_data: Annotated[OAuth2PasswordRequestForm, Depends()]) -> Token:
     """
     Authenticate a user and return an OAuth2 access token.
@@ -54,7 +55,8 @@ async def login_access_token(session: SessionDep, form_data: Annotated[OAuth2Pas
 
     return token
 
-@router.post("/refresh-token", response_model=Token)
+
+@router.post("/refresh-token", response_model=Token, responses={**SECURITY_EXCEPTION_DOC["InvalidTokenException"], **SECURITY_EXCEPTION_DOC["UserUnauthorizedException"]})
 async def refresh_access_token(refresh_token: str) -> Token:
     """
     Refresh an expired access token using a valid refresh token.
@@ -88,6 +90,7 @@ async def refresh_access_token(refresh_token: str) -> Token:
         token_type="bearer"
     )
 
+
 @router.post("/forgot-password")
 async def forgot_password(
     session: SessionDep,
@@ -104,6 +107,7 @@ async def forgot_password(
     """
     forgot_password_user(session=session, email=payload.email)
     return {"message": "A reset link has been sent to your email "}
+
 
 @router.post("/reset-password")
 async def reset_password(
