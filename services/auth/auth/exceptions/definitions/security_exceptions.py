@@ -48,4 +48,5 @@ class UserInactiveException(BaseException):
         self,
         message: str = "Your account is inactive. Please contact support or activate your account."
     ) -> None:
-        super().__init__(ErrorCodes.USER_INACTIVE, message)
+        # Using INVALID_CREDENTIALS error code for UserInactiveException to avoid exposing user existence information
+        super().__init__(ErrorCodes.INVALID_CREDENTIALS, message)

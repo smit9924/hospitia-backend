@@ -206,7 +206,7 @@ SECURITY_EXCEPTION_DOC = {
                     "example": {
                         "metadata": "None",
                         "message": "Your account is inactive. Please contact support or activate your account.",
-                        "errorCode": ErrorCodes.USER_INACTIVE
+                        "errorCode": ErrorCodes.INVALID_CREDENTIALS  # Using INVALID_CREDENTIALS error code for UserInactiveException to avoid exposing user existence information
                     }
                 }
             },

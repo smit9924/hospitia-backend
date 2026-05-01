@@ -538,7 +538,7 @@ def inactive_user_exception_handler(
 
     response = ApiErrorResponse(
         metadata=None,
-        errorCode=ErrorCodes.USER_INACTIVE,
+        errorCode=ErrorCodes.INVALID_CREDENTIALS,
         message=exc.message,
     )
 
