@@ -32,7 +32,7 @@ from auth.types.enums import AuthType
 
 log = logging.getLogger(__name__)
 
-def login(*, session: SessionDep, username: str, password: str) -> Token:
+def login(*, session: SessionDep, username: str, password: str, remember_me: bool = False) -> Token:
     """
     Authenticate a user and issue an OAuth2 access token.
 
@@ -63,7 +63,8 @@ def login(*, session: SessionDep, username: str, password: str) -> Token:
         subject=JWTSubject (
             user_guid=str(authenticated_user.guid), # UUID is not JSON serializable, convert to string
             role=authenticated_user.role,
-        )
+        ),
+        remember_me=remember_me,
     )
 
     return Token(

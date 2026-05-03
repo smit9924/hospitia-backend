@@ -14,6 +14,7 @@ from auth.doc.security_exceptions_doc import SECURITY_EXCEPTION_DOC
 from auth.schemas.auth_schemas import (
     ForgotPasswordRequest,
     JWTSubject,
+    LoginRequest,
     ResetPasswordRequest,
     Token,
     TokenType,
@@ -22,7 +23,7 @@ from auth.schemas.auth_schemas import (
 router = APIRouter(tags=["login"])
 
 @router.post("", response_model=Token, responses={**SECURITY_EXCEPTION_DOC["UserInactiveException"], **SECURITY_EXCEPTION_DOC["InvalidCredentialsException"],})
-async def login_user(session: SessionDep, form_data: Annotated[OAuth2PasswordRequestForm, Depends()]) -> Token:
+async def login_user(session: SessionDep, form_data: Annotated[LoginRequest, Depends()]) -> Token:
     """
     Authenticate a user and issue an OAuth2 access token.
     """
@@ -30,6 +31,7 @@ async def login_user(session: SessionDep, form_data: Annotated[OAuth2PasswordReq
         session=session,
         username=form_data.username,
         password=form_data.password,
+        remember_me=form_data.remember_me,
     )
 
     return token

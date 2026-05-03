@@ -1,4 +1,9 @@
 from datetime import datetime
+from typing import Annotated
+
+from annotated_doc import Doc
+from fastapi import Depends, Form
+from fastapi.security import OAuth2PasswordRequestForm
 
 from auth.types.enums import TokenType, UserType
 
@@ -113,3 +118,50 @@ class ResetPasswordRequest(BaseSchema):
     token: str
     new_password: str
 
+
+class LoginRequest:
+    """
+    Login request wrapper for OAuth2 password flow with additional fields.
+
+    This class extends the standard OAuth2 password form by combining
+    `OAuth2PasswordRequestForm` data with an additional `remember_me` flag.
+    It is designed to be used as a FastAPI dependency for handling login requests.
+
+    Attributes
+    ----------
+    form_data : OAuth2PasswordRequestForm
+        Injected dependency containing standard OAuth2 fields:
+        - username: User's login identifier
+        - password: User's password
+        - grant_type: OAuth2 grant type (typically "password")
+        - scopes: List of requested scopes
+        - client_id: Optional client identifier
+        - client_secret: Optional client secret
+
+    remember_me : bool, optional
+        Indicates whether the user wants an extended session.
+        If True, refresh token expiry is extended (e.g., 7 days);
+        otherwise, a shorter expiry is used (e.g., 12 hours).
+        Defaults to False.
+    """
+    def __init__(
+        self,
+        form_data: Annotated[OAuth2PasswordRequestForm, Depends()],
+        remember_me: Annotated[
+            bool,
+            Form(),
+            Doc(
+                """
+                `remember_me` boolean. If true, refresh token expiry is longer
+                `remember_me`.
+                """
+            ),
+        ] = False,
+    ) -> None:
+        self.username = form_data.username
+        self.password = form_data.password
+        self.grant_type = form_data.grant_type
+        self.scopes = form_data.scopes
+        self.client_id = form_data.client_id
+        self.client_secret = form_data.client_secret
+        self.remember_me = remember_me

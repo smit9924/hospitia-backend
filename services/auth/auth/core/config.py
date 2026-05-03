@@ -40,7 +40,8 @@ class Settings(BaseSettings):
     JWT_ENCRYPTION_ALGORITHM: str = ... # type: ignore
     JWT_ENCRYPTION_SECRET_KEY: str = ... # type: ignore
     JWT_ACCESS_TOKEN_EXPIRE_MINUTES: int = ... # type: ignore
-    JWT_REFRESH_TOKEN_EXPIRE_DAYS: int = ... # type: ignore
+    JWT_REFRESH_TOKEN_EXPIRE_MINUTES: int = ... # type: ignore
+    JWT_REFRESH_TOKEN_EXPIRE_MINUTES_REMEMBER_ME: int = ... # type: ignore
 
     # RabbitMQ
     RABBITMQ_HOST: str = ...  # type: ignore
@@ -92,14 +93,14 @@ class Settings(BaseSettings):
 
     @computed_field
     @property
-    def JWT_REFRESH_TOKEN_EXPIRE_DAYS_TIMEDELTA(self) -> timedelta:
+    def JWT_REFRESH_TOKEN_EXPIRE_MINUTES_TIMEDELTA(self) -> timedelta:
         """
         Return a timedelta representing the JWT refresh token lifetime.
 
         description
         -----------
             Compute and return a `timedelta` object based on the
-            `JWT_REFRESH_TOKEN_EXPIRE_DAYS` setting.
+            `JWT_REFRESH_TOKEN_EXPIRE_MINUTES` setting.
 
         parameters
         ----------
@@ -110,7 +111,29 @@ class Settings(BaseSettings):
         timedelta
             Time duration for which a JWT refresh token remains valid.
         """
-        return timedelta(days=self.JWT_REFRESH_TOKEN_EXPIRE_DAYS)
+        return timedelta(minutes=self.JWT_REFRESH_TOKEN_EXPIRE_MINUTES)
+
+    @computed_field
+    @property
+    def JWT_REFRESH_TOKEN_EXPIRE_MINUTES_REMEMBER_ME_TIMEDELTA(self) -> timedelta:
+        """
+        Return a timedelta representing the JWT refresh token lifetime for remember-me sessions.
+
+        description
+        -----------
+            Compute and return a `timedelta` object based on the
+            `JWT_REFRESH_TOKEN_EXPIRE_MINUTES_REMEMBER_ME` setting.
+
+        parameters
+        ----------
+        None
+
+        Returns
+        -------
+        timedelta
+            Time duration for which a JWT refresh token remains valid.
+        """
+        return timedelta(minutes=self.JWT_REFRESH_TOKEN_EXPIRE_MINUTES_REMEMBER_ME)
 
 
 settings = Settings()

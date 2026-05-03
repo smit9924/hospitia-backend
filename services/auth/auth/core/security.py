@@ -48,7 +48,7 @@ def create_jwt_access_token(*, subject: JWTSubject) -> tuple[str, datetime]:
     )
     return jwt_token, expire
 
-def create_jwt_refresh_token(*, subject: JWTSubject) -> tuple[str, datetime]:
+def create_jwt_refresh_token(*, subject: JWTSubject, remember_me: bool = False) -> tuple[str, datetime]:
     """
     Create a JSON Web Token (JWT) refresh token for a given subject.
 
@@ -67,7 +67,9 @@ def create_jwt_refresh_token(*, subject: JWTSubject) -> tuple[str, datetime]:
             Encoded JWT refresh token.
 
     """
-    expire = datetime.now(UTC) + settings.JWT_REFRESH_TOKEN_EXPIRE_DAYS_TIMEDELTA
+    expire = datetime.now(UTC) + settings.JWT_REFRESH_TOKEN_EXPIRE_MINUTES_TIMEDELTA
+    if remember_me:
+        expire = datetime.now(UTC) + settings.JWT_REFRESH_TOKEN_EXPIRE_MINUTES_REMEMBER_ME_TIMEDELTA
 
     to_encode = JWTPayload(
         exp=expire,
