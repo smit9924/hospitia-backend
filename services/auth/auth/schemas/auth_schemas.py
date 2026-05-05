@@ -10,9 +10,9 @@ from auth.types.enums import TokenType, UserType
 from .base_schemas import BaseSchema
 
 
-class Token(BaseSchema):
+class AccessToken(BaseSchema):
     """
-    Authentication token response schema.
+    Access token response schema.
 
     Represents the access token issued after successful authentication.
 
@@ -22,18 +22,35 @@ class Token(BaseSchema):
         JWT access token used for authenticated requests.
     access_token_expiry : datetime
         Expiration timestamp of the access token (UTC).
-    refresh_token : str
-        JWT refresh token used to obtain new access tokens after expiration.
-    refresh_token_expiry : datetime
-        Expiration timestamp of the refresh token (UTC).
     token_type : str
         Token scheme used for authentication (e.g., "bearer").
     """
     access_token: str
     access_token_expiry: datetime
+    token_type: str
+
+
+class Token(AccessToken):
+    """
+    Authentication token response schema.
+
+    Represents the access token issued after successful authentication.
+
+    Attributes
+    ----------
+    access_token : str
+        JWT access token used for authenticated requests (from parent class AccessToken).
+    access_token_expiry : datetime
+        Expiration timestamp of the access token (UTC) (from parent class AccessToken).
+    refresh_token : str
+        JWT refresh token used to obtain new access tokens after expiration.
+    refresh_token_expiry : datetime
+        Expiration timestamp of the refresh token (UTC).
+    token_type : str
+        Token scheme used for authentication (e.g., "bearer") (from parent class AccessToken).
+    """
     refresh_token: str
     refresh_token_expiry: datetime
-    token_type: str
 
 
 class JWTSubject(BaseSchema):
@@ -165,3 +182,17 @@ class LoginRequest:
         self.client_id = form_data.client_id
         self.client_secret = form_data.client_secret
         self.remember_me = remember_me
+
+
+class RefreshTokenRequest(BaseSchema):
+    """
+    Refresh token request schema.
+
+    Represents the payload required to refresh an access token using a valid refresh token.
+
+    Attributes
+    ----------
+    refresh_token : str
+        The JWT refresh token used to obtain a new access token.
+    """
+    refresh_token: str

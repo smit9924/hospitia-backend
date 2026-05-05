@@ -18,6 +18,8 @@ from auth.schemas.auth_schemas import (
     ResetPasswordRequest,
     Token,
     TokenType,
+    AccessToken,
+    RefreshTokenRequest,
 )
 
 router = APIRouter(tags=["login"])
@@ -58,8 +60,8 @@ async def login_access_token(session: SessionDep, form_data: Annotated[OAuth2Pas
     return token
 
 
-@router.post("/refresh-token", response_model=Token, responses={**SECURITY_EXCEPTION_DOC["InvalidTokenException"], **SECURITY_EXCEPTION_DOC["UserUnauthorizedException"]})
-async def refresh_access_token(refresh_token: str) -> Token:
+@router.post("/refresh-token", response_model=AccessToken, responses={**SECURITY_EXCEPTION_DOC["InvalidTokenException"], **SECURITY_EXCEPTION_DOC["UserUnauthorizedException"]})
+async def refresh_access_token(payload: RefreshTokenRequest) -> AccessToken:
     """
     Refresh an expired access token using a valid refresh token.
 
@@ -68,7 +70,7 @@ async def refresh_access_token(refresh_token: str) -> Token:
     maintain authenticated sessions without requiring users to re-enter
     credentials after access tokens expire.
     """
-    parsed_payload = decode_jwt_token(refresh_token, expected_type=TokenType.REFRESH)
+    parsed_payload = decode_jwt_token(payload.refresh_token, expected_type=TokenType.REFRESH)
 
     new_access_token, new_access_token_expiry = create_jwt_access_token(
         subject=JWTSubject (
@@ -77,18 +79,9 @@ async def refresh_access_token(refresh_token: str) -> Token:
         )
     )
 
-    new_refresh_token, new_refresh_token_expiry = create_jwt_refresh_token(
-        subject=JWTSubject (
-            user_guid=parsed_payload.parsed_subject.user_guid,
-            role=parsed_payload.parsed_subject.role,
-        )
-    )
-
-    return Token(
+    return AccessToken(
         access_token=new_access_token,
         access_token_expiry=new_access_token_expiry,
-        refresh_token=new_refresh_token,
-        refresh_token_expiry=new_refresh_token_expiry,
         token_type="bearer"
     )
 
