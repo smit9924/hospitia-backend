@@ -3,11 +3,15 @@ from typing import Annotated
 from fastapi import APIRouter, Depends
 
 from auth.api.dependencies import RoleValidationDep, SessionDep
-from auth.api.services.user_service import validate_and_create_user
+from auth.api.services.user_service import (
+    get_user_profile_data,
+    validate_and_create_user,
+)
 from auth.core.security import create_jwt_access_token, create_jwt_refresh_token
 from auth.database.models.users import Users
+from auth.doc.not_found_exceptions_doc import NOT_FOUND_EXCEPTIONS_DOC
 from auth.schemas.auth_schemas import JWTSubject, ParsedJWTPayload, Token
-from auth.schemas.user_schemas import UserSignup
+from auth.schemas.user_schemas import ProfileData, UserSignup
 from auth.types.enums import AuthType, UserType
 
 router = APIRouter(tags=["users"])
@@ -64,3 +68,22 @@ async def get_user_list(
     ],
 ):
     return "this is list of users"
+
+
+@router.get("/profile", responses={**NOT_FOUND_EXCEPTIONS_DOC["UserNotFoundException"],})
+async def get_profile_data(
+    token: Annotated[
+        ParsedJWTPayload,
+        Depends(RoleValidationDep([
+            UserType.ADMIN,
+            UserType.OWNER,
+            UserType.MANAGER,
+            UserType.CUSTOMER
+        ])),
+    ],
+    session: SessionDep,
+) -> ProfileData:
+    """
+    Retrieve the profile data for the authenticated user.
+    """
+    return get_user_profile_data(session=session, user_guid=token.parsed_subject.user_guid)

@@ -1,12 +1,17 @@
 from pydantic import EmailStr
 from sqlmodel import Session, select
 
+from auth.api.repositories.user_repository import get_user_by_guid
 from auth.core.security import get_password_hash
 from auth.database.models.users import Users
+from auth.exceptions.definitions.not_found_exceptions import (
+    UserNotFoundException,
+)
 from auth.exceptions.definitions.validation_exceptions import (
     UserWithEmailAlreadyExistsException,
     UserWithUsernameAlreadyExistsException,
 )
+from auth.schemas.user_schemas import ProfileData
 
 
 def get_user_by_email(*, session: Session, email: EmailStr) -> Users | None:
@@ -105,3 +110,18 @@ def validate_and_create_user(session: Session, user: Users) -> Users:
     session.add(user_validated)
     session.commit()
     return user
+
+def get_user_profile_data(*, session: Session, user_guid: str) -> ProfileData:
+    # Implementation for fetching user profile data
+    user = get_user_by_guid(session=session, guid=user_guid)
+    if not user:
+        raise UserNotFoundException()
+
+    return ProfileData(
+        guid=str(user.guid),
+        email=user.email,
+        role=user.role,
+        username=user.username,
+        first_name=user.first_name,
+        last_name=user.last_name
+    )
