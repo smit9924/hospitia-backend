@@ -14,6 +14,9 @@ from jwt import (
     MissingRequiredClaimError,
 )
 
+from auth.exceptions.definitions.not_found_exceptions import (
+    UserNotFoundException,
+)
 from auth.exceptions.definitions.security_exceptions import (
     InvalidCredentialsException,
     UserInactiveException,
@@ -23,6 +26,9 @@ from auth.exceptions.definitions.validation_exceptions import (
     PublicEmailNotAllowedException,
     UserWithEmailAlreadyExistsException,
     UserWithUsernameAlreadyExistsException,
+)
+from auth.exceptions.handlers.not_found_exceptions_handlers import (
+    user_not_found_exception_handler,
 )
 from auth.exceptions.handlers.security_exceptions_handlers import (
     decode_error_exception_handler,
@@ -75,4 +81,7 @@ def get_exception_handlers() -> dict[Any, Any]:
         ImmatureSignatureError: immature_signature_error_exception_handler,
         MissingRequiredClaimError: missing_required_claim_error_exception_handler,
         DecodeError: decode_error_exception_handler,
+
+        # Register NOT FOUND EXCEPTION handlers
+        UserNotFoundException: user_not_found_exception_handler,
     }
