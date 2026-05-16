@@ -233,7 +233,7 @@ def authorize_user(
     user = session.exec(stmt).first()
 
     if not user or user.role not in roles:
-        raise UserUnauthorizedException
+        raise UserUnauthorizedException()
 
 def generate_secure_token() -> tuple[str, datetime]:
     """

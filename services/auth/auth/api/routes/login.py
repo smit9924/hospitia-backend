@@ -9,17 +9,17 @@ from auth.api.services.login_service import (
     login,
     reset_password_user,
 )
-from auth.core.security import create_jwt_access_token, create_jwt_refresh_token
+from auth.core.security import create_jwt_access_token
 from auth.doc.security_exceptions_doc import SECURITY_EXCEPTION_DOC
 from auth.schemas.auth_schemas import (
+    AccessToken,
     ForgotPasswordRequest,
     JWTSubject,
     LoginRequest,
+    RefreshTokenRequest,
     ResetPasswordRequest,
     Token,
     TokenType,
-    AccessToken,
-    RefreshTokenRequest,
 )
 
 router = APIRouter(tags=["login"])
