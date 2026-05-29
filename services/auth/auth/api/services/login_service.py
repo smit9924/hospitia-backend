@@ -4,14 +4,12 @@ from datetime import UTC, datetime
 from sqlmodel import Session, select
 
 from auth.api.dependencies import SessionDep
-from auth.api.services.user_service import (
-    get_password_hash,
-    get_user_by_email_or_username,
-)
+from auth.api.repositories.user_repository import get_user_by_email_or_username
 from auth.core.security import (
     create_jwt_access_token,
     create_jwt_refresh_token,
     generate_secure_token,
+    get_password_hash,
     hash_secure_token,
     settings,
     verify_password,

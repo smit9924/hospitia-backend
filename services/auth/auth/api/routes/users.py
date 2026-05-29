@@ -5,13 +5,16 @@ from fastapi import APIRouter, Depends
 from auth.api.dependencies import RoleValidationDep, SessionDep
 from auth.api.services.user_service import (
     get_user_profile_data,
-    validate_and_create_user,
+    signupUser,
 )
-from auth.core.security import create_jwt_access_token, create_jwt_refresh_token
 from auth.database.models.users import Users
 from auth.doc.not_found_exceptions_doc import NOT_FOUND_EXCEPTIONS_DOC
-from auth.schemas.auth_schemas import JWTSubject, ParsedJWTPayload, Token
-from auth.schemas.user_schemas import ProfileData, UserSignup
+from auth.schemas.auth_schemas import ParsedJWTPayload, Token
+from auth.schemas.user_schemas import (
+    ProfileData,
+    UsernameAvailabilityRequest,
+    UserSignup,
+)
 from auth.types.enums import AuthType, UserType
 
 router = APIRouter(tags=["users"])
@@ -35,29 +38,7 @@ async def signup(session: SessionDep, user_signup: UserSignup) -> Token:
         role=UserType.OWNER,
     )
 
-    created_user = validate_and_create_user(session, user)
-
-    access_token, access_token_expiry = create_jwt_access_token(
-        subject=JWTSubject (
-            user_guid=str(created_user.guid), # UUID is not JSON serializable, convert to string
-            role=created_user.role,
-        )
-    )
-
-    refresh_token, refresh_token_expiry = create_jwt_refresh_token(
-        subject=JWTSubject (
-            user_guid=str(created_user.guid), # UUID is not JSON serializable, convert to string
-            role=created_user.role,
-        )
-    )
-
-    return Token(
-        access_token=access_token,
-        access_token_expiry=access_token_expiry,
-        refresh_token=refresh_token,
-        refresh_token_expiry=refresh_token_expiry,
-        token_type="bearer"
-    )
+    return signupUser(session=session, user=user)
 
 
 @router.get("/list")
