@@ -6,9 +6,11 @@ from auth.api.dependencies import RoleValidationDep, SessionDep
 from auth.api.services.user_service import (
     get_user_profile_data,
     signupUser,
+    validate_username_uniqueness,
 )
 from auth.database.models.users import Users
 from auth.doc.not_found_exceptions_doc import NOT_FOUND_EXCEPTIONS_DOC
+from auth.doc.validation_exception_doc import VALIDATION_EXCEPTION_DOC
 from auth.schemas.auth_schemas import ParsedJWTPayload, Token
 from auth.schemas.user_schemas import (
     ProfileData,
@@ -68,3 +70,12 @@ async def get_profile_data(
     Retrieve the profile data for the authenticated user.
     """
     return get_user_profile_data(session=session, user_guid=token.parsed_subject.user_guid)
+
+
+
+@router.post("/check-username-availability", responses={**VALIDATION_EXCEPTION_DOC["UserWithUsernameAlreadyExistsException"]})
+async def check_username_availability(session: SessionDep, username_req: UsernameAvailabilityRequest) -> None:
+    """
+    Check if a username is available for registration.
+    """
+    validate_username_uniqueness(session=session, username=username_req.username)

@@ -2,12 +2,16 @@ from sqlmodel import Session
 
 from auth.api.repositories.user_repository import (
     get_user_by_guid,
+    get_user_by_username,
     validate_and_create_user,
 )
 from auth.core.security import create_jwt_access_token, create_jwt_refresh_token
 from auth.database.models.users import Users
 from auth.exceptions.definitions.not_found_exceptions import (
     UserNotFoundException,
+)
+from auth.exceptions.definitions.validation_exceptions import (
+    UserWithUsernameAlreadyExistsException,
 )
 from auth.schemas.auth_schemas import JWTSubject, Token
 from auth.schemas.user_schemas import ProfileData
@@ -72,3 +76,24 @@ def signupUser(*, session: Session, user: Users) -> Token:
         refresh_token_expiry=refresh_token_expiry,
         token_type="bearer"
     )
+
+
+def validate_username_uniqueness(*, session: Session, username: str) -> None:
+    """
+    Validate that the provided username is unique in the system.
+
+    parameters
+    ----------
+        session : Session
+            Active SQLModel session for database operations.
+        username : str
+            The username to be validated for uniqueness.
+    raises
+    -------
+        UserWithUsernameAlreadyExistsException
+            If a user with the provided username already exists in the system.
+    """
+    user = get_user_by_username(session = session, username = username)
+
+    if user is not None:
+        raise UserWithUsernameAlreadyExistsException()

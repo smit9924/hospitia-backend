@@ -18,3 +18,7 @@ class ProfileData(BaseSchema):
     guid: str
     first_name: str | None = None
     last_name: str | None = None
+
+
+class UsernameAvailabilityRequest(BaseSchema):
+    username: str
