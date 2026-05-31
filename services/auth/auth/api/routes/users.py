@@ -6,6 +6,7 @@ from auth.api.dependencies import RoleValidationDep, SessionDep
 from auth.api.services.user_service import (
     get_user_profile_data,
     signupUser,
+    update_user_profile,
     validate_username_uniqueness,
 )
 from auth.database.models.users import Users
@@ -14,6 +15,7 @@ from auth.doc.validation_exception_doc import VALIDATION_EXCEPTION_DOC
 from auth.schemas.auth_schemas import ParsedJWTPayload, Token
 from auth.schemas.user_schemas import (
     ProfileData,
+    ProfileUpdate,
     UsernameAvailabilityRequest,
     UserSignup,
 )
@@ -22,7 +24,7 @@ from auth.types.enums import AuthType, UserType
 router = APIRouter(tags=["users"])
 
 
-@router.post("/signup")
+@router.post("/signup", responses={**VALIDATION_EXCEPTION_DOC["UserWithEmailAlreadyExistsException"], **VALIDATION_EXCEPTION_DOC["UserWithUsernameAlreadyExistsException"]})
 async def signup(session: SessionDep, user_signup: UserSignup) -> Token:
     """
     Register a new OWNER user and authenticate them.
@@ -71,6 +73,25 @@ async def get_profile_data(
     """
     return get_user_profile_data(session=session, user_guid=token.parsed_subject.user_guid)
 
+
+@router.post("/profile", responses={**NOT_FOUND_EXCEPTIONS_DOC["UserNotFoundException"], **VALIDATION_EXCEPTION_DOC["UserWithEmailAlreadyExistsException"], **VALIDATION_EXCEPTION_DOC["UserWithUsernameAlreadyExistsException"]})
+async def update_profile_data(
+    token: Annotated[
+        ParsedJWTPayload,
+        Depends(RoleValidationDep([
+            UserType.ADMIN,
+            UserType.OWNER,
+            UserType.MANAGER,
+            UserType.CUSTOMER
+        ])),
+    ],
+    session: SessionDep,
+    profile_update: ProfileUpdate
+) -> ProfileData:
+    """
+    Update the profile data for the authenticated user.
+    """
+    return update_user_profile(session=session, user_guid=token.parsed_subject.user_guid, profile_data=profile_update)
 
 
 @router.post("/check-username-availability", responses={**VALIDATION_EXCEPTION_DOC["UserWithUsernameAlreadyExistsException"]})

@@ -3,6 +3,7 @@ from sqlmodel import Session
 from auth.api.repositories.user_repository import (
     get_user_by_guid,
     get_user_by_username,
+    update_user_data,
     validate_and_create_user,
 )
 from auth.core.security import create_jwt_access_token, create_jwt_refresh_token
@@ -14,7 +15,7 @@ from auth.exceptions.definitions.validation_exceptions import (
     UserWithUsernameAlreadyExistsException,
 )
 from auth.schemas.auth_schemas import JWTSubject, Token
-from auth.schemas.user_schemas import ProfileData
+from auth.schemas.user_schemas import ProfileData, ProfileUpdate
 
 
 def get_user_profile_data(*, session: Session, user_guid: str) -> ProfileData:
@@ -97,3 +98,29 @@ def validate_username_uniqueness(*, session: Session, username: str) -> None:
 
     if user is not None:
         raise UserWithUsernameAlreadyExistsException()
+
+def update_user_profile(*, session: Session, user_guid: str, profile_data: ProfileUpdate) -> ProfileData:
+    """
+    Update the profile data for a user.
+
+    parameters
+    ----------
+    session : Session
+        Active SQLModel session for database operations.
+    user_guid : str
+        The GUID of the user whose profile data is to be updated.
+    profile_data : ProfileData
+        The new profile data to be updated for the user.
+    """
+
+    user = update_user_data(session=session, user_guid=user_guid, profile_data=profile_data)
+
+    return ProfileData(
+        guid=str(user.guid),
+        email=user.email,
+        role=user.role,
+        username=user.username,
+        first_name=user.first_name,
+        last_name=user.last_name
+    )
+

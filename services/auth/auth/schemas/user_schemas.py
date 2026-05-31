@@ -20,5 +20,11 @@ class ProfileData(BaseSchema):
     last_name: str | None = None
 
 
+class ProfileUpdate(BaseSchema):
+    username: str
+    first_name: str
+    last_name: str
+
+
 class UsernameAvailabilityRequest(BaseSchema):
     username: str

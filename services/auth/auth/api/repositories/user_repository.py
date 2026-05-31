@@ -3,10 +3,14 @@ from sqlmodel import Session, select
 
 from auth.core.security import get_password_hash
 from auth.database.models.users import Users
+from auth.exceptions.definitions.not_found_exceptions import (
+    UserNotFoundException,
+)
 from auth.exceptions.definitions.validation_exceptions import (
     UserWithEmailAlreadyExistsException,
     UserWithUsernameAlreadyExistsException,
 )
+from auth.schemas.user_schemas import ProfileUpdate
 
 
 def get_user_by_guid(*, session: Session, guid: str) -> Users | None:
@@ -125,4 +129,45 @@ def validate_and_create_user(session: Session, user: Users) -> Users:
 
     session.add(user_validated)
     session.commit()
+    return user
+
+
+def update_user_data(*, session: Session, user_guid: str, profile_data: ProfileUpdate) -> Users:
+    """
+    Update the profile data for a user.
+
+    Parameters
+    ----------
+    session : Session
+        Active database session used to persist the updated user data.
+    user_guid : str
+        The GUID of the user whose profile is to be updated.
+    profile_data : ProfileUpdate
+        The new profile data to be applied to the user's profile.
+
+    Returns
+    -------
+    Users
+        The user instance after successful validation and user creation.
+    """
+    user = get_user_by_guid(session=session, guid=user_guid)
+
+    if not user:
+        raise UserNotFoundException()
+
+    if profile_data.username != user.username:
+        user_existing_with_username = get_user_by_username(session=session, username=profile_data.username)
+
+        if user_existing_with_username and user_guid != user_existing_with_username.guid:
+            raise UserWithUsernameAlreadyExistsException()
+
+    # Update the user's profile data
+    user.username = profile_data.username
+    user.first_name = profile_data.first_name
+    user.last_name = profile_data.last_name
+
+    session.add(user)
+    session.commit()
+    session.refresh(user)
+
     return user
