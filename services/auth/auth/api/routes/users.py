@@ -1,6 +1,6 @@
 from typing import Annotated
 
-from fastapi import APIRouter, Depends
+from fastapi import APIRouter, Depends, Query
 
 from auth.api.dependencies import RoleValidationDep, SessionDep
 from auth.api.services.user_service import (
@@ -16,7 +16,6 @@ from auth.schemas.auth_schemas import ParsedJWTPayload, Token
 from auth.schemas.user_schemas import (
     ProfileData,
     ProfileUpdate,
-    UsernameAvailabilityRequest,
     UserSignup,
 )
 from auth.types.enums import AuthType, UserType
@@ -94,9 +93,9 @@ async def update_profile_data(
     return update_user_profile(session=session, user_guid=token.parsed_subject.user_guid, profile_data=profile_update)
 
 
-@router.post("/check-username-availability", responses={**VALIDATION_EXCEPTION_DOC["UserWithUsernameAlreadyExistsException"]})
-async def check_username_availability(session: SessionDep, username_req: UsernameAvailabilityRequest) -> None:
+@router.get("/check-username-availability", responses={**VALIDATION_EXCEPTION_DOC["UserWithUsernameAlreadyExistsException"]})
+async def check_username_availability(session: SessionDep, username: str = Query(...)) -> None:
     """
     Check if a username is available for registration.
     """
-    validate_username_uniqueness(session=session, username=username_req.username)
+    validate_username_uniqueness(session=session, username=username)

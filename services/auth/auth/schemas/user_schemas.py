@@ -24,7 +24,3 @@ class ProfileUpdate(BaseSchema):
     username: str
     first_name: str
     last_name: str
-
-
-class UsernameAvailabilityRequest(BaseSchema):
-    username: str
