@@ -97,15 +97,15 @@ def get_user_by_email_or_username(*, session: Session, identifire: EmailStr | st
     return user
 
 
-def validate_and_create_user(session: Session, user: Users) -> Users:
+def create_user(session: Session, validated_user: Users) -> Users:
     """
-    Validate user data and create the user in the database if the data is valid.
+    Create the user in the database if the data is valid.
 
     Parameters
     ----------
     session : Session
         Active database session used to persist the user.
-    user : Users
+    validated_user : Users
         User instance containing data to be validated and saved.
 
     Returns
@@ -114,22 +114,20 @@ def validate_and_create_user(session: Session, user: Users) -> Users:
         The user instance after successful validation and user creation.
     """
 
-    user_validated = Users.model_validate(user)
-
-    user_existing_with_email = get_user_by_email(session=session, email=user.email)
+    user_existing_with_email = get_user_by_email(session=session, email=validated_user.email)
     if user_existing_with_email:
         raise UserWithEmailAlreadyExistsException()
 
-    user_existing_with_username = get_user_by_username(session=session, username=user.username)
+    user_existing_with_username = get_user_by_username(session=session, username=validated_user.username)
     if user_existing_with_username:
         raise UserWithUsernameAlreadyExistsException()
 
-    if user_validated.password:
-        user_validated.password = get_password_hash(user_validated.password)
+    if validated_user.password:
+        validated_user.password = get_password_hash(validated_user.password)
 
-    session.add(user_validated)
+    session.add(validated_user)
     session.commit()
-    return user
+    return validated_user
 
 
 def update_user_data(*, session: Session, user_guid: str, profile_data: ProfileUpdate) -> Users:

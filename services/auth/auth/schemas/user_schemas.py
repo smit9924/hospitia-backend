@@ -6,6 +6,8 @@ from .base_schemas import BaseSchema
 
 
 class UserSignup(BaseSchema):
+    first_name: str
+    last_name: str
     email: EmailStr
     username: str
     password: str

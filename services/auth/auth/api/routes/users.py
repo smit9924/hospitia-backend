@@ -23,7 +23,7 @@ from auth.types.enums import AuthType, UserType
 router = APIRouter(tags=["users"])
 
 
-@router.post("/signup", responses={**VALIDATION_EXCEPTION_DOC["UserWithEmailAlreadyExistsException"], **VALIDATION_EXCEPTION_DOC["UserWithUsernameAlreadyExistsException"]})
+@router.post("/signup", responses={**VALIDATION_EXCEPTION_DOC["UserWithEmailAlreadyExistsException"], **VALIDATION_EXCEPTION_DOC["UserWithUsernameAlreadyExistsException"], **VALIDATION_EXCEPTION_DOC["WeakPasswordException"], **VALIDATION_EXCEPTION_DOC["InvalidUsernameException"]})
 async def signup(session: SessionDep, user_signup: UserSignup) -> Token:
     """
     Register a new OWNER user and authenticate them.
@@ -37,6 +37,8 @@ async def signup(session: SessionDep, user_signup: UserSignup) -> Token:
         email=user_signup.email,
         username=user_signup.username,
         password=user_signup.password,
+        first_name=user_signup.first_name,
+        last_name=user_signup.last_name,
         auth_type=AuthType.MANUAL,
         role=UserType.OWNER,
     )
@@ -93,7 +95,7 @@ async def update_profile_data(
     return update_user_profile(session=session, user_guid=token.parsed_subject.user_guid, profile_data=profile_update)
 
 
-@router.get("/check-username-availability", responses={**VALIDATION_EXCEPTION_DOC["UserWithUsernameAlreadyExistsException"]})
+@router.get("/check-username-availability", responses={**VALIDATION_EXCEPTION_DOC["UserWithUsernameAlreadyExistsException"], **VALIDATION_EXCEPTION_DOC["InvalidUsernameException"]})
 async def check_username_availability(session: SessionDep, username: str = Query(...)) -> None:
     """
     Check if a username is available for registration.
