@@ -52,4 +52,34 @@ VALIDATION_EXCEPTION_DOC = {
             },
         }
     },
+    "WeakPasswordException": {
+        409: {
+            "description": "Provided password does not meet strength requirements.",
+            "model": ApiErrorResponse[None],
+            "content": {
+                "application/json": {
+                    "example": {
+                        "metadata": "None",
+                        "message": "The provided password is too weak. Password must be at least 8 characters long and include uppercase letters, lowercase letters, numbers, and special characters.",
+                        "errorCode": ErrorCodes.WEAK_PASSWORD
+                    }
+                }
+            },
+        }
+    },
+    "InvalidUsernameException": {
+        409: {
+            "description": "Provided username is invalid.",
+            "model": ApiErrorResponse[None],
+            "content": {
+                "application/json": {
+                    "example": {
+                        "metadata": "None",
+                        "message": "The provided username is invalid. Please choose a different username.",
+                        "errorCode": ErrorCodes.INVALID_USERNAME
+                    }
+                }
+            },
+        }
+    }
 }
