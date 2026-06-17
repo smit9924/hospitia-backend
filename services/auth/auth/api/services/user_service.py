@@ -7,19 +7,22 @@ from auth.api.repositories.user_repository import (
     get_user_by_guid,
     get_user_by_username,
     update_user_data,
+    update_user_password,
 )
+from auth.api.services.login_service import authenticate_manual_user
 from auth.core.security import create_jwt_access_token, create_jwt_refresh_token
 from auth.database.models.users import Users
 from auth.exceptions.definitions.not_found_exceptions import (
     UserNotFoundException,
 )
+from auth.exceptions.definitions.security_exceptions import InvalidCredentialsException
 from auth.exceptions.definitions.validation_exceptions import (
     InvalidUsernameException,
     UserWithUsernameAlreadyExistsException,
     WeakPasswordException,
 )
 from auth.schemas.auth_schemas import JWTSubject, Token
-from auth.schemas.user_schemas import ProfileData, ProfileUpdate
+from auth.schemas.user_schemas import ChangePassword, ProfileData, ProfileUpdate
 
 
 def get_user_profile_data(*, session: Session, user_guid: str) -> ProfileData:
@@ -215,3 +218,24 @@ def update_user_profile(*, session: Session, user_guid: str, profile_data: Profi
         first_name=user.first_name,
         last_name=user.last_name
     )
+
+def change_user_password(*, session: Session, user_guid: str, change_password_data: ChangePassword) -> None:
+    user = get_user_by_guid(session=session, guid=user_guid)
+
+    if not user:
+        raise UserNotFoundException()
+
+    authenticated_user = authenticate_manual_user(
+        session=session,
+        identifire=user.email,
+        password=change_password_data.current_password,
+    )
+
+    if not authenticated_user:
+        raise InvalidCredentialsException()
+
+    # Validate password streangth
+    if not is_password_strong(change_password_data.new_password):
+        raise WeakPasswordException()
+
+    update_user_password(session=session, user_id=user.id, new_password=change_password_data.new_password)

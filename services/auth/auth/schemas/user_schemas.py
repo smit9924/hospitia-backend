@@ -26,3 +26,8 @@ class ProfileUpdate(BaseSchema):
     username: str
     first_name: str
     last_name: str
+
+
+class ChangePassword(BaseSchema):
+    current_password: str
+    new_password: str

@@ -4,6 +4,7 @@ from fastapi import APIRouter, Depends, Query
 
 from auth.api.dependencies import RoleValidationDep, SessionDep
 from auth.api.services.user_service import (
+    change_user_password,
     get_user_profile_data,
     signupUser,
     update_user_profile,
@@ -11,9 +12,11 @@ from auth.api.services.user_service import (
 )
 from auth.database.models.users import Users
 from auth.doc.not_found_exceptions_doc import NOT_FOUND_EXCEPTIONS_DOC
+from auth.doc.security_exceptions_doc import SECURITY_EXCEPTION_DOC
 from auth.doc.validation_exception_doc import VALIDATION_EXCEPTION_DOC
 from auth.schemas.auth_schemas import ParsedJWTPayload, Token
 from auth.schemas.user_schemas import (
+    ChangePassword,
     ProfileData,
     ProfileUpdate,
     UserSignup,
@@ -101,3 +104,23 @@ async def check_username_availability(session: SessionDep, username: str = Query
     Check if a username is available for registration.
     """
     validate_username_uniqueness(session=session, username=username)
+
+
+@router.put("/change-password", responses={**SECURITY_EXCEPTION_DOC["InvalidCredentialsException"], **NOT_FOUND_EXCEPTIONS_DOC["UserNotFoundException"], **VALIDATION_EXCEPTION_DOC["WeakPasswordException"]})
+async def change_password(
+    token: Annotated[
+        ParsedJWTPayload,
+        Depends(RoleValidationDep([UserType.ADMIN, UserType.OWNER, UserType.MANAGER, UserType.CUSTOMER])),
+    ],
+    session: SessionDep,
+    change_password_data: ChangePassword
+) -> None:
+    """
+    Change the password for the authenticated user.
+    """
+    change_user_password(
+        session=session,
+        user_guid=token.parsed_subject.user_guid,
+        change_password_data=change_password_data
+    )
+

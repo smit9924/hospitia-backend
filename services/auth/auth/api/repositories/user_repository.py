@@ -34,6 +34,27 @@ def get_user_by_guid(*, session: Session, guid: str) -> Users | None:
     return user
 
 
+def get_user_by_id(*, session: Session, id: int | None) -> Users | None:
+    """
+    Retrieve a user by their ID.
+
+    Query the database for a user matching the provided ID.
+    Returns the user object if found, otherwise None.
+
+    parameters
+    ----------
+        session : Session
+            Active SQLModel session for database operations.
+        id : int | None
+            The ID to search for.
+    """
+    get_user_by_id_statement = select(Users).where(
+        Users.id == id
+    )
+    user = session.exec(get_user_by_id_statement).first()
+    return user
+
+
 def get_user_by_email(*, session: Session, email: EmailStr) -> Users | None:
     """
     Retrieve a user by their email.
@@ -169,3 +190,30 @@ def update_user_data(*, session: Session, user_guid: str, profile_data: ProfileU
     session.refresh(user)
 
     return user
+
+def update_user_password(*, session: Session, user_id: int | None, new_password: str) -> None:
+    """
+    Update the password for a user.
+
+    Parameters
+    ----------
+    session : Session
+        Active database session used to persist the updated user data.
+    user_id : str
+        The ID of the user whose password is to be updated.
+    new_password : str
+        The new plain text password to be set for the user.
+
+    Returns
+    -------
+    None
+    """
+    user = get_user_by_id(session=session, id=user_id)
+
+    if not user:
+        raise UserNotFoundException()
+
+    user.password = get_password_hash(new_password)
+
+    session.add(user)
+    session.commit()
