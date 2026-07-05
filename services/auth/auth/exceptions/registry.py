@@ -14,6 +14,10 @@ from jwt import (
     MissingRequiredClaimError,
 )
 
+from auth.exceptions.definitions.messaging_queue_exceptions import (
+    MQMessagePublishException,
+    MQNotFoundException,
+)
 from auth.exceptions.definitions.not_found_exceptions import (
     UserNotFoundException,
 )
@@ -28,6 +32,10 @@ from auth.exceptions.definitions.validation_exceptions import (
     UserWithEmailAlreadyExistsException,
     UserWithUsernameAlreadyExistsException,
     WeakPasswordException,
+)
+from auth.exceptions.handlers.messaging_queue_exceptions_handlers import (
+    mq_message_publish_exception_handler,
+    mq_not_found_exception_handler,
 )
 from auth.exceptions.handlers.not_found_exceptions_handlers import (
     user_not_found_exception_handler,
@@ -90,4 +98,8 @@ def get_exception_handlers() -> dict[Any, Any]:
 
         # Register NOT FOUND EXCEPTION handlers
         UserNotFoundException: user_not_found_exception_handler,
+
+        # Register MESSAGING QUEUE EXCEPTION handlers
+        MQNotFoundException: mq_not_found_exception_handler,
+        MQMessagePublishException: mq_message_publish_exception_handler,
     }

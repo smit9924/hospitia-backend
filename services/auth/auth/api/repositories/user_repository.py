@@ -1,7 +1,10 @@
+from datetime import datetime
+
 from pydantic import EmailStr
-from sqlmodel import Session, select
+from sqlmodel import Session, select, update
 
 from auth.core.security import get_password_hash
+from auth.database.models.security import SecureToken
 from auth.database.models.users import Users
 from auth.exceptions.definitions.not_found_exceptions import (
     UserNotFoundException,
@@ -217,3 +220,26 @@ def update_user_password(*, session: Session, user_id: int | None, new_password:
 
     session.add(user)
     session.commit()
+
+def mark_security_tokens_as_used(*, session: Session, user_id: int | None) -> None:
+    if user_id is None:
+        raise UserNotFoundException()
+
+    mark_all_token_as_used_statement = (
+        update(SecureToken).where(SecureToken.user_id == user_id).values(used=True) # type: ignore
+    )
+
+    session.exec(mark_all_token_as_used_statement)
+    session.commit()
+
+def add_security_token(*, session: Session, user_id: int, token: str, expires_at: datetime) -> None:
+    secure_token = SecureToken(
+        user_id=user_id,
+        token=token,
+        expires_at=expires_at
+    )
+    validated_secureToken = SecureToken.model_validate(secure_token)
+
+    session.add(validated_secureToken)
+    session.commit()
+

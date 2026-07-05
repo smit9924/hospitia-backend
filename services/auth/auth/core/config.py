@@ -2,6 +2,7 @@ from datetime import timedelta
 from os import path
 from pathlib import Path
 
+from pika.exchange_type import ExchangeType
 from pydantic import PostgresDsn, computed_field
 from pydantic_settings import BaseSettings, SettingsConfigDict
 
@@ -43,15 +44,25 @@ class Settings(BaseSettings):
     JWT_REFRESH_TOKEN_EXPIRE_MINUTES: int = ... # type: ignore
     JWT_REFRESH_TOKEN_EXPIRE_MINUTES_REMEMBER_ME: int = ... # type: ignore
 
+    MQ_CLIENT_TYPE: str = ... # type: ignore
+
     # RabbitMQ
     RABBITMQ_HOST: str = ...  # type: ignore
     RABBITMQ_PORT: int = ...  # type: ignore
+    RABBITMQ_HEART_BEAT: int = ...  # type: ignore
+    RABBITMQ_CONNECTION_TIMEOUT: int = ...  # type: ignore
+    RABBITMQ_RETRY_ATTEMPTS: int = ...  # type: ignore
+    RABBITMQ_RETRY_DELAY: int = ...  # type: ignore
     RABBITMQ_USERNAME: str = ...  # type: ignore
     RABBITMQ_PASSWORD: str = ...  # type: ignore
+    RABBITMQ_PUBLISH_RETRY_ATTEMPTS: int = ...  # type: ignore
+    RABBITMQ_PUBLISH_RETRY_DELAY: int = ...  # type: ignore
 
     # Notification topology
-    NOTIFICATION_EXCHANGE: str = ...  # type: ignore
-    EMAIL_ROUTING_KEY: str = "email.send"
+    EMAIL_NOTIFICATION_EXCHANGE: str = ... # type: ignore
+    EMAIL_NOTIFICATION_EXCHANGE_TYPE: ExchangeType = ... # type: ignore
+    FORGOT_PASSWORD_EMAIL_QUEUE: str = ... # type: ignore
+    FORGOT_PASSWORD_EMAIL_QUEUE_ROUTING_KEY: str = ... # type: ignore
 
     FRONTEND_BASE_URL: str = ... # type: ignore
 

@@ -4,23 +4,28 @@ from datetime import UTC, datetime
 from sqlmodel import Session, select
 
 from auth.api.dependencies import SessionDep
-from auth.api.repositories.user_repository import get_user_by_email_or_username
+from auth.api.repositories.user_repository import (
+    add_security_token,
+    get_user_by_email_or_username,
+    mark_security_tokens_as_used,
+)
+from auth.core.config import settings
 from auth.core.security import (
     create_jwt_access_token,
     create_jwt_refresh_token,
     generate_secure_token,
     get_password_hash,
     hash_secure_token,
-    settings,
     verify_password,
 )
 from auth.database.models.security import SecureToken
 from auth.database.models.users import Users
+from auth.exceptions.definitions.not_found_exceptions import UserNotFoundException
 from auth.exceptions.definitions.security_exceptions import (
     InvalidCredentialsException,
     UserInactiveException,
 )
-from auth.messaging.publisher import publish_message
+from auth.messaging.general import get_mq_client
 from auth.schemas.auth_schemas import (
     JWTSubject,
     Token,
@@ -132,31 +137,16 @@ def forgot_password_user(*, session: Session, email: str) -> None:
         # For security, do not reveal whether the email exists in the system
         return
 
-    token, expire_time = generate_secure_token()
-
     if(user.id is None):
-            raise RuntimeError("Persisted user without ID")
-
-
-    hash_token = hash_secure_token(token)
+            raise UserNotFoundException("Persisted user without ID")
 
     # invalidate old tokens
-    stmt = select(SecureToken).where(
-        SecureToken.user_id == user.id,
-        (not SecureToken.used)
-    )
+    mark_security_tokens_as_used(session=session, user_id=user.id)
 
-    for record in session.exec(stmt):
-        record.used = True
+    token, expire_time = generate_secure_token()
+    hash_token = hash_secure_token(token)
+    add_security_token(session=session, user_id=user.id, token=hash_token, expires_at=expire_time)
 
-    reset_token = SecureToken(
-        user_id=user.id,
-        token=hash_token,
-        expires_at=expire_time,
-    )
-
-    session.add(reset_token)
-    session.commit()
 
     reset_link = f"{settings.FRONTEND_BASE_URL}/reset-password?token={token}"
 
@@ -174,7 +164,8 @@ def forgot_password_user(*, session: Session, email: str) -> None:
         }
     }
 
-    publish_message(message)
+    mq_client = get_mq_client()
+    mq_client.publish(settings.FORGOT_PASSWORD_EMAIL_QUEUE, message)
 
 def reset_password_user(*, session: Session, reset_token: str, new_password: str) -> None:
     """

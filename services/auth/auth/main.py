@@ -1,23 +1,43 @@
+from contextlib import asynccontextmanager
+
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 
 from auth.api.routes.main import api_router
 from auth.core.config import settings
 from auth.exceptions.registry import get_exception_handlers
+from auth.messaging.base import MQClient
+from auth.messaging.general import get_mq_client
 
 exception_handlers = get_exception_handlers()
 
-# @asynccontextmanager
-# async def lifespan(app: FastAPI):
-#     """Lifespan function to handle startup and shutdown events."""
-#     # Perform any startup tasks here (e.g., database connection, cache setup)
-#     yield
-#     RabbitMQClient.close_connection()  # Ensure RabbitMQ connection is closed on shutdown
+mq_client: MQClient = get_mq_client()
+
+def on_startup() -> None:
+    """
+    Perform initialization tasks on application startup.
+    """
+    mq_client.connect()
+
+def on_shutdown() -> None:
+    """
+    Perform cleanup tasks on application shutdown.
+    """
+    mq_client.close()
+
+@asynccontextmanager
+async def lifespan(_app: FastAPI):
+    """
+    Lifespan function to handle startup and shutdown events.
+    """
+    on_startup()
+    yield
+    on_shutdown()
 
 
 app = FastAPI(
     exception_handlers=exception_handlers,
-    # lifespan=lifespan
+    lifespan=lifespan
 )
 
 app.add_middleware(
