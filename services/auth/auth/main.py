@@ -11,18 +11,18 @@ from auth.messaging.general import get_mq_client
 
 exception_handlers = get_exception_handlers()
 
-mq_client: MQClient = get_mq_client()
-
 def on_startup() -> None:
     """
     Perform initialization tasks on application startup.
     """
+    mq_client: MQClient = get_mq_client()
     mq_client.connect()
 
 def on_shutdown() -> None:
     """
     Perform cleanup tasks on application shutdown.
     """
+    mq_client: MQClient = get_mq_client()
     mq_client.close()
 
 @asynccontextmanager
