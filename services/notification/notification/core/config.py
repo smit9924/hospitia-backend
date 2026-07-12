@@ -1,5 +1,6 @@
 from pathlib import Path
 
+from pika.exchange_type import ExchangeType
 from pydantic_settings import BaseSettings, SettingsConfigDict
 
 SERVICE_ROOT = Path(__file__).resolve().parents[2]
@@ -11,25 +12,34 @@ class Settings(BaseSettings):
         case_sensitive = False,
     )
 
-    # RabbitMQ connection
-    rabbitmq_host: str = ... # type: ignore
-    rabbitmq_port: int = ... # type: ignore
-    rabbitmq_username: str = ... # type: ignore
-    rabbitmq_password: str = ... # type: ignore
+    MQ_CLIENT_TYPE: str = ... # type: ignore
+
+    # RabbitMQ
+    RABBITMQ_HOST: str = ...  # type: ignore
+    RABBITMQ_PORT: int = ...  # type: ignore
+    RABBITMQ_USERNAME: str = ...  # type: ignore
+    RABBITMQ_PASSWORD: str = ...  # type: ignore
+    RABBITMQ_HEART_BEAT: int = ...  # type: ignore
+    RABBITMQ_CONNECTION_TIMEOUT: int = ...  # type: ignore
+    RABBITMQ_RETRY_ATTEMPTS: int = ...  # type: ignore
+    RABBITMQ_RETRY_DELAY: int = ...  # type: ignore
+    RABBITMQ_PUBLISH_RETRY_ATTEMPTS: int = ...  # type: ignore
+    RABBITMQ_PUBLISH_RETRY_DELAY: int = ...  # type: ignore
+    RABBITMQ_CONSUMER_RETRY_DELAY: int = ...  # type: ignore
+    RABBITMQ_CONSUMER_PREFETCH_COUNT: int = ...  # type: ignore
 
     # Notification topology
-    notification_exchange: str = ... # type: ignore
-    notification_exchange_type: str = "direct"
-    max_priority: int = 10
-    email_queue: str = ... # type: ignore
-    email_routing_key: str = "email.send"
+    EMAIL_NOTIFICATION_EXCHANGE: str = ... # type: ignore
+    EMAIL_NOTIFICATION_EXCHANGE_TYPE: ExchangeType = ... # type: ignore
+    FORGOT_PASSWORD_EMAIL_QUEUE: str = ... # type: ignore
+    FORGOT_PASSWORD_EMAIL_QUEUE_ROUTING_KEY: str = ... # type: ignore
 
     # Email (SMTP)
-    smtp_host: str = ... # type: ignore
-    smtp_port: int = 587
-    smtp_username: str = ... # type: ignore
-    smtp_password: str = ... # type: ignore
-    smtp_from: str = ... # type: ignore
-    smtp_use_tls: bool = True
+    SMTP_HOST: str = ... # type: ignore
+    SMTP_PORT: int = ... # type: ignore
+    SMTP_USERNAME: str = ... # type: ignore
+    SMTP_PASSWORD: str = ... # type: ignore
+    SMTP_FROM: str = ... # type: ignore
+    SMTP_USE_TLS: bool = ... # type: ignore
 
 settings = Settings()

@@ -1,33 +1,48 @@
 import logging
-import signal
-import sys
+from contextlib import asynccontextmanager
 
-from notification.messaging.connection import RabbitMQClient
-from notification.messaging.consumer import run_consumer
+from fastapi import FastAPI
+
+from notification.messaging.general import get_mq_client, get_mq_consumer
+
+logging.basicConfig(level=logging.INFO)
+logger = logging.getLogger(__name__)
 
 
-def shutdown_handler(signum, frame):
-    """Signal handler for graceful shutdown."""
-    logging.info("Shutdown signal received. Stopping consumer...")
-    RabbitMQClient.stop_consumer()
-
-if __name__ == "__main__":
+def on_startup() -> None:
     """
-    Starts the notification consumer process responsible for
-    receiving and processing messaging events from RabbitMQ.
+    Contains operations to be performed when the application starts up.
     """
-    signal.signal(signal.SIGINT, shutdown_handler) # Handle Ctrl+C
-    signal.signal(signal.SIGTERM, shutdown_handler) # Handle termination signals
+    mq_client = get_mq_client()
+    mq_client.connect()
 
-    try:
-        logging.info("starting notification consumer...")
-        run_consumer()
-    except Exception as exc:
-        logging.exception("Consumer encountered an error: %s", exc)
-        sys.exit(1)
-    finally:
-        logging.info("cleaning up resources...")
-        RabbitMQClient.close_connection()
-        logging.info("notification consumer shutdown complete.")
-        sys.exit(0)
+    mq_consumer = get_mq_consumer()
+    mq_consumer.connect()
+    mq_consumer.start_consuming()
 
+
+def on_shutdown() -> None:
+    """
+    Contains operations to be performed when the application is shutting down.
+    """
+    mq_client = get_mq_client()
+    mq_client.close()
+
+    mq_consumer = get_mq_consumer()
+    mq_consumer.stop_consuming()
+    mq_consumer.close()
+
+
+@asynccontextmanager
+async def lifespan(_app: FastAPI):
+    """
+    Lifespan function to handle startup and shutdown events.
+    """
+    on_startup()
+    yield
+    on_shutdown()
+
+
+app = FastAPI(
+    lifespan=lifespan
+)

@@ -7,8 +7,8 @@ from notification.core.config import settings
 
 def publish_test_email():
     credentials = pika.PlainCredentials(
-        settings.rabbitmq_username,
-        settings.rabbitmq_password,
+        settings.RABBITMQ_USERNAME,
+        settings.RABBITMQ_PASSWORD,
     )
 
     # Pika internally expects arguments typed as type[_DEFAULT], which causes
@@ -16,8 +16,8 @@ def publish_test_email():
     # type checking is ignored for these parameters.
     connection = pika.BlockingConnection(
         pika.ConnectionParameters(
-            host=settings.rabbitmq_host, #type: ignore[arg-type]
-            port=settings.rabbitmq_port, #type: ignore[arg-type]
+            host=settings.RABBITMQ_HOST, #type: ignore[arg-type]
+            port=settings.RABBITMQ_PORT, #type: ignore[arg-type]
             credentials=credentials, #type: ignore[arg-type]
         )
     )
@@ -38,8 +38,8 @@ def publish_test_email():
     }
 
     channel.basic_publish(
-        exchange=settings.notification_exchange,
-        routing_key=settings.email_routing_key,
+        exchange=settings.EMAIL_NOTIFICATION_EXCHANGE,
+        routing_key=settings.FORGOT_PASSWORD_EMAIL_QUEUE_ROUTING_KEY,
         body=json.dumps(message),
         properties=pika.BasicProperties(
             priority=5,

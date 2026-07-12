@@ -1,7 +1,7 @@
-from notification.exceptions.definitions.base import NotificationBaseException
+from notification.exceptions.definitions.base import BaseException
 
 
-class TemplateNotFoundError(NotificationBaseException):
+class TemplateNotFoundError(BaseException):
     """
     Raised when the requested Jinja2 template file does not exist
     in the templates directory.
@@ -19,7 +19,7 @@ class TemplateNotFoundError(NotificationBaseException):
         )
 
 
-class TemplateRenderError(NotificationBaseException):
+class TemplateRenderError(BaseException):
     """
     Raised when Jinja2 fails to render a template, typically due to
     missing context variables or a syntax error in the template.
