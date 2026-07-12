@@ -1,6 +1,4 @@
-import json
 from time import sleep
-from typing import Any
 
 from pika import (
     BasicProperties,
@@ -23,6 +21,7 @@ from auth.exceptions.definitions.messaging_queue_exceptions import (
     MQNotFoundException,
 )
 from auth.messaging.base import MQClient
+from auth.schemas.base_schemas import BaseModel
 
 from .exchange import RabbitMQExchange
 from .queue import RabbitMQQueue
@@ -78,7 +77,7 @@ class RabbitMQClient(MQClient):
         finally:
             self.__close_channel(channel)
 
-    def publish(self, destination: str, message: Any) -> None:
+    def publish(self, destination: str, message: BaseModel) -> None:
         """
         Publishes a JSON message to the configured queue route.
 
@@ -106,7 +105,7 @@ class RabbitMQClient(MQClient):
         if self._connection and self._connection.is_open:
             self._connection.close()
 
-    def __publish_with_retry(self, queue: RabbitMQQueue, message: Any) -> None:
+    def __publish_with_retry(self, queue: RabbitMQQueue, message: BaseModel) -> None:
         """
         Publishes a message with retry for recoverable RabbitMQ failures.
 
@@ -137,7 +136,7 @@ class RabbitMQClient(MQClient):
         if last_error is not None:
             raise MQMessagePublishException() from last_error
 
-    def __publish_once(self, queue: RabbitMQQueue, message: Any) -> None:
+    def __publish_once(self, queue: RabbitMQQueue, message: BaseModel) -> None:
         """
         Publishes a message once using a fresh RabbitMQ channel.
 
@@ -156,7 +155,7 @@ class RabbitMQClient(MQClient):
         self._publish_channel.basic_publish(
             exchange=queue.exchange_name,
             routing_key=queue.routing_key,
-            body=json.dumps(message).encode('utf-8'),
+            body=message.model_dump_json().encode('utf-8'),
             properties=BasicProperties(
                 content_type='application/json',
                 delivery_mode=2,

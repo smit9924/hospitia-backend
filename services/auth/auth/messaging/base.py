@@ -1,6 +1,8 @@
 from abc import ABC, abstractmethod
 from typing import Any
 
+from auth.schemas.base_schemas import BaseSchema
+
 
 class MQClient(ABC):
     """
@@ -28,7 +30,7 @@ class MQClient(ABC):
         raise NotImplementedError
 
     @abstractmethod
-    def publish(self, destination: str, message: Any) -> None:
+    def publish(self, destination: str, message: BaseSchema) -> None:
         """
         Publishes a message to the given destination.
 

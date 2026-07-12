@@ -1,6 +1,7 @@
 import logging
 from datetime import UTC, datetime
 
+from pydantic import AnyHttpUrl, TypeAdapter
 from sqlmodel import Session, select
 
 from auth.api.dependencies import SessionDep
@@ -31,6 +32,7 @@ from auth.schemas.auth_schemas import (
     Token,
 )
 from auth.schemas.common_schemas import ApiErrorResponse, ErrorCodes
+from auth.schemas.mq_schemas import MqForgotPasswordMessage
 from auth.types.enums import AuthType
 
 log = logging.getLogger(__name__)
@@ -148,21 +150,16 @@ def forgot_password_user(*, session: Session, email: str) -> None:
     add_security_token(session=session, user_id=user.id, token=hash_token, expires_at=expire_time)
 
 
-    reset_link = f"{settings.FRONTEND_BASE_URL}/reset-password?token={token}"
+    reset_link: AnyHttpUrl = TypeAdapter(AnyHttpUrl).validate_python(f"{settings.FRONTEND_BASE_URL}/reset-password?token={token}")
 
-    message = {
-        "channel": "email",
-        "payload": {
-            "to": [email],
-            "subject": "Password Reset Link",
-            "template": "password_reset",
-            "data": {
-                "username": user.username,
-                "reset_link": reset_link,
-                "expires_in": settings.RESET_TOKEN_EXPIRE_MINUTES,
-            }
-        }
-    }
+    message = MqForgotPasswordMessage(
+        to=[email],
+        subject="Password Reset Link",
+        user_first_name=user.first_name if user.first_name else "",
+        user_last_name=user.last_name if user.last_name else "",
+        reset_password_link=reset_link,
+        expiration_time=settings.RESET_TOKEN_EXPIRE_MINUTES
+    )
 
     mq_client = get_mq_client()
     mq_client.publish(settings.FORGOT_PASSWORD_EMAIL_QUEUE, message)
