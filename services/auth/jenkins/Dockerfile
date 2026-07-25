@@ -85,11 +85,4 @@ HEALTHCHECK \
 # Start application
 ###############################################################################
 
-CMD [
-    "uvicorn",
-    "auth.main:app",
-    "--host",
-    "0.0.0.0",
-    "--port",
-    "9002"
-]
+CMD ["uvicorn", "auth.main:app", "--host", "0.0.0.0", "--port", "9002" ]
