@@ -12,7 +12,7 @@ required_files=(
     "${auth_service_dir}/pyproject.toml"
     "${auth_service_dir}/uv.lock"
     "${auth_service_dir}/jenkins/Dockerfile"
-    "${auth_service_dir}/.dockerignore"
+    "${auth_service_dir}/jenkins/.dockerignore"
 )
 
 for file in "${required_files[@]}"; do
