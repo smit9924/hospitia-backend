@@ -35,6 +35,7 @@ WORKDIR /app
 
 RUN apt-get update \
     && apt-get install --yes --no-install-recommends \
+        build-essential \
         gcc \
     && rm -rf /var/lib/apt/lists/*
 
@@ -43,13 +44,14 @@ RUN apt-get update \
 ###############################################################################
 
 COPY pyproject.toml ./
+COPY README.md ./
 
 
-RUN pip install --upgrade pip \
-    && pip install uv \
+RUN pip install --no-cache-dir --upgrade pip \
+    && pip install --no-cache-dir uv \
     && uv pip install \
         --system \
-        .
+        -r pyproject.toml
 
 ###############################################################################
 # Copy application
