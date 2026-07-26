@@ -6,7 +6,7 @@ echo "Running database migrations..."
 
 cd /app/auth/database
 
-uv run alembic upgrade head
+alembic -c ./alembic.ini upgrade head
 
 echo "Starting application..."
 
