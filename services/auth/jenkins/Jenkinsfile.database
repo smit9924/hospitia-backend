@@ -158,14 +158,10 @@ pipeline {
                             exit 1
                         fi
 
-                        IMAGE_ID=\$(docker inspect \
-                            --format='{{.Image}}' \
-                            ${APPLICATION_NAME})
-
                         docker run --rm \
                             --network hospitia-network \
                             --env-file /opt/hospitia/${APPLICATION_NAME}/.env \
-                            "\${IMAGE_ID}" \
+                            "\${APPLICATION_NAME}" \
                             alembic upgrade head
 
                     """
