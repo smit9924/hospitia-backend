@@ -149,26 +149,29 @@ pipeline {
                         ssh \
                             -i "${SSH_KEY}" \
                             -o StrictHostKeyChecking=no \
-                            "${SSH_USER}@${DEPLOYMENT_SERVER_PUBLIC_IP}" <<EOF
+                            "${SSH_USER}@${DEPLOYMENT_SERVER_PUBLIC_IP}" \
+                            APPLICATION_NAME="${APPLICATION_NAME}" \
+                            DOCKER_IMAGE="${DOCKER_IMAGE}" \
+                            'bash -se' <<'EOF'
 
-                        set -Eeuo pipefail
+                    set -Eeuo pipefail
 
-                        if [[ -z "\$(docker ps \
-                            --filter "name=^/${APPLICATION_NAME}\$" \
-                            --filter "status=running" \
-                            --format "{{.Names}}")" ]]; then
+                    if [[ -z "$(docker ps \
+                        --filter "name=${APPLICATION_NAME}" \
+                        --filter "status=running" \
+                        --format "{{.Names}}")" ]]; then
+                        echo "ERROR: ${APPLICATION_NAME} is not running on the deployment server."
+                        exit 1
+                    fi
 
-                            echo "ERROR: ${APPLICATION_NAME} is not running on the deployment server."
-                            exit 1
-                        fi
+                    docker run --rm \
+                        --pull=never \
+                        --network hospitia-network \
+                        --env-file "/opt/hospitia/${APPLICATION_NAME}/.env" \
+                        "${DOCKER_IMAGE}:latest" \
+                        alembic upgrade head
 
-                        docker run --rm \
-                            --pull=never \
-                            --network hospitia-network \
-                            --env-file /opt/hospitia/${APPLICATION_NAME}/.env \
-                            ${DOCKER_IMAGE}:latest \
-                            alembic upgrade head
-                    """
+"""
                 }
             }
         }
