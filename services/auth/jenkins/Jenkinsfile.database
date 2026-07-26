@@ -156,7 +156,7 @@ pipeline {
 
                         docker exec \
                             ${APPLICATION_NAME} \
-                            alembic upgrade head
+                            sh -c "cd /app/auth/database && alembic upgrade head"
 
                         EOF
                         """
