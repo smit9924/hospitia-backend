@@ -1,0 +1,194 @@
+pipeline {
+
+    agent {
+        label 'docker-agent-python'
+    }
+
+    options {
+
+        skipDefaultCheckout(true)
+
+        timestamps()
+
+        disableConcurrentBuilds()
+
+        timeout(
+            time: 10,
+            unit: 'MINUTES'
+        )
+
+        buildDiscarder(
+            logRotator(
+                numToKeepStr: '30'
+            )
+        )
+    }
+
+    environment {
+
+        APPLICATION_NAME = 'auth-service'
+
+        APPLICATION_DIRECTORY = 'services/auth'
+
+        DOCKER_IMAGE = 'smit9924/hospitia-auth-service'
+    }
+
+    stages {
+
+        stage('Initialize') {
+
+            steps {
+
+                script {
+
+                    if (!params.SOURCE_BRANCH?.trim()) {
+                        error('SOURCE_BRANCH must not be empty.')
+                    }
+
+                    env.SOURCE_BRANCH =
+                        params.SOURCE_BRANCH.trim()
+
+                    currentBuild.displayName =
+                        "#${env.BUILD_NUMBER} ${env.SOURCE_BRANCH}"
+
+                    currentBuild.description =
+                        "Database Migration"
+                }
+            }
+        }
+
+        stage('Checkout Source') {
+
+            steps {
+
+                deleteDir()
+
+                checkout([
+                    $class: 'GitSCM',
+
+                    branches: [[
+                        name: "*/${env.SOURCE_BRANCH}"
+                    ]],
+
+                    userRemoteConfigs: [[
+                        url: scm.userRemoteConfigs[0].url,
+                        credentialsId: scm.userRemoteConfigs[0].credentialsId
+                    ]],
+
+                    extensions: [
+                        [
+                            $class: 'CleanBeforeCheckout'
+                        ],
+                        [
+                            $class: 'PruneStaleBranch'
+                        ]
+                    ]
+                ])
+            }
+        }
+
+        stage('Capture Build Metadata') {
+
+            steps {
+
+                script {
+
+                    env.GIT_COMMIT_SHORT = sh(
+                        script: 'git rev-parse --short=12 HEAD',
+                        returnStdout: true
+                    ).trim()
+
+                    currentBuild.description =
+                        "Migration ${env.GIT_COMMIT_SHORT}"
+                }
+            }
+        }
+
+        stage('Validate Repository') {
+
+            steps {
+
+                sh '''
+                    set -Eeuo pipefail
+
+                    chmod +x ${APPLICATION_DIRECTORY}/jenkins/scripts/validate-repo.sh
+
+                    ${APPLICATION_DIRECTORY}/jenkins/scripts/validate-repo.sh
+                '''
+            }
+        }
+
+        stage('Run Database Migration') {
+
+            steps {
+
+                withCredentials([
+
+                    sshUserPrivateKey(
+                        credentialsId: 'deploy-ssh',
+                        keyFileVariable: 'SSH_KEY',
+                        usernameVariable: 'SSH_USER'
+                    ),
+
+                    string(
+                        credentialsId: 'deployment-server-ip',
+                        variable: 'DEPLOYMENT_SERVER_PUBLIC_IP'
+                    ),
+
+                    usernamePassword(
+                        credentialsId: 'dockerhub',
+                        usernameVariable: 'DOCKERHUB_USERNAME',
+                        passwordVariable: 'DOCKERHUB_TOKEN'
+                    )
+
+                ]) {
+
+                    sh """
+                        set -Eeuo pipefail
+
+                        ssh \
+                            -i "${SSH_KEY}" \
+                            -o StrictHostKeyChecking=no \
+                            "${SSH_USER}@${DEPLOYMENT_SERVER_PUBLIC_IP}" <<EOF
+
+                        set -Eeuo pipefail
+
+                        if ! docker container inspect ${APPLICATION_NAME} >/dev/null 2>&1; then
+                            echo "ERROR: ${APPLICATION_NAME} is not deployed on the server."
+                            exit 1
+                        fi
+
+                        IMAGE_ID=\$(docker inspect \
+                            --format='{{.Image}}' \
+                            ${APPLICATION_NAME})
+
+                        docker run --rm \
+                            --network hospitia-network \
+                            --env-file /opt/hospitia/${APPLICATION_NAME}/.env \
+                            "\${IMAGE_ID}" \
+                            alembic upgrade head
+
+                    """
+                }
+            }
+        }
+
+        stage('Build Summary') {
+
+            steps {
+
+                sh '''
+                    printf "\\n"
+                    printf "=========================================\\n"
+                    printf "Database Migration Summary\\n"
+                    printf "=========================================\\n"
+                    printf "Application : %s\\n" "${APPLICATION_NAME}"
+                    printf "Branch      : %s\\n" "${SOURCE_BRANCH}"
+                    printf "Commit      : %s\\n" "${GIT_COMMIT_SHORT}"
+                    printf "Migration   : SUCCESS\\n"
+                    printf "=========================================\\n"
+                '''
+            }
+        }
+    }
+}
