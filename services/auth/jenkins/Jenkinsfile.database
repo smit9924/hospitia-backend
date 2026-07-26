@@ -145,21 +145,21 @@ pipeline {
 
                         set -Eeuo pipefail
 
-                        if [[ -z "$(docker ps \
+                        if ! docker ps \
                             --filter "name=${APPLICATION_NAME}" \
                             --filter "status=running" \
-                            --format "{{.Names}}")" ]]; then
+                            --format "{{.Names}}" | grep -qx "${APPLICATION_NAME}"; then
+
                             echo "ERROR: ${APPLICATION_NAME} is not running on the deployment server."
                             exit 1
                         fi
 
-                        docker run --rm \
-                            --pull=never \
-                            --network hospitia-network \
-                            --env-file "/opt/hospitia/${APPLICATION_NAME}/.env" \
-                            "${APPLICATION_NAME}" \
+                        docker exec \
+                            ${APPLICATION_NAME} \
                             alembic upgrade head
-                    """
+
+                        EOF
+                        """
                 }
             }
         }
