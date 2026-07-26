@@ -75,4 +75,10 @@ EXPOSE 9002
 # Start application
 ###############################################################################
 
+COPY jenkins/scripts/update-db.sh /usr/local/bin/update-db.sh
+
+RUN chmod +x /usr/local/bin/update-db.sh
+
+ENTRYPOINT ["/usr/local/bin/update-db.sh"]
+
 CMD ["uvicorn", "auth.main:app", "--host", "0.0.0.0", "--port", "9002" ]
