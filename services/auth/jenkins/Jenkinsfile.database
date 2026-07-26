@@ -133,12 +133,6 @@ pipeline {
                         variable: 'DEPLOYMENT_SERVER_PUBLIC_IP'
                     ),
 
-                    usernamePassword(
-                        credentialsId: 'dockerhub',
-                        usernameVariable: 'DOCKERHUB_USERNAME',
-                        passwordVariable: 'DOCKERHUB_TOKEN'
-                    )
-
                 ]) {
 
                     sh """
