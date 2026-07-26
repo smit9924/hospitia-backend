@@ -154,7 +154,7 @@ pipeline {
                         set -Eeuo pipefail
 
                         if [[ -z "\$(docker ps \
-                            --filter "name=^/${APPLICATION_NAME}\\$" \
+                            --filter "name=^/${APPLICATION_NAME}\$" \
                             --filter "status=running" \
                             --format "{{.Names}}")" ]]; then
 
