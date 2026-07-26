@@ -153,17 +153,26 @@ pipeline {
 
                         set -Eeuo pipefail
 
-                        if ! docker container inspect ${APPLICATION_NAME} >/dev/null 2>&1; then
-                            echo "ERROR: ${APPLICATION_NAME} is not deployed on the server."
+                        if [[ -z "\$(docker ps \
+                            --filter "name=^/${APPLICATION_NAME}$" \
+                            --filter "status=running" \
+                            --format "{{.Names}}")" ]]; then
+
+                            echo "ERROR: ${APPLICATION_NAME} is not running on the deployment server."
                             exit 1
                         fi
+
+                        IMAGE_ID=\$(docker inspect \
+                            --format='{{.Image}}' \
+                            ${APPLICATION_NAME})
 
                         docker run --rm \
                             --network hospitia-network \
                             --env-file /opt/hospitia/${APPLICATION_NAME}/.env \
-                            "\${APPLICATION_NAME}" \
+                            "\${IMAGE_ID}" \
                             alembic upgrade head
 
+                        EOF
                     """
                 }
             }
