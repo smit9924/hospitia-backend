@@ -63,11 +63,11 @@ COPY auth ./auth
 #############################################################################
 # Copy database update script
 ###############################################################################
-# COPY jenkins/scripts/update-db.sh /usr/local/bin/update-db.sh
+COPY jenkins/scripts/update-db.sh /usr/local/bin/update-db.sh
 
-# RUN chmod +x /usr/local/bin/update-db.sh
+RUN chmod +x /usr/local/bin/update-db.sh
 
-# ENTRYPOINT ["/usr/local/bin/update-db.sh"]
+ENTRYPOINT ["/usr/local/bin/update-db.sh"]
 
 ###############################################################################
 # Switch to non-root user

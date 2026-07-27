@@ -4,9 +4,9 @@ set -Eeuo pipefail
 
 echo "Running database migrations..."
 
-cd /app/auth/database
-
-alembic -c ./alembic.ini upgrade head
+# Run migration from /app directory instead of getting inside auth/database directory
+# to avoid module auth not found error when running alembic command
+alembic -c ./auth/database/alembic.ini upgrade head
 
 echo "Starting application..."
 
