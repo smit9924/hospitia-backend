@@ -2,8 +2,8 @@ import logging
 from typing import Any
 
 from notification.schemas.mq_schemas import MqForgotPasswordMessage
-from notification.servicies.email_service import send_html_email
-from notification.servicies.template_service import render_template
+from notification.services.email_service import send_html_email
+from notification.services.template_service import render_template
 
 log = logging.getLogger(__name__)
 
