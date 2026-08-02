@@ -41,3 +41,23 @@ class UserWithUsernameAlreadyExistsException(BaseException):
         message: str = "A user with the provided username already exists."
     ) -> None:
         super().__init__(ErrorCodes.USER_WITH_USENAME_ALREADY_EXIST, message)
+
+
+class WeakPasswordException(BaseException):
+    """Raised when a provided password does not meet strength requirements."""
+
+    def __init__(
+        self,
+        message: str = "The provided password is too weak. Password must be at least 8 characters long and include uppercase letters, lowercase letters, numbers, and special characters."
+    ) -> None:
+        super().__init__(ErrorCodes.WEAK_PASSWORD, message)
+
+
+class InvalidUsernameException(BaseException):
+    """Raised when a provided username does not meet validation requirements."""
+
+    def __init__(
+        self,
+        message: str = "The provided username is invalid. Username must be between 3 and 50 characters long and can only contain letters, digits, and underscores. It must start with a letter and end with a letter or digit."
+    ) -> None:
+        super().__init__(ErrorCodes.INVALID_USERNAME, message)

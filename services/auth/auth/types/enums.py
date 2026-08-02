@@ -58,3 +58,37 @@ class UserType(IntEnum):
     OWNER = 2
     MANAGER = 3
     CUSTOMER = 4
+
+class TokenType(IntEnum):
+    """
+    JWT token types for distinguishing access and refresh tokens.
+
+    This enum defines the purpose of JWT tokens issued by the authentication
+    system. Values are stored as integers in the database for efficiency.
+
+    Attributes
+    ----------
+    ACCESS : int
+        Access token used for authenticating API requests. Short-lived token
+        that grants access to protected resources.
+        Value: 1
+    REFRESH : int
+        Refresh token used to obtain new access tokens after expiration.
+        Long-lived token that can be securely stored by clients.
+        Value: 2
+    """
+    ACCESS = 1
+    REFRESH = 2
+
+
+class Priority(IntEnum):
+    """
+    Message priority levels.
+
+    Higher values indicate higher processing priority
+    within RabbitMQ priority queues.
+    """
+    LOW = 1
+    NORMAL = 5
+    HIGH = 8
+    CRITICAL = 10

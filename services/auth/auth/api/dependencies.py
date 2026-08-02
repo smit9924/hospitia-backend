@@ -8,7 +8,9 @@ from sqlmodel import Session
 from auth.core.config import settings
 from auth.core.security import authorize_user, decode_jwt_token
 from auth.database.db import engine
-from auth.types.enums import UserType
+from auth.exceptions.definitions.security_exceptions import UserUnauthorizedException
+from auth.schemas.auth_schemas import ParsedJWTPayload
+from auth.types.enums import TokenType, UserType
 
 
 def get_session() -> Generator[Session]:
@@ -70,7 +72,7 @@ def RoleValidationDep(
     async def validate_jwt_token(
         token: TokenDep,
         session: SessionDep,
-    ) -> None:
+    ) -> ParsedJWTPayload:
         """
         Decode and validate a JWT access token and authorize the user by role.
 
@@ -92,15 +94,15 @@ def RoleValidationDep(
             None
         """
         if not roles:
-            # If no roles are provided, treat the route as public
-            # and skip role-based authorization checks
-            return
+            # If no roles are provided, treat user as unauthenticated
+            raise UserUnauthorizedException()
 
-        token_payload = decode_jwt_token(token)
+        token_payload = decode_jwt_token(token, expected_type= TokenType.ACCESS)
         authorize_user(
             token_payload=token_payload,
             session=session,
             roles=roles,
         )
+        return token_payload
 
     return validate_jwt_token
