@@ -1,2 +1,2 @@
-# sso-services
-This repository contains backend par of SSO.
+# hospitia-services
+This repository contains backend par of hospitia.
