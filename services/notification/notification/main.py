@@ -3,7 +3,8 @@ from contextlib import asynccontextmanager
 
 from fastapi import FastAPI
 
-from notification.messaging.general import get_mq_client, get_mq_consumer
+from notification.messaging.mq_client_general import get_mq_client
+from notification.messaging.mq_consumer_general import get_mq_consumer
 
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)

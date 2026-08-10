@@ -35,6 +35,7 @@ class Settings(BaseSettings):
     FORGOT_PASSWORD_EMAIL_QUEUE_ROUTING_KEY: str = ... # type: ignore
     FORGOT_PASSWORD_DEAD_LETTER_EMAIL_QUEUE: str = ... # type: ignore
     FORGOT_PASSWORD_DEAD_LETTER_EMAIL_QUEUE_ROUTING_KEY: str = ... # type: ignore
+    FORGOT_PASSWORD_EMAIL_RETRY_COUNT: int = ... # type: ignore
 
     # Email (SMTP)
     SMTP_HOST: str = ... # type: ignore

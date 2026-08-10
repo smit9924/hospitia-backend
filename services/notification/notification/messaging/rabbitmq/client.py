@@ -51,6 +51,12 @@ class RabbitMQClient(MQClient):
                 name=settings.FORGOT_PASSWORD_EMAIL_QUEUE,
                 exchange_name=settings.EMAIL_NOTIFICATION_EXCHANGE,
                 routing_key=settings.FORGOT_PASSWORD_EMAIL_QUEUE_ROUTING_KEY,
+                dead_letter_queue=settings.FORGOT_PASSWORD_DEAD_LETTER_EMAIL_QUEUE,
+            ),
+            settings.FORGOT_PASSWORD_DEAD_LETTER_EMAIL_QUEUE: RabbitMQQueue(
+                name=settings.FORGOT_PASSWORD_DEAD_LETTER_EMAIL_QUEUE,
+                exchange_name=settings.EMAIL_NOTIFICATION_EXCHANGE,
+                routing_key=settings.FORGOT_PASSWORD_DEAD_LETTER_EMAIL_QUEUE_ROUTING_KEY,
             ),
         }
 

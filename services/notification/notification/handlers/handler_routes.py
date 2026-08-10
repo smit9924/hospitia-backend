@@ -2,6 +2,9 @@ from collections.abc import Callable
 from typing import Any
 
 from notification.core.config import settings
+from notification.exceptions.definitions.messaging_queue_exceptions import (
+    HandlerNotFoundError,
+)
 from notification.handlers.email_handlers import (
     forgot_password_email_handler,
 )
@@ -25,5 +28,5 @@ def get_handler(routing_key: str) -> EMAIL_MESSAGE_HANDLER:
 
     try:
         return MESSAGE_ROUTES[routing_key]
-    except KeyError:
-        raise ValueError(f"No handler registered for '{routing_key}'")
+    except Exception as ex:
+        raise HandlerNotFoundError(routing_key) from ex

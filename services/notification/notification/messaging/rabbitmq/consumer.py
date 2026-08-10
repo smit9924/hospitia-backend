@@ -1,6 +1,7 @@
 import json
 from threading import Event, Thread
 from time import sleep
+from typing import Any
 
 from pika import (
     BasicProperties,
@@ -19,6 +20,7 @@ from pika.exceptions import (
 from pika.spec import Basic
 
 from notification.core.config import settings
+from notification.exceptions.registry import get_exception_handler
 from notification.handlers.handler_routes import EMAIL_MESSAGE_HANDLER, get_handler
 from notification.messaging.base import MQConsumer
 
@@ -68,6 +70,12 @@ class RabbitMQConsumer(MQConsumer):
                 name=settings.FORGOT_PASSWORD_EMAIL_QUEUE,
                 exchange_name=settings.EMAIL_NOTIFICATION_EXCHANGE,
                 routing_key=settings.FORGOT_PASSWORD_EMAIL_QUEUE_ROUTING_KEY,
+                dead_letter_queue=settings.FORGOT_PASSWORD_DEAD_LETTER_EMAIL_QUEUE,
+            ),
+            settings.FORGOT_PASSWORD_DEAD_LETTER_EMAIL_QUEUE: RabbitMQQueue(
+                name=settings.FORGOT_PASSWORD_DEAD_LETTER_EMAIL_QUEUE,
+                exchange_name=settings.EMAIL_NOTIFICATION_EXCHANGE,
+                routing_key=settings.FORGOT_PASSWORD_DEAD_LETTER_EMAIL_QUEUE_ROUTING_KEY,
             ),
         }
 
@@ -227,7 +235,10 @@ class RabbitMQConsumer(MQConsumer):
 
         channel.basic_consume(
             queue=queue.name,
-            on_message_callback=self.__build_consumer_callback(handler),
+            on_message_callback=self.__build_consumer_callback(
+                destination,
+                handler,
+            ),
             auto_ack=False,
         )
 
@@ -239,6 +250,7 @@ class RabbitMQConsumer(MQConsumer):
 
     def __build_consumer_callback(
         self,
+        destination: str,
         handler: EMAIL_MESSAGE_HANDLER,
     ):
         def callback(
@@ -249,6 +261,8 @@ class RabbitMQConsumer(MQConsumer):
         ) -> None:
             if method.delivery_tag is None:
                 raise ValueError("Received message without a delivery tag.")
+
+            message: dict[str, Any] | None = None
 
             try:
                 message = json.loads(body.decode("utf-8"))
@@ -265,11 +279,29 @@ class RabbitMQConsumer(MQConsumer):
                     requeue=False,
                 )
 
-            except Exception:
-                channel.basic_nack(
-                    delivery_tag=method.delivery_tag,
-                    requeue=False,
-                )
+            except Exception as exc:
+                exception_handler = get_exception_handler(destination)
+                dead_letter_queue = self._queues[destination].dead_letter_queue
+
+                if (
+                    exception_handler is not None
+                    and dead_letter_queue is not None
+                    and message is not None
+                ):
+                    exception_handler(
+                        original_queue=destination,
+                        dead_letter_queue=dead_letter_queue,
+                        data=message,
+                        exc=exc,
+                    )
+                    channel.basic_ack(
+                        delivery_tag=method.delivery_tag,
+                    )
+                else:
+                    channel.basic_nack(
+                        delivery_tag=method.delivery_tag,
+                        requeue=False,
+                    )
 
         return callback
 

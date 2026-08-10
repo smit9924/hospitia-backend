@@ -28,6 +28,8 @@ class MqForgotPasswordMessage(MqBaseSchema):
         URL for resetting the password.
     expiration_time : int
         Expiration time for the reset password link in seconds.
+    retry_count : int | None
+        Application-level retry count injected on processing failure.
     """
     to: list[str]
     subject: str
@@ -35,3 +37,4 @@ class MqForgotPasswordMessage(MqBaseSchema):
     user_last_name: str
     reset_password_link: AnyHttpUrl
     expiration_time: int
+    retry_count: int | None = None

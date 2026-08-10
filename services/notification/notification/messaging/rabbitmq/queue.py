@@ -16,6 +16,7 @@ class RabbitMQQueue(MQQueueBase):
     durable: bool
     auto_delete: bool
     arguments: dict[str, Any] | None
+    dead_letter_queue: str | None
 
     def __init__(
         self,
@@ -25,6 +26,7 @@ class RabbitMQQueue(MQQueueBase):
         durable: bool = True,
         auto_delete: bool = False,
         arguments: dict[str, Any] | None = None,
+        dead_letter_queue: str | None = None,
     ) -> None:
         self.name = name
         self.exchange_name = exchange_name
@@ -32,6 +34,7 @@ class RabbitMQQueue(MQQueueBase):
         self.durable = durable
         self.auto_delete = auto_delete
         self.arguments = arguments
+        self.dead_letter_queue = dead_letter_queue
 
     def declare(self, channel: BlockingChannel) -> None:
         """

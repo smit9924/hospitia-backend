@@ -120,6 +120,7 @@ class MQQueueBase(ABC):
     """
 
     name: str
+    dead_letter_queue: str | None
 
     @abstractmethod
     def declare(cls, channel: Any) -> None:
