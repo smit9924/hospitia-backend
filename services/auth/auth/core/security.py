@@ -247,7 +247,7 @@ def generate_secure_token() -> tuple[str, datetime]:
         A tuple containing the securely generated random token and its expiration time.
     """
     reset_token = secrets.token_urlsafe(48)
-    expire_time = datetime.now(UTC) + timedelta(minutes=settings.RESET_TOKEN_EXPIRE_MINUTES)
+    expire_time = datetime.now(UTC) + timedelta(minutes=settings.PASSWORD_RESET_TOKEN_EXPIRE_MINUTES)
     return reset_token, expire_time
 
 def hash_secure_token(token: str) -> str:

@@ -161,7 +161,7 @@ def forgot_password_user(*, session: Session, email: str) -> None:
         user_first_name=user.first_name if user.first_name else "",
         user_last_name=user.last_name if user.last_name else "",
         reset_password_link=reset_link,
-        expiration_time=settings.RESET_TOKEN_EXPIRE_MINUTES
+        expiration_time=settings.PASSWORD_RESET_TOKEN_EXPIRE_MINUTES
     )
 
     mq_client = get_mq_client()

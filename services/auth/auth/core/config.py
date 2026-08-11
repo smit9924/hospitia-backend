@@ -66,7 +66,7 @@ class Settings(BaseSettings):
 
     FRONTEND_BASE_URL: str = ... # type: ignore
 
-    RESET_TOKEN_EXPIRE_MINUTES: int = 15
+    PASSWORD_RESET_TOKEN_EXPIRE_MINUTES: int = ... # type: ignore
 
     @computed_field
     @property
