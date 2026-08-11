@@ -16,6 +16,7 @@ from jwt import (
 
 from auth.exceptions.definitions.security_exceptions import (
     InvalidCredentialsException,
+    InvalidTokenException,
     UserInactiveException,
     UserUnauthorizedException,
 )
@@ -544,5 +545,44 @@ def inactive_user_exception_handler(
 
     return JSONResponse(
         status_code=status.HTTP_403_FORBIDDEN,
+        content=response.model_dump(),
+    )
+
+
+def invalid_token_exception_handler(
+    _request: Request,
+    exc: InvalidTokenException,
+) -> JSONResponse:
+    """
+    Handle invalid or expired application token failures.
+
+    Description
+    -----------
+    Generates a standardized API error response when a provided
+    application token (such as a password reset token) is invalid,
+    expired, already used, or otherwise cannot be accepted.
+
+    Parameters
+    ----------
+    _request : Request
+        The incoming FastAPI request object.
+    exc : InvalidTokenException
+        Exception raised when the provided token is invalid.
+
+    Returns
+    -------
+    JSONResponse
+        HTTP 401 Unauthorized response with a structured error payload
+        describing the token validation failure.
+    """
+
+    response = ApiErrorResponse(
+        metadata=None,
+        errorCode=exc.errorCode,
+        message=exc.message,
+    )
+
+    return JSONResponse(
+        status_code=status.HTTP_401_UNAUTHORIZED,
         content=response.model_dump(),
     )

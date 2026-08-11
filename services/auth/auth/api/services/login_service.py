@@ -2,11 +2,12 @@ import logging
 from datetime import UTC, datetime
 
 from pydantic import AnyHttpUrl, TypeAdapter
-from sqlmodel import Session, select
+from sqlmodel import Session
 
 from auth.api.dependencies import SessionDep
 from auth.api.repositories.user_repository import (
     add_security_token,
+    find_unused_secure_token_for_update,
     get_user_by_email_or_username,
     mark_security_tokens_as_used,
 )
@@ -17,23 +18,25 @@ from auth.core.security import (
     generate_secure_token,
     get_password_hash,
     hash_secure_token,
-    verify_password,
+    verify_hash,
 )
-from auth.database.models.security import SecureToken
 from auth.database.models.users import Users
 from auth.exceptions.definitions.not_found_exceptions import UserNotFoundException
 from auth.exceptions.definitions.security_exceptions import (
     InvalidCredentialsException,
+    InvalidTokenException,
     UserInactiveException,
 )
+from auth.exceptions.definitions.validation_exceptions import WeakPasswordException
 from auth.messaging.general import get_mq_client
 from auth.schemas.auth_schemas import (
     JWTSubject,
     Token,
 )
-from auth.schemas.common_schemas import ApiErrorResponse, ErrorCodes
 from auth.schemas.mq_schemas import MqForgotPasswordMessage
 from auth.types.enums import AuthType
+from auth.api.services.common_service import is_password_strong
+
 
 log = logging.getLogger(__name__)
 
@@ -111,7 +114,7 @@ def authenticate_manual_user(*, session: Session, identifire: str, password: str
     if not user.auth_type == AuthType.MANUAL:
         return None
 
-    if (not user.password) or (not verify_password(plain_password=password, hashed_password=user.password)):
+    if (not user.password) or (not verify_hash(plain_value=password, hashed_value=user.password)):
         return None
 
     return user
@@ -150,7 +153,7 @@ def forgot_password_user(*, session: Session, email: str) -> None:
     add_security_token(session=session, user_id=user.id, token=hash_token, expires_at=expire_time)
 
 
-    reset_link: AnyHttpUrl = TypeAdapter(AnyHttpUrl).validate_python(f"{settings.FRONTEND_BASE_URL}/reset-password?token={token}")
+    reset_link: AnyHttpUrl = TypeAdapter(AnyHttpUrl).validate_python(f"{settings.FRONTEND_BASE_URL}/auth/reset-password?token={token}")
 
     message = MqForgotPasswordMessage(
         to=[email],
@@ -169,43 +172,36 @@ def reset_password_user(*, session: Session, reset_token: str, new_password: str
     Handle password reset requests.
 
     Validates the provided reset token and, if valid, updates the user's password
-    in the database. Returns a message indicating that the password has been reset,
-    without revealing whether the token is valid for security reasons.
+    in the database.
 
     parameters
     ----------
         session : Session
             Active SQLModel session for database operations.
-        token : str
+        reset_token : str
             The password reset token provided by the user.
         new_password : str
             The new plain text password that the user wants to set.
     """
-    token_hash = hash_secure_token(reset_token)
+    if not is_password_strong(new_password):
+        raise WeakPasswordException()
+
+    record = find_unused_secure_token_for_update(session=session, plain_token=reset_token)
     now = datetime.now(UTC)
 
-    # atomically consume token
-    stmt = (
-        select(SecureToken)
-        .where(SecureToken.token == token_hash)
-        .with_for_update()
-    )
-
-    record = session.exec(stmt).first()
-
     if record is None:
-        return
+        raise InvalidTokenException()
 
-    if record.used or record.expires_at <= now:
-        ApiErrorResponse(
-            metadata=None,
-            message="Invalid or expired token",
-            errorCode=ErrorCodes.INVALIDTOKEN
-        )
+    expires_at = record.expires_at
+    if expires_at.tzinfo is None:
+        expires_at = expires_at.replace(tzinfo=UTC)
+
+    if record.used or expires_at <= now:
+        raise InvalidTokenException()
 
     user = session.get(Users, record.user_id)
     if user is None:
-        return
+        raise InvalidTokenException()
 
     user.password = get_password_hash(new_password)
     record.used = True
@@ -213,4 +209,3 @@ def reset_password_user(*, session: Session, reset_token: str, new_password: str
     session.add(user)
     session.add(record)
     session.commit()
-

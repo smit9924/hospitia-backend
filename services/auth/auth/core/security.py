@@ -85,26 +85,28 @@ def create_jwt_refresh_token(*, subject: JWTSubject, remember_me: bool = False) 
     return jwt_token, expire
 
 
-def verify_password(plain_password: str, hashed_password: str) -> bool:
+def verify_hash(plain_value: str, hashed_value: str) -> bool:
     """
-    Validates a plaintext password against a bcrypt-hashed password.
+    Validates a plaintext value against a bcrypt hash.
+
+    Used for passwords, secure tokens, and other secrets stored with bcrypt.
 
     Parameters
     ----------
-    plain_password : str
-        The plaintext password to validate.
+    plain_value : str
+        The plaintext value to validate.
 
-    hashed_password : str
-        The bcrypt-hashed password to validate against.
+    hashed_value : str
+        The bcrypt-hashed value to validate against.
 
     Returns
     -------
     bool
-        True if the plaintext password matches the hashed password, otherwise False.
+        True if the plaintext value matches the hash, otherwise False.
     """
     return checkpw(
-        bytes(plain_password, encoding="utf-8"),
-        bytes(hashed_password, encoding="utf-8"),
+        bytes(plain_value, encoding="utf-8"),
+        bytes(hashed_value, encoding="utf-8"),
     )
 
 

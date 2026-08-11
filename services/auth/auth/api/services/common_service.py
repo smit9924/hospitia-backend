@@ -1,0 +1,35 @@
+import re
+
+
+def is_password_strong(password: str | None) -> bool:
+    r"""
+    Validate the strength of a password based on defined criteria.
+
+    criteria for a strong password:
+    -------------------------------
+    - Minimum length of 8 characters and maximum length of 50 characters.
+    - Contains at least one uppercase letter.
+    - Contains at least one lowercase letter.
+    - Contains at least one digit.
+    - Contains at least one special character (e.g., !@#$%^&*(),.?":{}|<>_-[];'\/+=~`).
+
+    parameters
+    ----------
+        password : str | None
+
+    returns
+    -------
+        bool : True if the password is strong, False otherwise.
+
+    """
+    if ( password is None
+        or len(password) < 8
+        or len(password) > 50
+        or not re.search(r"[A-Z]", password)
+        or not re.search(r"[a-z]", password)
+        or not re.search(r"\d", password)
+        or not re.search(r"[!@#$%^&*(),.?\":{}|<>\_\-\[\];'/+=~`]", password)
+    ):
+        return False
+
+    return True

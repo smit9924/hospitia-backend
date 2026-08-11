@@ -1,5 +1,3 @@
-import re
-
 from sqlmodel import Session
 
 from auth.api.repositories.user_repository import (
@@ -23,6 +21,7 @@ from auth.exceptions.definitions.validation_exceptions import (
 )
 from auth.schemas.auth_schemas import JWTSubject, Token
 from auth.schemas.user_schemas import ChangePassword, ProfileData, ProfileUpdate
+from auth.api.services.common_service import is_password_strong
 
 
 def get_user_profile_data(*, session: Session, user_guid: str) -> ProfileData:
@@ -94,39 +93,6 @@ def signupUser(*, session: Session, user: Users) -> Token:
         refresh_token_expiry=refresh_token_expiry,
         token_type="bearer"
     )
-
-def is_password_strong(password: str | None) -> bool:
-    r"""
-    Validate the strength of a password based on defined criteria.
-
-    criteria for a strong password:
-    -------------------------------
-    - Minimum length of 8 characters and maximum length of 50 characters.
-    - Contains at least one uppercase letter.
-    - Contains at least one lowercase letter.
-    - Contains at least one digit.
-    - Contains at least one special character (e.g., !@#$%^&*(),.?":{}|<>_-[];'\/+=~`).
-
-    parameters
-    ----------
-        password : str | None
-
-    returns
-    -------
-        bool : True if the password is strong, False otherwise.
-
-    """
-    if ( password is None
-        or len(password) < 8
-        or len(password) > 50
-        or not re.search(r"[A-Z]", password)
-        or not re.search(r"[a-z]", password)
-        or not re.search(r"\d", password)
-        or not re.search(r"[!@#$%^&*(),.?\":{}|<>\_\-\[\];'/+=~`]", password)
-    ):
-        return False
-
-    return True
 
 def validate_username_uniqueness(*, session: Session, username: str) -> None:
     """

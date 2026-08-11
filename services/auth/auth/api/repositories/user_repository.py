@@ -3,7 +3,7 @@ from datetime import datetime
 from pydantic import EmailStr
 from sqlmodel import Session, select, update
 
-from auth.core.security import get_password_hash
+from auth.core.security import get_password_hash, verify_hash
 from auth.database.models.security import SecureToken
 from auth.database.models.users import Users
 from auth.exceptions.definitions.not_found_exceptions import (
@@ -243,3 +243,35 @@ def add_security_token(*, session: Session, user_id: int, token: str, expires_at
     session.add(validated_secureToken)
     session.commit()
 
+
+def find_unused_secure_token_for_update(*, session: Session, plain_token: str) -> SecureToken | None:
+    """
+    Find an unused secure token that matches the provided plaintext token.
+
+    Loads unused secure tokens with a row-level lock and verifies the plaintext
+    token against each stored bcrypt hash.
+
+    Parameters
+    ----------
+    session : Session
+        Active database session used to query secure tokens.
+    plain_token : str
+        The plaintext token provided by the client (e.g. from a reset link).
+
+    Returns
+    -------
+    SecureToken | None
+        The matching unused secure token if found; otherwise ``None``.
+    """
+    unused_tokens_statement = (
+        select(SecureToken)
+        .where(SecureToken.used == False)  # noqa: E712
+        .with_for_update()
+    )
+    unused_tokens = session.exec(unused_tokens_statement).all()
+
+    for record in unused_tokens:
+        if verify_hash(plain_value=plain_token, hashed_value=record.token):
+            return record
+
+    return None

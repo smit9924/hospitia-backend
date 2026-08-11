@@ -11,6 +11,7 @@ from auth.api.services.login_service import (
 )
 from auth.core.security import create_jwt_access_token
 from auth.doc.security_exceptions_doc import SECURITY_EXCEPTION_DOC
+from auth.doc.validation_exception_doc import VALIDATION_EXCEPTION_DOC
 from auth.schemas.auth_schemas import (
     AccessToken,
     ForgotPasswordRequest,
@@ -104,7 +105,13 @@ async def forgot_password(
     return {"message": "A reset link has been sent to your email "}
 
 
-@router.post("/reset-password")
+@router.post(
+    "/reset-password",
+    responses={
+        **SECURITY_EXCEPTION_DOC["InvalidTokenException"],
+        **VALIDATION_EXCEPTION_DOC["WeakPasswordException"],
+    },
+)
 async def reset_password(
     session: SessionDep,
     payload: ResetPasswordRequest

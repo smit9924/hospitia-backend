@@ -23,6 +23,7 @@ from auth.exceptions.definitions.not_found_exceptions import (
 )
 from auth.exceptions.definitions.security_exceptions import (
     InvalidCredentialsException,
+    InvalidTokenException,
     UserInactiveException,
     UserUnauthorizedException,
 )
@@ -53,6 +54,7 @@ from auth.exceptions.handlers.security_exceptions_handlers import (
     invalid_key_error_exception_handler,
     invalid_signature_error_exception_handler,
     invalid_token_error_exception_handler,
+    invalid_token_exception_handler,
     missing_required_claim_error_exception_handler,
     user_unauthorized_exception_handler,
 )
@@ -82,6 +84,7 @@ def get_exception_handlers() -> dict[Any, Any]:
         UserUnauthorizedException: user_unauthorized_exception_handler,
         InvalidCredentialsException: invalid_credentials_exception_handler,
         UserInactiveException: inactive_user_exception_handler,
+        InvalidTokenException: invalid_token_exception_handler,
 
         # Register PYJWT SECURITY EXCEPTION handlers
         ExpiredSignatureError: expired_signature_error_exception_handler,

@@ -50,3 +50,16 @@ class UserInactiveException(BaseException):
     ) -> None:
         # Using INVALID_CREDENTIALS error code for UserInactiveException to avoid exposing user existence information
         super().__init__(ErrorCodes.INVALID_CREDENTIALS, message)
+
+
+class InvalidTokenException(BaseException):
+    """
+    Raised when a provided token is invalid, expired, already used,
+    or otherwise cannot be accepted for the requested operation.
+    """
+
+    def __init__(
+        self,
+        message: str = "Invalid or expired token."
+    ) -> None:
+        super().__init__(ErrorCodes.INVALIDTOKEN, message)
