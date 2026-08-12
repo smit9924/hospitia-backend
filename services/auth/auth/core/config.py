@@ -63,10 +63,13 @@ class Settings(BaseSettings):
     EMAIL_NOTIFICATION_EXCHANGE_TYPE: ExchangeType = ... # type: ignore
     FORGOT_PASSWORD_EMAIL_QUEUE: str = ... # type: ignore
     FORGOT_PASSWORD_EMAIL_QUEUE_ROUTING_KEY: str = ... # type: ignore
+    VERIFY_EMAIL_OTP_EMAIL_QUEUE: str = ... # type: ignore
+    VERIFY_EMAIL_OTP_EMAIL_QUEUE_ROUTING_KEY: str = ... # type: ignore
 
     FRONTEND_BASE_URL: str = ... # type: ignore
 
     PASSWORD_RESET_TOKEN_EXPIRE_MINUTES: int = ... # type: ignore
+    VERIFY_EMAIL_OTP_TIMEOUT: int = ... # type: ignore
 
     @computed_field
     @property

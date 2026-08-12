@@ -1,13 +1,22 @@
+import re
+from datetime import UTC, datetime, timedelta
+
 from sqlmodel import Session
 
 from auth.api.repositories.user_repository import (
+    add_otp,
     create_user,
+    get_latest_unused_otp_for_user,
     get_user_by_guid,
     get_user_by_username,
+    mark_otp_used_and_email_verified,
+    mark_otps_as_used,
     update_user_data,
     update_user_password,
 )
+from auth.api.services.common_service import generate_otp, is_password_strong
 from auth.api.services.login_service import authenticate_manual_user
+from auth.core.config import settings
 from auth.core.security import create_jwt_access_token, create_jwt_refresh_token
 from auth.database.models.users import Users
 from auth.exceptions.definitions.not_found_exceptions import (
@@ -15,13 +24,18 @@ from auth.exceptions.definitions.not_found_exceptions import (
 )
 from auth.exceptions.definitions.security_exceptions import InvalidCredentialsException
 from auth.exceptions.definitions.validation_exceptions import (
+    EmailAlreadyVerifiedException,
+    InvalidOtpException,
     InvalidUsernameException,
     UserWithUsernameAlreadyExistsException,
     WeakPasswordException,
 )
+from auth.messaging.general import get_mq_client
 from auth.schemas.auth_schemas import JWTSubject, Token
+from auth.schemas.mq_schemas import MqVerifyEmailOtpMessage
 from auth.schemas.user_schemas import ChangePassword, ProfileData, ProfileUpdate
-from auth.api.services.common_service import is_password_strong
+
+VERIFY_EMAIL_OTP_LENGTH = 6
 
 
 def get_user_profile_data(*, session: Session, user_guid: str) -> ProfileData:
@@ -35,7 +49,6 @@ def get_user_profile_data(*, session: Session, user_guid: str) -> ProfileData:
     user_guid : str
         The GUID of the user whose profile data is to be retrieved.
     """
-    # Implementation for fetching user profile data
     user = get_user_by_guid(session=session, guid=user_guid)
     if not user:
         raise UserNotFoundException()
@@ -46,8 +59,10 @@ def get_user_profile_data(*, session: Session, user_guid: str) -> ProfileData:
         role=user.role,
         username=user.username,
         first_name=user.first_name,
-        last_name=user.last_name
+        last_name=user.last_name,
+        is_email_verified=user.is_email_verified,
     )
+
 
 def signupUser(*, session: Session, user: Users) -> Token:
     """
@@ -94,6 +109,7 @@ def signupUser(*, session: Session, user: Users) -> Token:
         token_type="bearer"
     )
 
+
 def validate_username_uniqueness(*, session: Session, username: str) -> None:
     """
     Validate that the provided username is unique in the system.
@@ -117,6 +133,7 @@ def validate_username_uniqueness(*, session: Session, username: str) -> None:
 
     if user is not None:
         raise UserWithUsernameAlreadyExistsException()
+
 
 def is_valid_username(username: str | None) -> bool:
     """
@@ -160,6 +177,7 @@ def is_valid_username(username: str | None) -> bool:
 
     return True
 
+
 def update_user_profile(*, session: Session, user_guid: str, profile_data: ProfileUpdate) -> ProfileData:
     """
     Update the profile data for a user.
@@ -182,8 +200,10 @@ def update_user_profile(*, session: Session, user_guid: str, profile_data: Profi
         role=user.role,
         username=user.username,
         first_name=user.first_name,
-        last_name=user.last_name
+        last_name=user.last_name,
+        is_email_verified=user.is_email_verified,
     )
+
 
 def change_user_password(*, session: Session, user_guid: str, change_password_data: ChangePassword) -> None:
     user = get_user_by_guid(session=session, guid=user_guid)
@@ -205,3 +225,74 @@ def change_user_password(*, session: Session, user_guid: str, change_password_da
         raise WeakPasswordException()
 
     update_user_password(session=session, user_id=user.id, new_password=change_password_data.new_password)
+
+
+def request_email_verification_otp(*, session: Session, user_guid: str) -> dict[str, str]:
+    """
+    Generate and email an OTP for verifying the authenticated user's email.
+    """
+    user = get_user_by_guid(session=session, guid=user_guid)
+    if not user:
+        raise UserNotFoundException()
+
+    if user.is_email_verified:
+        raise EmailAlreadyVerifiedException()
+
+    if user.id is None:
+        raise UserNotFoundException("Persisted user without ID")
+
+    mark_otps_as_used(session=session, user_id=user.id)
+
+    otp_value = generate_otp(VERIFY_EMAIL_OTP_LENGTH)
+    expires_at = datetime.now(UTC) + timedelta(minutes=settings.VERIFY_EMAIL_OTP_TIMEOUT)
+    add_otp(session=session, user_id=user.id, otp=otp_value, expires_at=expires_at)
+
+    message = MqVerifyEmailOtpMessage(
+        to=[user.email],
+        subject="Verify Your Email",
+        user_first_name=user.first_name if user.first_name else "",
+        user_last_name=user.last_name if user.last_name else "",
+        otp=otp_value,
+        expiration_time=settings.VERIFY_EMAIL_OTP_TIMEOUT,
+    )
+
+    mq_client = get_mq_client()
+    mq_client.publish(settings.VERIFY_EMAIL_OTP_EMAIL_QUEUE, message)
+
+    return {"message": "A verification OTP has been sent to your email"}
+
+
+def verify_email_otp(*, session: Session, user_guid: str, otp: str) -> dict[str, str]:
+    """
+    Validate an email verification OTP and mark the user's email as verified.
+    """
+    user = get_user_by_guid(session=session, guid=user_guid)
+    if not user:
+        raise UserNotFoundException()
+
+    if user.is_email_verified:
+        raise EmailAlreadyVerifiedException()
+
+    if user.id is None:
+        raise UserNotFoundException("Persisted user without ID")
+
+    otp_record = get_latest_unused_otp_for_user(session=session, user_id=user.id)
+    now = datetime.now(UTC)
+
+    if otp_record is None:
+        raise InvalidOtpException()
+
+    expires_at = otp_record.expires_at
+    if expires_at.tzinfo is None:
+        expires_at = expires_at.replace(tzinfo=UTC)
+
+    if otp_record.used or expires_at <= now or otp_record.otp != otp:
+        raise InvalidOtpException()
+
+    mark_otp_used_and_email_verified(
+        session=session,
+        otp_record=otp_record,
+        user=user,
+    )
+
+    return {"message": "Email verified successfully"}

@@ -6,9 +6,11 @@ from auth.api.dependencies import RoleValidationDep, SessionDep
 from auth.api.services.user_service import (
     change_user_password,
     get_user_profile_data,
+    request_email_verification_otp,
     signupUser,
     update_user_profile,
     validate_username_uniqueness,
+    verify_email_otp,
 )
 from auth.database.models.users import Users
 from auth.doc.not_found_exceptions_doc import NOT_FOUND_EXCEPTIONS_DOC
@@ -20,10 +22,13 @@ from auth.schemas.user_schemas import (
     ProfileData,
     ProfileUpdate,
     UserSignup,
+    VerifyEmailOtpRequest,
 )
 from auth.types.enums import AuthType, UserType
 
 router = APIRouter(tags=["users"])
+
+_ALL_ROLES = [UserType.ADMIN, UserType.OWNER, UserType.MANAGER, UserType.CUSTOMER]
 
 
 @router.post("/signup", responses={**VALIDATION_EXCEPTION_DOC["UserWithEmailAlreadyExistsException"], **VALIDATION_EXCEPTION_DOC["UserWithUsernameAlreadyExistsException"], **VALIDATION_EXCEPTION_DOC["WeakPasswordException"], **VALIDATION_EXCEPTION_DOC["InvalidUsernameException"]})
@@ -63,12 +68,7 @@ async def get_user_list(
 async def get_profile_data(
     token: Annotated[
         ParsedJWTPayload,
-        Depends(RoleValidationDep([
-            UserType.ADMIN,
-            UserType.OWNER,
-            UserType.MANAGER,
-            UserType.CUSTOMER
-        ])),
+        Depends(RoleValidationDep(_ALL_ROLES, require_email_verified=False)),
     ],
     session: SessionDep,
 ) -> ProfileData:
@@ -82,12 +82,7 @@ async def get_profile_data(
 async def update_profile_data(
     token: Annotated[
         ParsedJWTPayload,
-        Depends(RoleValidationDep([
-            UserType.ADMIN,
-            UserType.OWNER,
-            UserType.MANAGER,
-            UserType.CUSTOMER
-        ])),
+        Depends(RoleValidationDep(_ALL_ROLES)),
     ],
     session: SessionDep,
     profile_update: ProfileUpdate
@@ -110,7 +105,7 @@ async def check_username_availability(session: SessionDep, username: str = Query
 async def change_password(
     token: Annotated[
         ParsedJWTPayload,
-        Depends(RoleValidationDep([UserType.ADMIN, UserType.OWNER, UserType.MANAGER, UserType.CUSTOMER])),
+        Depends(RoleValidationDep(_ALL_ROLES)),
     ],
     session: SessionDep,
     change_password_data: ChangePassword
@@ -124,3 +119,53 @@ async def change_password(
         change_password_data=change_password_data
     )
 
+
+@router.post(
+    "/request-email-verification-otp",
+    responses={
+        **NOT_FOUND_EXCEPTIONS_DOC["UserNotFoundException"],
+        **VALIDATION_EXCEPTION_DOC["EmailAlreadyVerifiedException"],
+        **SECURITY_EXCEPTION_DOC["UserUnauthorizedException"],
+    },
+)
+async def request_email_verification_otp_endpoint(
+    token: Annotated[
+        ParsedJWTPayload,
+        Depends(RoleValidationDep(_ALL_ROLES, require_email_verified=False)),
+    ],
+    session: SessionDep,
+) -> dict[str, str]:
+    """
+    Request an OTP for verifying the authenticated user's email address.
+    """
+    return request_email_verification_otp(
+        session=session,
+        user_guid=token.parsed_subject.user_guid,
+    )
+
+
+@router.post(
+    "/verify-email-otp",
+    responses={
+        **NOT_FOUND_EXCEPTIONS_DOC["UserNotFoundException"],
+        **VALIDATION_EXCEPTION_DOC["EmailAlreadyVerifiedException"],
+        **VALIDATION_EXCEPTION_DOC["InvalidOtpException"],
+        **SECURITY_EXCEPTION_DOC["UserUnauthorizedException"],
+    },
+)
+async def verify_email_otp_endpoint(
+    token: Annotated[
+        ParsedJWTPayload,
+        Depends(RoleValidationDep(_ALL_ROLES, require_email_verified=False)),
+    ],
+    session: SessionDep,
+    payload: VerifyEmailOtpRequest,
+) -> dict[str, str]:
+    """
+    Verify the authenticated user's email address using an OTP.
+    """
+    return verify_email_otp(
+        session=session,
+        user_guid=token.parsed_subject.user_guid,
+        otp=payload.otp,
+    )

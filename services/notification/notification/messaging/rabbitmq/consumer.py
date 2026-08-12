@@ -56,6 +56,7 @@ class RabbitMQConsumer(MQConsumer):
         # Registered handlers
         self._consumer_handlers: dict[str, EMAIL_MESSAGE_HANDLER] = {
             settings.FORGOT_PASSWORD_EMAIL_QUEUE: get_handler(settings.FORGOT_PASSWORD_EMAIL_QUEUE),
+            settings.VERIFY_EMAIL_OTP_EMAIL_QUEUE: get_handler(settings.VERIFY_EMAIL_OTP_EMAIL_QUEUE),
         }
 
         self._exchanges: dict[str, RabbitMQExchange] = {
@@ -76,6 +77,17 @@ class RabbitMQConsumer(MQConsumer):
                 name=settings.FORGOT_PASSWORD_DEAD_LETTER_EMAIL_QUEUE,
                 exchange_name=settings.EMAIL_NOTIFICATION_EXCHANGE,
                 routing_key=settings.FORGOT_PASSWORD_DEAD_LETTER_EMAIL_QUEUE_ROUTING_KEY,
+            ),
+            settings.VERIFY_EMAIL_OTP_EMAIL_QUEUE: RabbitMQQueue(
+                name=settings.VERIFY_EMAIL_OTP_EMAIL_QUEUE,
+                exchange_name=settings.EMAIL_NOTIFICATION_EXCHANGE,
+                routing_key=settings.VERIFY_EMAIL_OTP_EMAIL_QUEUE_ROUTING_KEY,
+                dead_letter_queue=settings.VERIFY_EMAIL_OTP_DEAD_LETTER_EMAIL_QUEUE,
+            ),
+            settings.VERIFY_EMAIL_OTP_DEAD_LETTER_EMAIL_QUEUE: RabbitMQQueue(
+                name=settings.VERIFY_EMAIL_OTP_DEAD_LETTER_EMAIL_QUEUE,
+                exchange_name=settings.EMAIL_NOTIFICATION_EXCHANGE,
+                routing_key=settings.VERIFY_EMAIL_OTP_DEAD_LETTER_EMAIL_QUEUE_ROUTING_KEY,
             ),
         }
 

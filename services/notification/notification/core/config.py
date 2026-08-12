@@ -37,6 +37,13 @@ class Settings(BaseSettings):
     FORGOT_PASSWORD_DEAD_LETTER_EMAIL_QUEUE_ROUTING_KEY: str = ... # type: ignore
     FORGOT_PASSWORD_EMAIL_RETRY_COUNT: int = ... # type: ignore
 
+    # Verify email OTP
+    VERIFY_EMAIL_OTP_EMAIL_QUEUE: str = ... # type: ignore
+    VERIFY_EMAIL_OTP_EMAIL_QUEUE_ROUTING_KEY: str = ... # type: ignore
+    VERIFY_EMAIL_OTP_DEAD_LETTER_EMAIL_QUEUE: str = ... # type: ignore
+    VERIFY_EMAIL_OTP_DEAD_LETTER_EMAIL_QUEUE_ROUTING_KEY: str = ... # type: ignore
+    VERIFY_EMAIL_OTP_EMAIL_RETRY_COUNT: int = ... # type: ignore
+
     # Email (SMTP)
     SMTP_HOST: str = ... # type: ignore
     SMTP_PORT: int = ... # type: ignore

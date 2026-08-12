@@ -4,6 +4,7 @@ from pydantic import EmailStr
 from sqlmodel import Session, select, update
 
 from auth.core.security import get_password_hash, verify_hash
+from auth.database.models.otp import Otp
 from auth.database.models.security import SecureToken
 from auth.database.models.users import Users
 from auth.exceptions.definitions.not_found_exceptions import (
@@ -275,3 +276,63 @@ def find_unused_secure_token_for_update(*, session: Session, plain_token: str) -
             return record
 
     return None
+
+
+def mark_otps_as_used(*, session: Session, user_id: int | None) -> None:
+    """Invalidate all unused OTPs for a user by marking them as used."""
+    if user_id is None:
+        raise UserNotFoundException()
+
+    mark_all_otps_as_used_statement = (
+        update(Otp).where(Otp.user_id == user_id, Otp.used == False).values(used=True)  # noqa: E712
+    )
+    session.exec(mark_all_otps_as_used_statement)
+    session.commit()
+
+
+def add_otp(*, session: Session, user_id: int, otp: str, expires_at: datetime) -> Otp:
+    """Persist a new OTP record for a user."""
+    otp_record = Otp(
+        user_id=user_id,
+        otp=otp,
+        expires_at=expires_at,
+    )
+    validated_otp = Otp.model_validate(otp_record)
+    session.add(validated_otp)
+    session.commit()
+    session.refresh(validated_otp)
+    return validated_otp
+
+
+def get_latest_unused_otp_for_user(*, session: Session, user_id: int) -> Otp | None:
+    """Return the most recently created unused OTP for a user."""
+    statement = (
+        select(Otp)
+        .where(Otp.user_id == user_id, Otp.used == False)  # noqa: E712
+        .order_by(Otp.created_at.desc())  # type: ignore[attr-defined]
+        .with_for_update()
+    )
+    return session.exec(statement).first()
+
+
+def mark_user_email_verified(*, session: Session, user: Users) -> None:
+    """Mark a user's email as verified."""
+    user.is_email_verified = True
+    session.add(user)
+    session.commit()
+    session.refresh(user)
+
+
+def mark_otp_used_and_email_verified(
+    *,
+    session: Session,
+    otp_record: Otp,
+    user: Users,
+) -> None:
+    """Mark an OTP as used and the user's email as verified in one transaction."""
+    otp_record.used = True
+    user.is_email_verified = True
+    session.add(otp_record)
+    session.add(user)
+    session.commit()
+    session.refresh(user)

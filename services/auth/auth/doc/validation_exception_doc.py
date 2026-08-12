@@ -81,5 +81,35 @@ VALIDATION_EXCEPTION_DOC = {
                 }
             },
         }
-    }
+    },
+    "EmailAlreadyVerifiedException": {
+        409: {
+            "description": "User email is already verified.",
+            "model": ApiErrorResponse[None],
+            "content": {
+                "application/json": {
+                    "example": {
+                        "metadata": "None",
+                        "message": "Your email address has already been verified.",
+                        "errorCode": ErrorCodes.EMAIL_ALREADY_VERIFIED
+                    }
+                }
+            },
+        }
+    },
+    "InvalidOtpException": {
+        400: {
+            "description": "Provided OTP is invalid or expired.",
+            "model": ApiErrorResponse[None],
+            "content": {
+                "application/json": {
+                    "example": {
+                        "metadata": "None",
+                        "message": "The provided OTP is invalid or has expired.",
+                        "errorCode": ErrorCodes.INVALID_OTP
+                    }
+                }
+            },
+        }
+    },
 }

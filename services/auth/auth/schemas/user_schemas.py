@@ -20,6 +20,7 @@ class ProfileData(BaseSchema):
     guid: str
     first_name: str | None = None
     last_name: str | None = None
+    is_email_verified: bool = False
 
 
 class ProfileUpdate(BaseSchema):
@@ -31,3 +32,7 @@ class ProfileUpdate(BaseSchema):
 class ChangePassword(BaseSchema):
     current_password: str
     new_password: str
+
+
+class VerifyEmailOtpRequest(BaseSchema):
+    otp: str

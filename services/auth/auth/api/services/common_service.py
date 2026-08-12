@@ -1,4 +1,26 @@
 import re
+import secrets
+
+
+def generate_otp(length: int) -> str:
+    """
+    Generate a cryptographically secure numeric OTP of the given length.
+
+    Parameters
+    ----------
+    length : int
+        Number of digits in the OTP. Must be a positive integer.
+
+    Returns
+    -------
+    str
+        A zero-padded numeric OTP string of the requested length.
+    """
+    if length < 1:
+        raise ValueError("OTP length must be a positive integer.")
+
+    upper_bound = 10**length
+    return str(secrets.randbelow(upper_bound)).zfill(length)
 
 
 def is_password_strong(password: str | None) -> bool:

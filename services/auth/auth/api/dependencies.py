@@ -46,6 +46,7 @@ TokenDep = Annotated[str, Depends(oauth2_flow)]
 
 def RoleValidationDep(
     roles: list[UserType] | None = None,
+    require_email_verified: bool = True,
 ) -> Callable:
     """
     Dependency factory for JWT validation and role-based authorization.
@@ -53,15 +54,19 @@ def RoleValidationDep(
     Creates and returns a FastAPI dependency function that:
     - Decodes and validates a JWT access token
     - Authorizes the authenticated user against the provided role list
+    - Optionally requires the user's email to be verified
 
-    The returned dependency captures the `roles` argument via a closure,
-    allowing role requirements to be declared at route definition time
-    while keeping the authorization logic centralized and stateless.
+    The returned dependency captures the `roles` and `require_email_verified`
+    arguments via a closure, allowing role and email-verification requirements
+    to be declared at route definition time while keeping the authorization
+    logic centralized and stateless.
 
     Parameters
     ----------
     roles : list[UserType] | None
         List of allowed user roles. If None, only token validity is enforced.
+    require_email_verified : bool
+        When True (default), the user must have a verified email address.
 
     Returns
     -------
@@ -102,6 +107,7 @@ def RoleValidationDep(
             token_payload=token_payload,
             session=session,
             roles=roles,
+            require_email_verified=require_email_verified,
         )
         return token_payload
 

@@ -199,6 +199,7 @@ def authorize_user(
     token_payload: ParsedJWTPayload,
     session: Session,
     roles: list[UserType],
+    require_email_verified: bool = True,
 ) -> None:
     """
     Authorize the authenticated user based on allowed roles.
@@ -206,8 +207,8 @@ def authorize_user(
     Description
     -----------
     Validates that the user associated with the JWT payload exists in the
-    database and has a role included in the allowed roles list. If `roles`
-    is None, authorization is skipped and access is granted to all users.
+    database and has a role included in the allowed roles list. If
+    ``require_email_verified`` is True, the user's email must also be verified.
 
     Parameters
     ----------
@@ -218,6 +219,8 @@ def authorize_user(
     roles : list[UserType] | None, optional
         List of roles allowed to access the resource. If None, access is
         allowed for all authenticated users.
+    require_email_verified : bool
+        When True, reject users whose email has not been verified.
 
     Returns
     -------
@@ -226,7 +229,8 @@ def authorize_user(
     Raises
     ------
     UserUnauthorizedException
-        If the user does not exist or does not have a permitted role.
+        If the user does not exist, does not have a permitted role, or has
+        not verified their email when verification is required.
     """
 
     stmt = select(Users).where(
@@ -235,6 +239,9 @@ def authorize_user(
     user = session.exec(stmt).first()
 
     if not user or user.role not in roles:
+        raise UserUnauthorizedException()
+
+    if require_email_verified and not user.is_email_verified:
         raise UserUnauthorizedException()
 
 def generate_secure_token() -> tuple[str, datetime]:

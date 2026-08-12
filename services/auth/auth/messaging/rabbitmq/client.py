@@ -51,6 +51,11 @@ class RabbitMQClient(MQClient):
                 exchange_name=settings.EMAIL_NOTIFICATION_EXCHANGE,
                 routing_key=settings.FORGOT_PASSWORD_EMAIL_QUEUE_ROUTING_KEY,
             ),
+            settings.VERIFY_EMAIL_OTP_EMAIL_QUEUE: RabbitMQQueue(
+                name=settings.VERIFY_EMAIL_OTP_EMAIL_QUEUE,
+                exchange_name=settings.EMAIL_NOTIFICATION_EXCHANGE,
+                routing_key=settings.VERIFY_EMAIL_OTP_EMAIL_QUEUE_ROUTING_KEY,
+            ),
         }
 
     def connect(self) -> None:

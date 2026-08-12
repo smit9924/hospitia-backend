@@ -61,3 +61,23 @@ class InvalidUsernameException(BaseException):
         message: str = "The provided username is invalid. Username must be between 3 and 50 characters long and can only contain letters, digits, and underscores. It must start with a letter and end with a letter or digit."
     ) -> None:
         super().__init__(ErrorCodes.INVALID_USERNAME, message)
+
+
+class EmailAlreadyVerifiedException(BaseException):
+    """Raised when email verification is requested for an already verified email."""
+
+    def __init__(
+        self,
+        message: str = "Your email address has already been verified."
+    ) -> None:
+        super().__init__(ErrorCodes.EMAIL_ALREADY_VERIFIED, message)
+
+
+class InvalidOtpException(BaseException):
+    """Raised when a provided OTP is invalid, expired, or already used."""
+
+    def __init__(
+        self,
+        message: str = "The provided OTP is invalid or has expired."
+    ) -> None:
+        super().__init__(ErrorCodes.INVALID_OTP, message)

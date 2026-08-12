@@ -94,6 +94,7 @@ class Users(SQLModel, table=True):
     password: str | None = Field(default=None, max_length=255)
     auth_type: AuthType = Field(default=AuthType.MANUAL.value, nullable=False, sa_type=Integer)
     role: UserType = Field(default=UserType.CUSTOMER, nullable=False, sa_type=Integer)
+    is_email_verified: bool = Field(default=False, nullable=False, sa_type=Boolean)
     is_active: bool = Field(default=False, nullable=False, sa_type=Boolean)
     is_deleted: bool = Field(default=False, nullable=False, sa_type=Boolean)
 

@@ -28,6 +28,8 @@ from auth.exceptions.definitions.security_exceptions import (
     UserUnauthorizedException,
 )
 from auth.exceptions.definitions.validation_exceptions import (
+    EmailAlreadyVerifiedException,
+    InvalidOtpException,
     InvalidUsernameException,
     PublicEmailNotAllowedException,
     UserWithEmailAlreadyExistsException,
@@ -59,6 +61,8 @@ from auth.exceptions.handlers.security_exceptions_handlers import (
     user_unauthorized_exception_handler,
 )
 from auth.exceptions.handlers.validation_exception_handlers import (
+    email_already_verified_exception_handler,
+    invalid_otp_exception_handler,
     invalid_username_exception_handler,
     public_email_not_allowed_exception_handler,
     user_with_email_already_exists_exception_handler,
@@ -79,6 +83,8 @@ def get_exception_handlers() -> dict[Any, Any]:
         UserWithUsernameAlreadyExistsException: user_with_username_already_exists_exception_handler,
         WeakPasswordException: weak_password_exception_handler,
         InvalidUsernameException: invalid_username_exception_handler,
+        EmailAlreadyVerifiedException: email_already_verified_exception_handler,
+        InvalidOtpException: invalid_otp_exception_handler,
 
         # Register CUSTOM SECURITY EXCEPTION handlers
         UserUnauthorizedException: user_unauthorized_exception_handler,

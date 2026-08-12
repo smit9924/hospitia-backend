@@ -2,6 +2,8 @@ from fastapi import Request, status
 from fastapi.responses import JSONResponse
 
 from auth.exceptions.definitions.validation_exceptions import (
+    EmailAlreadyVerifiedException,
+    InvalidOtpException,
     InvalidUsernameException,
     PublicEmailNotAllowedException,
     UserWithEmailAlreadyExistsException,
@@ -191,5 +193,43 @@ def  invalid_username_exception_handler(_request: Request, exc: InvalidUsernameE
 
     return JSONResponse(
         status_code=status.HTTP_409_CONFLICT,
+        content=response.model_dump(),
+    )
+
+
+def email_already_verified_exception_handler(
+    _request: Request,
+    exc: EmailAlreadyVerifiedException,
+) -> JSONResponse:
+    """
+    Handle the exception raised when email is already verified.
+    """
+    response = ApiErrorResponse(
+        metadata=None,
+        errorCode=exc.errorCode,
+        message=exc.message,
+    )
+
+    return JSONResponse(
+        status_code=status.HTTP_409_CONFLICT,
+        content=response.model_dump(),
+    )
+
+
+def invalid_otp_exception_handler(
+    _request: Request,
+    exc: InvalidOtpException,
+) -> JSONResponse:
+    """
+    Handle the exception raised when an OTP is invalid or expired.
+    """
+    response = ApiErrorResponse(
+        metadata=None,
+        errorCode=exc.errorCode,
+        message=exc.message,
+    )
+
+    return JSONResponse(
+        status_code=status.HTTP_400_BAD_REQUEST,
         content=response.model_dump(),
     )
