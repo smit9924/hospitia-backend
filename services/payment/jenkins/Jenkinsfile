@@ -1,0 +1,260 @@
+pipeline {
+    agent {
+        label 'docker-agent-python'
+    }
+
+    options {
+        skipDefaultCheckout(true)
+
+        timestamps()
+
+        disableConcurrentBuilds()
+
+        timeout(
+            time: 15,
+            unit: 'MINUTES'
+        )
+
+        buildDiscarder(
+            logRotator(
+                numToKeepStr: '30'
+            )
+        )
+    }
+
+    environment {
+        APPLICATION_NAME = 'payment-service'
+        APPLICATION_DIRECTORY = 'services/payment'
+        DOCKER_FILE = 'jenkins/Dockerfile'
+        DOCKER_IMAGE = 'smit9924/hospitia-payment-service'
+        DOCKER_BUILDKIT = '1'
+    }
+
+    stages {
+
+        stage('Initialize') {
+
+            steps {
+
+                script {
+
+                    if (!params.SOURCE_BRANCH?.trim()) {
+                        error('SOURCE_BRANCH must not be empty.')
+                    }
+
+                    env.SOURCE_BRANCH =
+                        params.SOURCE_BRANCH.trim()
+
+                    currentBuild.displayName =
+                        "#${env.BUILD_NUMBER} ${env.SOURCE_BRANCH}"
+
+                    currentBuild.description =
+                        "Application: ${env.APPLICATION_NAME}"
+                }
+            }
+        }
+
+       stage('Checkout Source') {
+
+            steps {
+
+                deleteDir()
+
+                checkout([
+                    $class: 'GitSCM',
+
+                    branches: [[
+                        name: "*/${env.SOURCE_BRANCH}"
+                    ]],
+
+                    userRemoteConfigs: [[
+                        url: scm.userRemoteConfigs[0].url,
+                        credentialsId: scm.userRemoteConfigs[0].credentialsId
+                    ]],
+
+                    extensions: [
+                        [
+                            $class: 'CleanBeforeCheckout'
+                        ],
+                        [
+                            $class: 'PruneStaleBranch'
+                        ]
+                    ]
+                ])
+            }
+        }
+
+        stage('Capture Build Metadata') {
+
+            steps {
+
+                script {
+
+                    env.GIT_COMMIT_FULL = sh(
+                        script: 'git rev-parse HEAD',
+                        returnStdout: true
+                    ).trim()
+
+                    env.GIT_COMMIT_SHORT = sh(
+                        script: 'git rev-parse --short=12 HEAD',
+                        returnStdout: true
+                    ).trim()
+
+                    env.GIT_BRANCH = sh(
+                        script: 'git rev-parse --abbrev-ref HEAD',
+                        returnStdout: true
+                    ).trim()
+
+                    env.GIT_COMMIT_DATE = sh(
+                        script: 'git show -s --format=%cI HEAD',
+                        returnStdout: true
+                    ).trim()
+
+                    env.DOCKER_IMAGE_TAG = env.GIT_COMMIT_SHORT
+
+                    currentBuild.displayName =
+                        "#${env.BUILD_NUMBER} ${env.GIT_BRANCH}"
+
+                    currentBuild.description =
+                        "Commit: ${env.GIT_COMMIT_SHORT}"
+                }
+
+                sh '''
+                    printf 'Repository : %s\n' "$(git config --get remote.origin.url)"
+                    printf 'Branch     : %s\n' "${GIT_BRANCH}"
+                    printf 'Commit     : %s\n' "${GIT_COMMIT_FULL}"
+                    printf 'Image Tag  : %s\n' "${DOCKER_IMAGE_TAG}"
+                '''
+            }
+        }
+
+        stage('Validate Repository') {
+
+            steps {
+
+                sh '''
+                    set -Eeuo pipefail
+
+                    chmod +x ${APPLICATION_DIRECTORY}/jenkins/scripts/validate-repo.sh
+
+                    ${APPLICATION_DIRECTORY}/jenkins/scripts/validate-repo.sh
+                '''
+            }
+        }
+
+        stage('Build Docker Image') {
+
+            steps {
+
+                dir(env.APPLICATION_DIRECTORY) {
+
+                    script {
+
+                        appImage = docker.build(
+                            "${DOCKER_IMAGE}:${DOCKER_IMAGE_TAG}",
+                            "--pull -f ${DOCKER_FILE} ."
+                        )
+                    }
+                }
+            }
+        }
+
+        stage('Push Docker Image') {
+
+            steps {
+
+                script {
+
+                    docker.withRegistry('', 'dockerhub') {
+
+                        appImage.push()
+
+                        appImage.push('latest')
+                    }
+                }
+            }
+        }
+
+        stage('Deploy') {
+
+            steps {
+
+                script {
+
+                    docker.withRegistry('', 'dockerhub') {
+
+                        withCredentials([
+                            sshUserPrivateKey(
+                                credentialsId: 'deploy-ssh',
+                                keyFileVariable: 'SSH_KEY',
+                                usernameVariable: 'SSH_USER'
+                            ),
+                            string(
+                                credentialsId: 'deployment-server-ip',
+                                variable: 'DEPLOYMENT_SERVER_PUBLIC_IP'
+                            ),
+                            usernamePassword(
+                                credentialsId: 'dockerhub',
+                                usernameVariable: 'DOCKERHUB_USERNAME',
+                                passwordVariable: 'DOCKERHUB_TOKEN'
+                            )
+                        ]) {
+
+                            sh """
+                                set -Eeuo pipefail
+
+                                ssh \
+                                    -i "${SSH_KEY}" \
+                                    -o StrictHostKeyChecking=no \
+                                    "${SSH_USER}@${DEPLOYMENT_SERVER_PUBLIC_IP}" <<EOF
+
+                                set -Eeuo pipefail
+
+                                echo "${DOCKERHUB_TOKEN}" | docker login \
+                                    --username "${DOCKERHUB_USERNAME}" \
+                                    --password-stdin
+
+                                docker pull ${DOCKER_IMAGE}:latest
+
+                                docker stop ${APPLICATION_NAME} || true
+                                docker rm ${APPLICATION_NAME} || true
+
+                                docker run -d \
+                                    --name ${APPLICATION_NAME} \
+                                    --restart on-failure \
+                                    -p 9004:9004 \
+                                    --network hospitia-network \
+                                    --env-file /opt/hospitia/${APPLICATION_NAME}/.env \
+                                    ${DOCKER_IMAGE}:latest
+
+                                docker logout
+
+                                docker image prune -f
+
+                            """
+                        }
+                    }
+                }
+            }
+        }
+
+        stage('Build Summary') {
+
+            steps {
+
+                sh '''
+                    printf '\n'
+                    printf '=========================================\n'
+                    printf 'Build Summary\n'
+                    printf '=========================================\n'
+                    printf 'Application : %s\n' "${APPLICATION_NAME}"
+                    printf 'Branch      : %s\n' "${GIT_BRANCH}"
+                    printf 'Commit      : %s\n' "${GIT_COMMIT_SHORT}"
+                    printf 'Image       : %s\n' "${DOCKER_IMAGE}"
+                    printf 'Image Tag   : %s\n' "${DOCKER_IMAGE_TAG}"
+                    printf '=========================================\n'
+                '''
+            }
+        }
+    }
+}

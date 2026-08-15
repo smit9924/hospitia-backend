@@ -70,6 +70,15 @@ APP=$1
 if [[ $APP == "auth" ]]; then
     echo "Set path for the AUTH app!"
     APP_PATH="$BASE_PATH/auth/auth/database"
+elif [[ $APP == "booking" ]]; then
+    echo "Set path for the BOOKING app!"
+    APP_PATH="$BASE_PATH/booking/booking/database"
+elif [[ $APP == "payment" ]]; then
+    echo "Set path for the PAYMENT app!"
+    APP_PATH="$BASE_PATH/payment/payment/database"
+elif [[ $APP == "dashboard" ]]; then
+    echo "Set path for the DASHBOARD app!"
+    APP_PATH="$BASE_PATH/dashboard/dashboard/database"
 # Add conditions to get path for another apps
 # elif [[ "$APP" -eq "anotherApp" ]] then
 #     another path
