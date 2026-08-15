@@ -76,6 +76,9 @@ elif [[ $APP == "booking" ]]; then
 elif [[ $APP == "payment" ]]; then
     echo "Set path for the PAYMENT app!"
     APP_PATH="$BASE_PATH/payment/payment/database"
+elif [[ $APP == "dashboard" ]]; then
+    echo "Set path for the DASHBOARD app!"
+    APP_PATH="$BASE_PATH/dashboard/dashboard/database"
 # Add conditions to get path for another apps
 # elif [[ "$APP" -eq "anotherApp" ]] then
 #     another path
