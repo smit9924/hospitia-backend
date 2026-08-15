@@ -41,6 +41,8 @@ class UsersReplica(SQLModel, table=True):
     - Indexed fields (`id`, `guid`, `email`) enable fast queries
     """
 
+    __tablename__ = "usersreplica"
+
     id: int | None = Field(default=None, primary_key=True, index=True)
     guid: uuid.UUID | None = Field(default_factory=uuid.uuid4, unique=True, nullable=False, index=True)
     email: EmailStr = Field(unique=True, index=True, max_length=255)
