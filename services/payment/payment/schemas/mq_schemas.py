@@ -1,6 +1,6 @@
 from pydantic import AnyHttpUrl
 
-from booking.schemas.base_schemas import BaseSchema
+from payment.schemas.base_schemas import BaseSchema
 
 
 class MqBaseSchema(BaseSchema):
