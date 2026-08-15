@@ -222,7 +222,7 @@ pipeline {
                                 docker run -d \
                                     --name ${APPLICATION_NAME} \
                                     --restart on-failure \
-                                    -p 9004:9004 \
+                                    -p 9006:9006 \
                                     --network hospitia-network \
                                     --env-file /opt/hospitia/${APPLICATION_NAME}/.env \
                                     ${DOCKER_IMAGE}:latest
