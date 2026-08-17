@@ -53,12 +53,22 @@ class Settings(BaseSettings):
     RABBITMQ_PASSWORD: str = ...  # type: ignore
     RABBITMQ_PUBLISH_RETRY_ATTEMPTS: int = ...  # type: ignore
     RABBITMQ_PUBLISH_RETRY_DELAY: int = ...  # type: ignore
+    RABBITMQ_CONSUMER_RETRY_DELAY: int = ...  # type: ignore
+    RABBITMQ_CONSUMER_PREFETCH_COUNT: int = ...  # type: ignore
 
     # Notification topology
     EMAIL_NOTIFICATION_EXCHANGE: str = ... # type: ignore
     EMAIL_NOTIFICATION_EXCHANGE_TYPE: ExchangeType = ... # type: ignore
     FORGOT_PASSWORD_EMAIL_QUEUE: str = ... # type: ignore
     FORGOT_PASSWORD_EMAIL_QUEUE_ROUTING_KEY: str = ... # type: ignore
+
+    USER_EVENTS_EXCHANGE: str = ... # type: ignore
+    USER_EVENTS_EXCHANGE_TYPE: ExchangeType = ... # type: ignore
+    USER_CREATED_QUEUE: str = ... # type: ignore
+    USER_CREATED_QUEUE_ROUTING_KEY: str = ... # type: ignore
+    USER_CREATED_DEAD_LETTER_QUEUE: str = ... # type: ignore
+    USER_CREATED_DEAD_LETTER_QUEUE_ROUTING_KEY: str = ... # type: ignore
+    USER_CREATED_RETRY_COUNT: int = ... # type: ignore
 
     FRONTEND_BASE_URL: str = ... # type: ignore
 

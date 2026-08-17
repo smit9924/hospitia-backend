@@ -1,4 +1,6 @@
+import json
 from time import sleep
+from typing import Any
 
 from pika import (
     BasicProperties,
@@ -12,7 +14,9 @@ from pika.exceptions import (
     AMQPConnectionError,
     ChannelClosedByBroker,
     ConnectionClosed,
+    NackError,
     StreamLostError,
+    UnroutableError,
 )
 
 from dashboard.core.config import settings
@@ -21,7 +25,7 @@ from dashboard.exceptions.definitions.messaging_queue_exceptions import (
     MQNotFoundException,
 )
 from dashboard.messaging.base import MQClient
-from dashboard.schemas.base_schemas import BaseModel
+from dashboard.schemas.base_schemas import BaseSchema
 
 from .exchange import RabbitMQExchange
 from .queue import RabbitMQQueue
@@ -43,6 +47,10 @@ class RabbitMQClient(MQClient):
                 name=settings.EMAIL_NOTIFICATION_EXCHANGE,
                 exchange_type=settings.EMAIL_NOTIFICATION_EXCHANGE_TYPE,
             ),
+            settings.USER_EVENTS_EXCHANGE: RabbitMQExchange(
+                name=settings.USER_EVENTS_EXCHANGE,
+                exchange_type=settings.USER_EVENTS_EXCHANGE_TYPE,
+            ),
         }
 
         self._queues: dict[str, RabbitMQQueue] = {
@@ -50,6 +58,17 @@ class RabbitMQClient(MQClient):
                 name=settings.FORGOT_PASSWORD_EMAIL_QUEUE,
                 exchange_name=settings.EMAIL_NOTIFICATION_EXCHANGE,
                 routing_key=settings.FORGOT_PASSWORD_EMAIL_QUEUE_ROUTING_KEY,
+            ),
+            settings.USER_CREATED_QUEUE: RabbitMQQueue(
+                name=settings.USER_CREATED_QUEUE,
+                exchange_name=settings.USER_EVENTS_EXCHANGE,
+                routing_key=settings.USER_CREATED_QUEUE_ROUTING_KEY,
+                dead_letter_queue=settings.USER_CREATED_DEAD_LETTER_QUEUE,
+            ),
+            settings.USER_CREATED_DEAD_LETTER_QUEUE: RabbitMQQueue(
+                name=settings.USER_CREATED_DEAD_LETTER_QUEUE,
+                exchange_name=settings.USER_EVENTS_EXCHANGE,
+                routing_key=settings.USER_CREATED_DEAD_LETTER_QUEUE_ROUTING_KEY,
             ),
         }
 
@@ -77,23 +96,37 @@ class RabbitMQClient(MQClient):
         finally:
             self.__close_channel(channel)
 
-    def publish(self, destination: str, message: BaseModel) -> None:
+    def publish(
+        self,
+        destination: str,
+        message: BaseSchema,
+        routing_key: str | None = None,
+    ) -> None:
         """
-        Publishes a JSON message to the configured queue route.
+        Publishes a JSON message to a registered queue or exchange.
 
         Args:
-            destination: Registered queue name.
+            destination: Registered queue name or exchange name.
             message: Message payload to publish.
+            routing_key: Required when destination is an exchange.
 
         Raises:
-            MQNotFoundException: If the destination queue is not registered.
+            MQNotFoundException: If the destination is not registered.
         """
 
-        if destination not in self._queues:
-            raise MQNotFoundException()
+        if destination in self._queues:
+            queue = self._queues[destination]
+            self.__publish_with_retry(queue.exchange_name, queue.routing_key, message)
+            return
 
-        queue = self._queues[destination]
-        self.__publish_with_retry(queue, message)
+        if destination in self._exchanges:
+            exchange = self._exchanges[destination]
+            if routing_key is None:
+                raise MQNotFoundException()
+            self.__publish_with_retry(exchange.name, routing_key, message)
+            return
+
+        raise MQNotFoundException()
 
     def close(self) -> None:
         """
@@ -105,12 +138,18 @@ class RabbitMQClient(MQClient):
         if self._connection and self._connection.is_open:
             self._connection.close()
 
-    def __publish_with_retry(self, queue: RabbitMQQueue, message: BaseModel) -> None:
+    def __publish_with_retry(
+        self,
+        exchange_name: str,
+        routing_key: str,
+        message: BaseSchema,
+    ) -> None:
         """
         Publishes a message with retry for recoverable RabbitMQ failures.
 
         Args:
-            queue: Registered RabbitMQ queue route.
+            exchange_name: Target exchange name.
+            routing_key: Routing key used to route the message.
             message: Message payload to publish.
         """
 
@@ -118,8 +157,10 @@ class RabbitMQClient(MQClient):
 
         for attempt in range(1, settings.RABBITMQ_PUBLISH_RETRY_ATTEMPTS + 1):
             try:
-                self.__publish_once(queue, message)
+                self.__publish_once(exchange_name, routing_key, message)
                 return
+            except (UnroutableError, NackError) as error:
+                raise MQMessagePublishException() from error
             except (
                 AMQPConnectionError,
                 AMQPChannelError,
@@ -136,12 +177,18 @@ class RabbitMQClient(MQClient):
         if last_error is not None:
             raise MQMessagePublishException() from last_error
 
-    def __publish_once(self, queue: RabbitMQQueue, message: BaseModel) -> None:
+    def __publish_once(
+        self,
+        exchange_name: str,
+        routing_key: str,
+        message: BaseSchema,
+    ) -> None:
         """
-        Publishes a message once using a fresh RabbitMQ channel.
+        Publishes a message once using a publisher-confirm channel.
 
         Args:
-            queue: Registered RabbitMQ queue route.
+            exchange_name: Target exchange name.
+            routing_key: Routing key used to route the message.
             message: Message payload to publish.
         """
         # Establish connection if lost with any reason
@@ -151,10 +198,9 @@ class RabbitMQClient(MQClient):
             self._publish_channel = self.__get_channel()
             self._publish_channel.confirm_delivery()
 
-
         self._publish_channel.basic_publish(
-            exchange=queue.exchange_name,
-            routing_key=queue.routing_key,
+            exchange=exchange_name,
+            routing_key=routing_key,
             body=message.model_dump_json().encode('utf-8'),
             properties=BasicProperties(
                 content_type='application/json',
@@ -167,7 +213,6 @@ class RabbitMQClient(MQClient):
         """
         Creates a RabbitMQ connection when no active connection exists.
         """
-
         if self._connection is not None and self._connection.is_open:
             return
 
@@ -212,6 +257,7 @@ class RabbitMQClient(MQClient):
             self.close()
         finally:
             self._connection = None
+            self._publish_channel = None
 
     def __close_channel(self, channel: BlockingChannel) -> None:
         """

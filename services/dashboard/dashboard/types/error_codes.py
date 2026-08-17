@@ -18,3 +18,4 @@ class ErrorCodes(IntEnum):
     INVALID_OTP = 1013
 
     # Dashboard service error codes (4000-4099)
+    HANDLER_NOT_FOUND = 4001
