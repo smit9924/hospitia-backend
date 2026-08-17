@@ -49,6 +49,7 @@ async def signup(session: SessionDep, user_signup: UserSignup) -> Token:
         last_name=user_signup.last_name,
         auth_type=AuthType.MANUAL,
         role=UserType.OWNER,
+        is_active=True,
     )
 
     return signupUser(session=session, user=user)

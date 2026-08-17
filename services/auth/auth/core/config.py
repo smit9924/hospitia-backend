@@ -66,6 +66,18 @@ class Settings(BaseSettings):
     VERIFY_EMAIL_OTP_EMAIL_QUEUE: str = ... # type: ignore
     VERIFY_EMAIL_OTP_EMAIL_QUEUE_ROUTING_KEY: str = ... # type: ignore
 
+    # User events topology (Auth declares subscriber queues so events persist if those services are down)
+    USER_EVENTS_EXCHANGE: str = ... # type: ignore
+    USER_EVENTS_EXCHANGE_TYPE: ExchangeType = ... # type: ignore
+    USER_CREATED_EVENT_TYPE: str = ... # type: ignore
+    USER_CREATED_ROUTING_KEY: str = ... # type: ignore
+    BOOKING_USER_CREATED_QUEUE: str = ... # type: ignore
+    BOOKING_USER_CREATED_QUEUE_ROUTING_KEY: str = ... # type: ignore
+    PAYMENT_USER_CREATED_QUEUE: str = ... # type: ignore
+    PAYMENT_USER_CREATED_QUEUE_ROUTING_KEY: str = ... # type: ignore
+    DASHBOARD_USER_CREATED_QUEUE: str = ... # type: ignore
+    DASHBOARD_USER_CREATED_QUEUE_ROUTING_KEY: str = ... # type: ignore
+
     FRONTEND_BASE_URL: str = ... # type: ignore
 
     PASSWORD_RESET_TOKEN_EXPIRE_MINUTES: int = ... # type: ignore

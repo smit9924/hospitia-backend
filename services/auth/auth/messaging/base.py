@@ -30,13 +30,18 @@ class MQClient(ABC):
         raise NotImplementedError
 
     @abstractmethod
-    def publish(self, destination: str, message: BaseSchema) -> None:
+    def publish(
+        self,
+        destination: str,
+        message: BaseSchema,
+        routing_key: str | None = None,
+    ) -> None:
         """
         Publishes a message to the given destination.
 
-        @param destination Broker destination name. For RabbitMQ, this can be an exchange.
+        @param destination Broker destination name. For RabbitMQ, this can be a queue or an exchange.
         @param message Message payload to publish.
-        @param routing_key Optional routing key or topic key, depending on broker.
+        @param routing_key Optional routing key or topic key. Required when destination is an exchange.
         """
         raise NotImplementedError
 

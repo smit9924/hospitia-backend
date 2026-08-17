@@ -126,6 +126,8 @@ def create_user(session: Session, validated_user: Users) -> Users:
     """
     Create the user in the database if the data is valid.
 
+    Note: This function does not commit the session.
+
     Parameters
     ----------
     session : Session
@@ -151,7 +153,8 @@ def create_user(session: Session, validated_user: Users) -> Users:
         validated_user.password = get_password_hash(validated_user.password)
 
     session.add(validated_user)
-    session.commit()
+    session.flush()
+    session.refresh(validated_user)
     return validated_user
 
 

@@ -1,4 +1,5 @@
 import re
+import uuid
 from datetime import UTC, datetime, timedelta
 
 from sqlmodel import Session
@@ -32,7 +33,7 @@ from auth.exceptions.definitions.validation_exceptions import (
 )
 from auth.messaging.general import get_mq_client
 from auth.schemas.auth_schemas import JWTSubject, Token
-from auth.schemas.mq_schemas import MqVerifyEmailOtpMessage
+from auth.schemas.mq_schemas import MqDomainEvent, MqUserCreatedPayload, MqVerifyEmailOtpMessage
 from auth.schemas.user_schemas import ChangePassword, ProfileData, ProfileUpdate
 
 VERIFY_EMAIL_OTP_LENGTH = 6
@@ -67,6 +68,7 @@ def get_user_profile_data(*, session: Session, user_guid: str) -> ProfileData:
 def signupUser(*, session: Session, user: Users) -> Token:
     """
     Sign up a new user and create a JWT token for authentication.
+    Publish a user created event to the message queue.
 
     parameters
     ----------
@@ -86,6 +88,29 @@ def signupUser(*, session: Session, user: Users) -> Token:
         raise InvalidUsernameException()
 
     created_user = create_user(session=session, validated_user=validated_user)
+
+    if created_user.id is None or created_user.guid is None:
+        raise UserNotFoundException("Persisted user without ID")
+
+    event = MqDomainEvent(
+        event_id=uuid.uuid4(),
+        event_type=settings.USER_CREATED_EVENT_TYPE,
+        occurred_at=datetime.now(UTC),
+        payload=MqUserCreatedPayload(
+            id=created_user.id,
+            guid=created_user.guid,
+            email=created_user.email,
+            username=created_user.username,
+            first_name=created_user.first_name,
+            last_name=created_user.last_name,
+        ).model_dump(mode="json"),
+    )
+    get_mq_client().publish(
+        settings.USER_EVENTS_EXCHANGE,
+        event,
+        routing_key=settings.USER_CREATED_ROUTING_KEY,
+    )
+    session.commit()
 
     access_token, access_token_expiry = create_jwt_access_token(
         subject=JWTSubject (

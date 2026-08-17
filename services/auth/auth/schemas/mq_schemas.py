@@ -1,4 +1,8 @@
-from pydantic import AnyHttpUrl
+from datetime import datetime
+from typing import Any
+from uuid import UUID
+
+from pydantic import AnyHttpUrl, EmailStr
 
 from auth.schemas.base_schemas import BaseSchema
 
@@ -62,3 +66,43 @@ class MqVerifyEmailOtpMessage(MqBaseSchema):
     user_last_name: str
     otp: str
     expiration_time: int
+
+
+class MqUserCreatedPayload(MqBaseSchema):
+    """
+    Payload for a newly created Auth user.
+
+    Attributes
+    ----------
+    id : int
+        Auth service primary key for the user.
+    guid : UUID
+        Public user identifier used in JWTs and APIs.
+    email : EmailStr
+        Unique email address.
+    username : str
+        Unique username.
+    first_name : str | None
+        User's first name.
+    last_name : str | None
+        User's last name.
+    """
+
+    id: int
+    guid: UUID
+    email: EmailStr
+    username: str
+    first_name: str | None = None
+    last_name: str | None = None
+
+
+class MqDomainEvent(MqBaseSchema):
+    """
+    Envelope for inter-service domain events.
+    """
+
+    event_id: UUID
+    event_type: str
+    occurred_at: datetime
+    payload: dict[str, Any]
+    retry_count: int = 0
