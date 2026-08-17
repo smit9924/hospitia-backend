@@ -10,15 +10,15 @@ from notification.handlers.email_handlers import (
     verify_email_otp_email_handler,
 )
 
-type EMAIL_MESSAGE_HANDLER = Callable[[dict[str, Any]], None]
+type MESSAGE_HANDLER = Callable[[dict[str, Any]], None]
 
-MESSAGE_ROUTES: dict[str, EMAIL_MESSAGE_HANDLER] = {
+MESSAGE_ROUTES: dict[str, MESSAGE_HANDLER] = {
     settings.FORGOT_PASSWORD_EMAIL_QUEUE: forgot_password_email_handler,
     settings.VERIFY_EMAIL_OTP_EMAIL_QUEUE: verify_email_otp_email_handler,
 }
 
 
-def get_handler(routing_key: str) -> EMAIL_MESSAGE_HANDLER:
+def get_handler(routing_key: str) -> MESSAGE_HANDLER:
     """
     Retrieve the appropriate handler function based on the provided routing key.
 

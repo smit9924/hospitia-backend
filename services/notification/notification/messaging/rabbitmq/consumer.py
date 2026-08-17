@@ -21,7 +21,7 @@ from pika.spec import Basic
 
 from notification.core.config import settings
 from notification.exceptions.registry import get_exception_handler
-from notification.handlers.handler_routes import EMAIL_MESSAGE_HANDLER, get_handler
+from notification.handlers.handler_routes import MESSAGE_HANDLER, get_handler
 from notification.messaging.base import MQConsumer
 
 from .exchange import RabbitMQExchange
@@ -54,7 +54,7 @@ class RabbitMQConsumer(MQConsumer):
         self._consumer_channel_pool: dict[str, BlockingChannel] = {}
 
         # Registered handlers
-        self._consumer_handlers: dict[str, EMAIL_MESSAGE_HANDLER] = {
+        self._consumer_handlers: dict[str, MESSAGE_HANDLER] = {
             settings.FORGOT_PASSWORD_EMAIL_QUEUE: get_handler(settings.FORGOT_PASSWORD_EMAIL_QUEUE),
             settings.VERIFY_EMAIL_OTP_EMAIL_QUEUE: get_handler(settings.VERIFY_EMAIL_OTP_EMAIL_QUEUE),
         }
@@ -191,7 +191,7 @@ class RabbitMQConsumer(MQConsumer):
     def __consume_queue_with_retry(
         self,
         destination: str,
-        handler: EMAIL_MESSAGE_HANDLER,
+        handler: MESSAGE_HANDLER,
     ) -> None:
         """
         Independent retry loop for one queue.
@@ -232,7 +232,7 @@ class RabbitMQConsumer(MQConsumer):
     def __consume_queue(
         self,
         destination: str,
-        handler: EMAIL_MESSAGE_HANDLER,
+        handler: MESSAGE_HANDLER,
     ) -> None:
 
         channel = self.__get_consumer_channel(destination)
@@ -263,7 +263,7 @@ class RabbitMQConsumer(MQConsumer):
     def __build_consumer_callback(
         self,
         destination: str,
-        handler: EMAIL_MESSAGE_HANDLER,
+        handler: MESSAGE_HANDLER,
     ):
         def callback(
             channel: BlockingChannel,
