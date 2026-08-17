@@ -5,7 +5,6 @@ from payment.types.enums import TokenType, UserType
 from .base_schemas import BaseSchema
 
 
-
 class JWTSubject(BaseSchema):
     """
     Subject information embedded within a JWT access token.

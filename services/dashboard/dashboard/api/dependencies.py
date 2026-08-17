@@ -6,9 +6,11 @@ from fastapi.security import OAuth2PasswordBearer
 from sqlmodel import Session
 
 from dashboard.core.config import settings
-from dashboard.core.security import authorize_user, decode_jwt_token
+from dashboard.core.security import decode_jwt_token
 from dashboard.database.db import engine
-from dashboard.exceptions.definitions.security_exceptions import UserUnauthorizedException
+from dashboard.exceptions.definitions.security_exceptions import (
+	UserUnauthorizedException,
+)
 from dashboard.schemas.auth_schemas import ParsedJWTPayload
 from dashboard.types.enums import TokenType, UserType
 
@@ -74,10 +76,7 @@ def RoleValidationDep(
         A FastAPI-compatible dependency function.
     """
 
-    async def validate_jwt_token(
-        token: TokenDep,
-        session: SessionDep,
-    ) -> ParsedJWTPayload:
+    async def validate_jwt_token(token: TokenDep) -> ParsedJWTPayload:
         """
         Decode and validate a JWT access token and authorize the user by role.
 

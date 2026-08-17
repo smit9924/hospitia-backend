@@ -6,7 +6,7 @@ from fastapi.security import OAuth2PasswordBearer
 from sqlmodel import Session
 
 from booking.core.config import settings
-from booking.core.security import authorize_user, decode_jwt_token
+from booking.core.security import decode_jwt_token
 from booking.database.db import engine
 from booking.exceptions.definitions.security_exceptions import UserUnauthorizedException
 from booking.schemas.auth_schemas import ParsedJWTPayload
@@ -74,10 +74,7 @@ def RoleValidationDep(
         A FastAPI-compatible dependency function.
     """
 
-    async def validate_jwt_token(
-        token: TokenDep,
-        session: SessionDep,
-    ) -> ParsedJWTPayload:
+    async def validate_jwt_token(token: TokenDep) -> ParsedJWTPayload:
         """
         Decode and validate a JWT access token and authorize the user by role.
 

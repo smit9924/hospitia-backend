@@ -11,6 +11,7 @@ from auth.api.repositories.user_repository import (
     get_user_by_email_or_username,
     mark_security_tokens_as_used,
 )
+from auth.api.services.common_service import is_password_strong
 from auth.core.config import settings
 from auth.core.security import (
     create_jwt_access_token,
@@ -35,8 +36,6 @@ from auth.schemas.auth_schemas import (
 )
 from auth.schemas.mq_schemas import MqForgotPasswordMessage
 from auth.types.enums import AuthType
-from auth.api.services.common_service import is_password_strong
-
 
 log = logging.getLogger(__name__)
 

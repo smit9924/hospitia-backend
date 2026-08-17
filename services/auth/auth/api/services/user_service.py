@@ -33,7 +33,11 @@ from auth.exceptions.definitions.validation_exceptions import (
 )
 from auth.messaging.general import get_mq_client
 from auth.schemas.auth_schemas import JWTSubject, Token
-from auth.schemas.mq_schemas import MqDomainEvent, MqUserCreatedPayload, MqVerifyEmailOtpMessage
+from auth.schemas.mq_schemas import (
+    MqDomainEvent,
+    MqUserCreatedPayload,
+    MqVerifyEmailOtpMessage,
+)
 from auth.schemas.user_schemas import ChangePassword, ProfileData, ProfileUpdate
 
 VERIFY_EMAIL_OTP_LENGTH = 6

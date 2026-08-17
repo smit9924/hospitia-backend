@@ -2,7 +2,9 @@
 from jwt import InvalidTokenError, decode
 
 from dashboard.core.config import settings
-from dashboard.exceptions.definitions.security_exceptions import UserUnauthorizedException
+from dashboard.exceptions.definitions.security_exceptions import (
+    UserUnauthorizedException,
+)
 from dashboard.schemas.auth_schemas import (
     JWTSubject,
     ParsedJWTPayload,

@@ -1,6 +1,4 @@
-from uuid import UUID
 
-from pydantic import EmailStr
 from sqlmodel import Session, select
 
 from booking.database.models.users import UsersReplica
