@@ -18,3 +18,4 @@ class ErrorCodes(IntEnum):
     INVALID_OTP = 1013
 
     # Payment service error codes (3000-3099)
+    HANDLER_NOT_FOUND = 3001

@@ -8,6 +8,7 @@ from payment.core.config import settings
 from payment.exceptions.registry import get_exception_handlers
 from payment.messaging.base import MQClient
 from payment.messaging.general import get_mq_client
+from payment.messaging.mq_consumer_general import get_mq_consumer
 
 exception_handlers = get_exception_handlers()
 
@@ -18,12 +19,20 @@ def on_startup() -> None:
     mq_client: MQClient = get_mq_client()
     mq_client.connect()
 
+    mq_consumer = get_mq_consumer()
+    mq_consumer.connect()
+    mq_consumer.start_consuming()
+
 def on_shutdown() -> None:
     """
     Perform cleanup tasks on application shutdown.
     """
     mq_client: MQClient = get_mq_client()
     mq_client.close()
+
+    mq_consumer = get_mq_consumer()
+    mq_consumer.stop_consuming()
+    mq_consumer.close()
 
 @asynccontextmanager
 async def lifespan(_app: FastAPI):
