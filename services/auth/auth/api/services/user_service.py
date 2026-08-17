@@ -109,7 +109,7 @@ def signupUser(*, session: Session, user: Users) -> Token:
             last_name=created_user.last_name,
         ).model_dump(mode="json"),
     )
-    get_mq_client().publish(settings.USER_CREATED_EVENT, event)
+    get_mq_client().publish(settings.USER_EVENTS_EXCHANGE, event, settings.USER_CREATED_ROUTING_KEY)
     session.commit()
 
     access_token, access_token_expiry = create_jwt_access_token(
