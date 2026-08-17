@@ -30,13 +30,18 @@ class MQClient(ABC):
         raise NotImplementedError
 
     @abstractmethod
-    def publish(self, destination: str, message: BaseSchema) -> None:
+    def publish(
+        self,
+        destination: str,
+        message: BaseSchema,
+        routing_key: str | None = None,
+    ) -> None:
         """
         Publishes a message to the given destination.
 
-        @param destination Broker destination name. For RabbitMQ, this can be an exchange.
+        @param destination Broker destination name. For RabbitMQ, this can be a queue or an exchange.
         @param message Message payload to publish.
-        @param routing_key Optional routing key or topic key, depending on broker.
+        @param routing_key Optional routing key or topic key. Required when destination is an exchange.
         """
         raise NotImplementedError
 
@@ -44,6 +49,56 @@ class MQClient(ABC):
     def close(self) -> None:
         """
         Closes broker resources and connection.
+        """
+        raise NotImplementedError
+
+
+class MQConsumer(ABC):
+    """
+    Base contract for message queue consumers.
+
+    Concrete implementations are responsible for managing broker-specific
+    connections, subscriptions, retries, acknowledgements, and message
+    processing lifecycles.
+    """
+
+    @abstractmethod
+    def connect(self) -> None:
+        """
+        Establishes connectivity with the messaging broker and validates that
+        required resources exist.
+        """
+        raise NotImplementedError
+
+    @abstractmethod
+    def declare_destinations(self) -> None:
+        """
+        Declares all required broker-specific messaging destinations.
+
+        For RabbitMQ, this can include exchanges, queues, and bindings.
+        For Kafka, this can include topics.
+        """
+        raise NotImplementedError
+
+    @abstractmethod
+    def start_consuming(self) -> None:
+        """
+        Starts consuming messages from all registered destinations.
+        """
+        raise NotImplementedError
+
+    @abstractmethod
+    def stop_consuming(self) -> None:
+        """
+        Gracefully stops all active consumers and prevents new messages from
+        being processed.
+        """
+        raise NotImplementedError
+
+    @abstractmethod
+    def close(self) -> None:
+        """
+        Releases all broker resources and shuts down the consumer.
         """
         raise NotImplementedError
 
@@ -69,6 +124,7 @@ class MQQueueBase(ABC):
     """
 
     name: str
+    dead_letter_queue: str | None
 
     @abstractmethod
     def declare(cls, channel: Any) -> None:

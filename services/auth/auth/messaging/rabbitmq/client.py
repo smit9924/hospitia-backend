@@ -23,7 +23,7 @@ from auth.exceptions.definitions.messaging_queue_exceptions import (
     MQNotFoundException,
 )
 from auth.messaging.base import MQClient
-from auth.schemas.base_schemas import BaseModel
+from auth.schemas.base_schemas import BaseSchema
 
 from .exchange import RabbitMQExchange
 from .queue import RabbitMQQueue
@@ -106,7 +106,7 @@ class RabbitMQClient(MQClient):
     def publish(
         self,
         destination: str,
-        message: BaseModel,
+        message: BaseSchema,
         routing_key: str | None = None,
     ) -> None:
         """
@@ -152,7 +152,7 @@ class RabbitMQClient(MQClient):
         self,
         exchange_name: str,
         routing_key: str,
-        message: BaseModel,
+        message: BaseSchema,
     ) -> None:
         """
         Publishes a message with retry for recoverable RabbitMQ failures.
@@ -191,7 +191,7 @@ class RabbitMQClient(MQClient):
         self,
         exchange_name: str,
         routing_key: str,
-        message: BaseModel,
+        message: BaseSchema,
     ) -> None:
         """
         Publishes a message once using a publisher-confirm channel.

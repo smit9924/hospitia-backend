@@ -18,3 +18,4 @@ class ErrorCodes(IntEnum):
     INVALID_OTP = 1013
 
     # Booking service error codes (2000-2099)
+    HANDLER_NOT_FOUND = 2001
