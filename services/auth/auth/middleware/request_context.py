@@ -33,18 +33,6 @@ def get_request_id() -> str:
     return request_id
 
 
-def __resolve_request_id(header_value: str | None) -> str:
-    """
-    Resolve the request ID from the header value.
-    """
-    if header_value is None:
-        return str(uuid4())
-    candidate = header_value.strip()
-    if _REQUEST_ID_PATTERN.fullmatch(candidate):
-        return candidate
-    return str(uuid4())
-
-
 class RequestContextMiddleware:
     """
     Bind the current HTTP request for the lifetime of one ASGI call.
@@ -62,7 +50,7 @@ class RequestContextMiddleware:
             return
 
         headers = MutableHeaders(scope=scope)
-        request_id = __resolve_request_id(headers.get(REQUEST_ID_HEADER))
+        request_id = self.__resolve_request_id(headers.get(REQUEST_ID_HEADER))
         headers[REQUEST_ID_HEADER] = request_id
 
         request = Request(scope, receive)
@@ -79,3 +67,14 @@ class RequestContextMiddleware:
             await self.app(scope, receive, send_wrapper)
         finally:
             _request_ctx.reset(context_token)
+
+    def __resolve_request_id(self, header_value: str | None) -> str:
+        """
+        Resolve the request ID from the header value.
+        """
+        if header_value is None:
+            return str(uuid4())
+        candidate = header_value.strip()
+        if _REQUEST_ID_PATTERN.fullmatch(candidate):
+            return candidate
+        return str(uuid4())
