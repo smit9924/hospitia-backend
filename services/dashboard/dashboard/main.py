@@ -9,6 +9,7 @@ from dashboard.exceptions.registry import get_exception_handlers
 from dashboard.messaging.base import MQClient
 from dashboard.messaging.general import get_mq_client
 from dashboard.messaging.mq_consumer_general import get_mq_consumer
+from dashboard.middleware import REQUEST_ID_HEADER, RequestIdMiddleware
 
 exception_handlers = get_exception_handlers()
 
@@ -49,12 +50,14 @@ app = FastAPI(
     lifespan=lifespan
 )
 
+app.add_middleware(RequestIdMiddleware)
 app.add_middleware(
     CORSMiddleware,
     allow_origins=settings.ALLOWED_ORIGINS,
     allow_credentials=settings.ALLOWED_CREDENTIALS,
     allow_methods=settings.ALLOWED_METHODS,
     allow_headers=settings.ALLOWED_HEADERS,
+    expose_headers=[REQUEST_ID_HEADER],
 )
 
 @app.get("/")
