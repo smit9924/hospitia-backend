@@ -48,6 +48,7 @@ def login(*, session: SessionDep, username: str, password: str, remember_me: boo
     token is generated and returned for use in subsequent authenticated
     requests.
     """
+    log.info("Started")
     authenticated_user = authenticate_manual_user(
         session=session,
         identifire=username,
@@ -55,8 +56,10 @@ def login(*, session: SessionDep, username: str, password: str, remember_me: boo
     )
 
     if not authenticated_user:
+        log.warning("Invalid credentials")
         raise InvalidCredentialsException()
     elif not authenticated_user.is_active:
+        log.warning("Inactive user")
         raise UserInactiveException()
 
     access_token, access_token_expiry = create_jwt_access_token(
@@ -74,6 +77,7 @@ def login(*, session: SessionDep, username: str, password: str, remember_me: boo
         remember_me=remember_me,
     )
 
+    log.info("User login successful guid=%s", authenticated_user.guid)
     return Token(
         access_token=access_token,
         access_token_expiry=access_token_expiry,

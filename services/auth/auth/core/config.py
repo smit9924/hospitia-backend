@@ -6,6 +6,9 @@ from pika.exchange_type import ExchangeType
 from pydantic import PostgresDsn, computed_field
 from pydantic_settings import BaseSettings, SettingsConfigDict
 
+from auth.schemas.logging_schemas import LoggingSettings
+from auth.types.enums import EnvironmentName, LogFormatName, LogLevelName
+
 BASE_DIR: Path = Path(__file__).resolve().parent.parent
 
 class Settings(BaseSettings):
@@ -17,8 +20,13 @@ class Settings(BaseSettings):
 
     app_name: str = "Awesome API"
 
-
     API_V1_STR: str = "/api/v1"  # Base path for API version 1 endpoints
+
+    ENVIRONMENT: EnvironmentName = ...  # type: ignore
+    SERVICE_NAME: str = ...  # type: ignore
+    LOG_LEVEL: LogLevelName = ...  # type: ignore
+    LOG_FORMAT: LogFormatName = ...  # type: ignore
+    LOG_RETENTION_DAYS: int = ...  # type: ignore
 
 
     # Ignore Pylance type checks here. These fields are populated by Pydantic Settings at runtime,
@@ -160,6 +168,16 @@ class Settings(BaseSettings):
             Time duration for which a JWT refresh token remains valid.
         """
         return timedelta(minutes=self.JWT_REFRESH_TOKEN_EXPIRE_MINUTES_REMEMBER_ME)
+
+    def logging_settings(self) -> LoggingSettings:
+        return LoggingSettings(
+            environment=self.ENVIRONMENT,
+            service_name=self.SERVICE_NAME,
+            log_level=self.LOG_LEVEL,
+            log_format=self.LOG_FORMAT,
+            log_retention_days=self.LOG_RETENTION_DAYS,
+            log_directory=Path.joinpath(BASE_DIR, "..", "bin", "logs"),
+        )
 
 
 settings = Settings()

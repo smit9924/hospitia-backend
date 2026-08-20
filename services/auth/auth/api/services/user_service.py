@@ -1,3 +1,4 @@
+import logging
 import re
 import uuid
 from datetime import UTC, datetime, timedelta
@@ -41,6 +42,7 @@ from auth.schemas.mq_schemas import (
 from auth.schemas.user_schemas import ChangePassword, ProfileData, ProfileUpdate
 
 VERIFY_EMAIL_OTP_LENGTH = 6
+log = logging.getLogger(__name__)
 
 
 def get_user_profile_data(*, session: Session, user_guid: str) -> ProfileData:
@@ -81,19 +83,23 @@ def signupUser(*, session: Session, user: Users) -> Token:
         user : Users
             The user object containing the details of the user to be created.
     """
+    log.info("Started")
     validated_user = user.model_validate(user)
 
     # Validate password streangth
     if not is_password_strong(validated_user.password):
+        log.error("Weak password")
         raise WeakPasswordException()
 
     # Validate username format
     if not is_valid_username(validated_user.username):
+        log.error("Invalid username")
         raise InvalidUsernameException()
 
     created_user = create_user(session=session, validated_user=validated_user)
 
     if created_user.id is None or created_user.guid is None:
+        log.error("Persisted user without ID")
         raise UserNotFoundException("Persisted user without ID")
 
     event = MqDomainEvent(
@@ -126,6 +132,7 @@ def signupUser(*, session: Session, user: Users) -> Token:
         )
     )
 
+    log.info("User created successfully guid=%s", created_user.guid)
     return Token(
         access_token=access_token,
         access_token_expiry=access_token_expiry,
