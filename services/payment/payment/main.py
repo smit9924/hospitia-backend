@@ -9,6 +9,7 @@ from payment.exceptions.registry import get_exception_handlers
 from payment.messaging.base import MQClient
 from payment.messaging.general import get_mq_client
 from payment.messaging.mq_consumer_general import get_mq_consumer
+from payment.middleware import REQUEST_ID_HEADER, RequestIdMiddleware
 
 exception_handlers = get_exception_handlers()
 
@@ -49,12 +50,14 @@ app = FastAPI(
     lifespan=lifespan
 )
 
+app.add_middleware(RequestIdMiddleware)
 app.add_middleware(
     CORSMiddleware,
     allow_origins=settings.ALLOWED_ORIGINS,
     allow_credentials=settings.ALLOWED_CREDENTIALS,
     allow_methods=settings.ALLOWED_METHODS,
     allow_headers=settings.ALLOWED_HEADERS,
+    expose_headers=[REQUEST_ID_HEADER],
 )
 
 @app.get("/")
