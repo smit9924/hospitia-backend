@@ -8,6 +8,7 @@ from auth.core.config import settings
 from auth.exceptions.registry import get_exception_handlers
 from auth.messaging.base import MQClient
 from auth.messaging.general import get_mq_client
+from auth.middleware import REQUEST_ID_HEADER, RequestIdMiddleware
 
 exception_handlers = get_exception_handlers()
 
@@ -40,12 +41,14 @@ app = FastAPI(
     lifespan=lifespan
 )
 
+app.add_middleware(RequestIdMiddleware)
 app.add_middleware(
     CORSMiddleware,
     allow_origins=settings.ALLOWED_ORIGINS,
     allow_credentials=settings.ALLOWED_CREDENTIALS,
     allow_methods=settings.ALLOWED_METHODS,
     allow_headers=settings.ALLOWED_HEADERS,
+    expose_headers=[REQUEST_ID_HEADER],
 )
 
 @app.get("/")
