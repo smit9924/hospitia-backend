@@ -223,6 +223,9 @@ pipeline {
                                     --name ${APPLICATION_NAME} \
                                     --label com.hospitia.service=${APPLICATION_NAME} \
                                     --restart on-failure \
+                                    --log-driver json-file \
+                                    --log-opt max-size=20m \
+                                    --log-opt max-file=3 \
                                     -p 9005:9005 \
                                     --network hospitia-network \
                                     --env-file /opt/hospitia/${APPLICATION_NAME}/.env \
