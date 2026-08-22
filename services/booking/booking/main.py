@@ -6,10 +6,13 @@ from fastapi.middleware.cors import CORSMiddleware
 from booking.api.routes.main import api_router
 from booking.core.config import settings
 from booking.exceptions.registry import get_exception_handlers
+from booking.logging import configure_logging
 from booking.messaging.base import MQClient
 from booking.messaging.general import get_mq_client
 from booking.messaging.mq_consumer_general import get_mq_consumer
-from booking.middleware import REQUEST_ID_HEADER, RequestIdMiddleware
+from booking.middleware import REQUEST_ID_HEADER, RequestContextMiddleware
+
+configure_logging(settings.logging_settings())
 
 exception_handlers = get_exception_handlers()
 
@@ -50,7 +53,7 @@ app = FastAPI(
     lifespan=lifespan
 )
 
-app.add_middleware(RequestIdMiddleware)
+app.add_middleware(RequestContextMiddleware)
 app.add_middleware(
     CORSMiddleware,
     allow_origins=settings.ALLOWED_ORIGINS,
