@@ -1,3 +1,4 @@
+import logging
 from typing import Annotated
 
 from fastapi import APIRouter, Depends
@@ -24,6 +25,7 @@ from auth.schemas.auth_schemas import (
 )
 
 router = APIRouter(tags=["login"])
+log = logging.getLogger(__name__)
 
 @router.post("", response_model=Token, responses={**SECURITY_EXCEPTION_DOC["UserInactiveException"], **SECURITY_EXCEPTION_DOC["InvalidCredentialsException"],})
 async def login_user(session: SessionDep, form_data: Annotated[LoginRequest, Depends()]) -> Token:
@@ -71,6 +73,7 @@ async def refresh_access_token(payload: RefreshTokenRequest) -> AccessToken:
     maintain authenticated sessions without requiring users to re-enter
     credentials after access tokens expire.
     """
+    log.info("Started")
     parsed_payload = decode_jwt_token(payload.refresh_token, expected_type=TokenType.REFRESH)
 
     new_access_token, new_access_token_expiry = create_jwt_access_token(
@@ -80,6 +83,7 @@ async def refresh_access_token(payload: RefreshTokenRequest) -> AccessToken:
         )
     )
 
+    log.info("Access token refreshed user_guid=%s", parsed_payload.parsed_subject.user_guid)
     return AccessToken(
         access_token=new_access_token,
         access_token_expiry=new_access_token_expiry,

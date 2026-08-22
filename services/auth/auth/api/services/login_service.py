@@ -139,10 +139,12 @@ def forgot_password_user(*, session: Session, email: str) -> None:
             The email address of the user requesting a password reset.
 
     """
+    log.info("Started")
     user = get_user_by_email_or_username(session=session, identifire=email)
 
     if not user:
         # For security, do not reveal whether the email exists in the system
+        log.info("Password reset request completed")
         return
 
     if(user.id is None):
@@ -164,11 +166,12 @@ def forgot_password_user(*, session: Session, email: str) -> None:
         user_first_name=user.first_name if user.first_name else "",
         user_last_name=user.last_name if user.last_name else "",
         reset_password_link=reset_link,
-        expiration_time=settings.PASSWORD_RESET_TOKEN_EXPIRE_MINUTES
+        expiration_time=settings.PASSWORD_RESET_TOKEN_EXPIRE_MINUTES,
     )
 
     mq_client = get_mq_client()
     mq_client.publish(settings.FORGOT_PASSWORD_EMAIL_QUEUE, message)
+    log.info("Password reset email queued guid=%s", user.guid)
 
 def reset_password_user(*, session: Session, reset_token: str, new_password: str) -> None:
     """
@@ -186,13 +189,16 @@ def reset_password_user(*, session: Session, reset_token: str, new_password: str
         new_password : str
             The new plain text password that the user wants to set.
     """
+    log.info("Started")
     if not is_password_strong(new_password):
+        log.warning("Weak password")
         raise WeakPasswordException()
 
     record = find_unused_secure_token_for_update(session=session, plain_token=reset_token)
     now = datetime.now(UTC)
 
     if record is None:
+        log.warning("Invalid or expired reset token")
         raise InvalidTokenException()
 
     expires_at = record.expires_at
@@ -200,10 +206,12 @@ def reset_password_user(*, session: Session, reset_token: str, new_password: str
         expires_at = expires_at.replace(tzinfo=UTC)
 
     if record.used or expires_at <= now:
+        log.warning("Invalid or expired reset token")
         raise InvalidTokenException()
 
     user = session.get(Users, record.user_id)
     if user is None:
+        log.warning("Reset token references missing user")
         raise InvalidTokenException()
 
     user.password = get_password_hash(new_password)
@@ -212,3 +220,4 @@ def reset_password_user(*, session: Session, reset_token: str, new_password: str
     session.add(user)
     session.add(record)
     session.commit()
+    log.info("Password reset successful user_id=%s", user.id)

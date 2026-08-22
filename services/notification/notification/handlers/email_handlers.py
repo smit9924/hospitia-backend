@@ -24,6 +24,7 @@ def forgot_password_email_handler(event: dict[str, Any]) -> None:
     -------
     None
     """
+    log.info("Started")
     data = MqForgotPasswordMessage(**event)
 
     html = render_template(
@@ -37,7 +38,11 @@ def forgot_password_email_handler(event: dict[str, Any]) -> None:
         body=html,
     )
 
-    log.info(f"Email sent to {data.to} with subject '{data.subject}'")
+    log.info(
+        "Forgot password email sent recipient_count=%d subject=%s",
+        len(data.to),
+        data.subject,
+    )
 
 
 def verify_email_otp_email_handler(event: dict[str, Any]) -> None:
@@ -53,6 +58,7 @@ def verify_email_otp_email_handler(event: dict[str, Any]) -> None:
     -------
     None
     """
+    log.info("Started")
     data = MqVerifyEmailOtpMessage(**event)
 
     html = render_template(
@@ -66,4 +72,8 @@ def verify_email_otp_email_handler(event: dict[str, Any]) -> None:
         body=html,
     )
 
-    log.info(f"Email sent to {data.to} with subject '{data.subject}'")
+    log.info(
+        "Verify email OTP email sent recipient_count=%d subject=%s",
+        len(data.to),
+        data.subject,
+    )

@@ -1,8 +1,11 @@
+import logging
 import smtplib
 from email.mime.multipart import MIMEMultipart
 from email.mime.text import MIMEText
 
 from notification.core.config import settings
+
+log = logging.getLogger(__name__)
 
 
 def send_html_email(*, to: list[str], subject: str, body: str, ) -> None:
@@ -28,6 +31,11 @@ def send_html_email(*, to: list[str], subject: str, body: str, ) -> None:
     smtplib.SMTPException
         If there is an error during the SMTP connection or sending process.
     """
+    log.info(
+        "Sending email recipient_count=%d subject=%s",
+        len(to),
+        subject,
+    )
 
     message = MIMEMultipart("alternative")
 
@@ -37,13 +45,27 @@ def send_html_email(*, to: list[str], subject: str, body: str, ) -> None:
 
     message.attach(MIMEText(body, "html"))
 
-    with smtplib.SMTP(settings.SMTP_HOST, settings.SMTP_PORT, ) as smtp:
-        if settings.SMTP_USE_TLS:
-            smtp.starttls()
+    try:
+        with smtplib.SMTP(settings.SMTP_HOST, settings.SMTP_PORT, ) as smtp:
+            if settings.SMTP_USE_TLS:
+                smtp.starttls()
 
-        smtp.login(
-            settings.SMTP_USERNAME,
-            settings.SMTP_PASSWORD,
+            smtp.login(
+                settings.SMTP_USERNAME,
+                settings.SMTP_PASSWORD,
+            )
+
+            smtp.send_message(message)
+    except smtplib.SMTPException:
+        log.exception(
+            "Failed to send email recipient_count=%d subject=%s",
+            len(to),
+            subject,
         )
+        raise
 
-        smtp.send_message(message)
+    log.info(
+        "Email sent recipient_count=%d subject=%s",
+        len(to),
+        subject,
+    )

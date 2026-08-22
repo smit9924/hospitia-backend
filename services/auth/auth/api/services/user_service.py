@@ -56,10 +56,13 @@ def get_user_profile_data(*, session: Session, user_guid: str) -> ProfileData:
     user_guid : str
         The GUID of the user whose profile data is to be retrieved.
     """
+    log.info("Started")
     user = get_user_by_guid(session=session, guid=user_guid)
     if not user:
+        log.warning("User not found guid=%s", user_guid)
         raise UserNotFoundException()
 
+    log.info("Profile data retrieved guid=%s", user.guid)
     return ProfileData(
         guid=str(user.guid),
         email=user.email,
@@ -116,6 +119,7 @@ def signupUser(*, session: Session, user: Users) -> Token:
         ).model_dump(mode="json"),
     )
     get_mq_client().publish(settings.USER_EVENTS_EXCHANGE, event, settings.USER_CREATED_ROUTING_KEY)
+    log.info("User created event published event_id=%s guid=%s", event.event_id, created_user.guid)
     session.commit()
 
     access_token, access_token_expiry = create_jwt_access_token(
@@ -223,9 +227,10 @@ def update_user_profile(*, session: Session, user_guid: str, profile_data: Profi
     profile_data : ProfileData
         The new profile data to be updated for the user.
     """
-
+    log.info("Started")
     user = update_user_data(session=session, user_guid=user_guid, profile_data=profile_data)
 
+    log.info("Profile updated guid=%s", user.guid)
     return ProfileData(
         guid=str(user.guid),
         email=user.email,
@@ -238,9 +243,11 @@ def update_user_profile(*, session: Session, user_guid: str, profile_data: Profi
 
 
 def change_user_password(*, session: Session, user_guid: str, change_password_data: ChangePassword) -> None:
+    log.info("Started")
     user = get_user_by_guid(session=session, guid=user_guid)
 
     if not user:
+        log.warning("User not found guid=%s", user_guid)
         raise UserNotFoundException()
 
     authenticated_user = authenticate_manual_user(
@@ -250,24 +257,30 @@ def change_user_password(*, session: Session, user_guid: str, change_password_da
     )
 
     if not authenticated_user:
+        log.warning("Invalid current password guid=%s", user_guid)
         raise InvalidCredentialsException()
 
     # Validate password streangth
     if not is_password_strong(change_password_data.new_password):
+        log.warning("Weak password guid=%s", user_guid)
         raise WeakPasswordException()
 
     update_user_password(session=session, user_id=user.id, new_password=change_password_data.new_password)
+    log.info("Password changed guid=%s", user_guid)
 
 
 def request_email_verification_otp(*, session: Session, user_guid: str) -> dict[str, str]:
     """
     Generate and email an OTP for verifying the authenticated user's email.
     """
+    log.info("Started")
     user = get_user_by_guid(session=session, guid=user_guid)
     if not user:
+        log.warning("User not found guid=%s", user_guid)
         raise UserNotFoundException()
 
     if user.is_email_verified:
+        log.warning("Email already verified guid=%s", user_guid)
         raise EmailAlreadyVerifiedException()
 
     if user.id is None:
@@ -290,6 +303,7 @@ def request_email_verification_otp(*, session: Session, user_guid: str) -> dict[
 
     mq_client = get_mq_client()
     mq_client.publish(settings.VERIFY_EMAIL_OTP_EMAIL_QUEUE, message)
+    log.info("Email verification OTP queued guid=%s", user.guid)
 
     return {"message": "A verification OTP has been sent to your email"}
 
@@ -298,11 +312,14 @@ def verify_email_otp(*, session: Session, user_guid: str, otp: str) -> dict[str,
     """
     Validate an email verification OTP and mark the user's email as verified.
     """
+    log.info("Started")
     user = get_user_by_guid(session=session, guid=user_guid)
     if not user:
+        log.warning("User not found guid=%s", user_guid)
         raise UserNotFoundException()
 
     if user.is_email_verified:
+        log.warning("Email already verified guid=%s", user_guid)
         raise EmailAlreadyVerifiedException()
 
     if user.id is None:
@@ -312,6 +329,7 @@ def verify_email_otp(*, session: Session, user_guid: str, otp: str) -> dict[str,
     now = datetime.now(UTC)
 
     if otp_record is None:
+        log.warning("Invalid OTP guid=%s", user_guid)
         raise InvalidOtpException()
 
     expires_at = otp_record.expires_at
@@ -319,6 +337,7 @@ def verify_email_otp(*, session: Session, user_guid: str, otp: str) -> dict[str,
         expires_at = expires_at.replace(tzinfo=UTC)
 
     if otp_record.used or expires_at <= now or otp_record.otp != otp:
+        log.warning("Invalid OTP guid=%s", user_guid)
         raise InvalidOtpException()
 
     mark_otp_used_and_email_verified(
@@ -327,4 +346,5 @@ def verify_email_otp(*, session: Session, user_guid: str, otp: str) -> dict[str,
         user=user,
     )
 
+    log.info("Email verified guid=%s", user.guid)
     return {"message": "Email verified successfully"}

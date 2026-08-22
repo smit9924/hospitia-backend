@@ -27,10 +27,7 @@ def get_request_id() -> str:
     request = get_request()
     if request is None:
         return _MISSING_REQUEST_ID
-    request_id = getattr(request.state, "request_id", None)
-    if not request_id or not isinstance(request_id, str):
-        return _MISSING_REQUEST_ID
-    return request_id
+    return getattr(request.state, "request_id", _MISSING_REQUEST_ID)
 
 
 class RequestContextMiddleware:
