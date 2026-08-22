@@ -1,13 +1,13 @@
-import logging
 from contextlib import asynccontextmanager
 
 from fastapi import FastAPI
 
+from notification.core.config import settings
+from notification.logging import configure_logging
 from notification.messaging.mq_client_general import get_mq_client
 from notification.messaging.mq_consumer_general import get_mq_consumer
 
-logging.basicConfig(level=logging.INFO)
-logger = logging.getLogger(__name__)
+configure_logging(settings.logging_settings())
 
 
 def on_startup() -> None:
