@@ -6,10 +6,13 @@ from fastapi.middleware.cors import CORSMiddleware
 from payment.api.routes.main import api_router
 from payment.core.config import settings
 from payment.exceptions.registry import get_exception_handlers
+from payment.logging import configure_logging
 from payment.messaging.base import MQClient
 from payment.messaging.general import get_mq_client
 from payment.messaging.mq_consumer_general import get_mq_consumer
-from payment.middleware import REQUEST_ID_HEADER, RequestIdMiddleware
+from payment.middleware import REQUEST_ID_HEADER, RequestContextMiddleware
+
+configure_logging(settings.logging_settings())
 
 exception_handlers = get_exception_handlers()
 
@@ -50,7 +53,7 @@ app = FastAPI(
     lifespan=lifespan
 )
 
-app.add_middleware(RequestIdMiddleware)
+app.add_middleware(RequestContextMiddleware)
 app.add_middleware(
     CORSMiddleware,
     allow_origins=settings.ALLOWED_ORIGINS,

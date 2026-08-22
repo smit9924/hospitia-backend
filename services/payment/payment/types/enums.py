@@ -1,4 +1,4 @@
-from enum import IntEnum
+from enum import IntEnum, StrEnum
 
 
 class UserType(IntEnum):
@@ -52,3 +52,26 @@ class TokenType(IntEnum):
     ACCESS = 1
     REFRESH = 2
 
+
+class EnvironmentName(StrEnum):
+    """Runtime environment that selects logging handlers and related behaviour."""
+
+    LOCAL = "local"
+    PRODUCTION = "production"
+
+
+class LogFormatName(StrEnum):
+    """Log line encoding written to stdout and, locally, to the log file."""
+
+    CONSOLE = "console"
+    JSON = "json"
+
+
+class LogLevelName(StrEnum):
+    """Python logging levels accepted by LOG_LEVEL."""
+
+    DEBUG = "DEBUG"
+    INFO = "INFO"
+    WARNING = "WARNING"
+    ERROR = "ERROR"
+    CRITICAL = "CRITICAL"
