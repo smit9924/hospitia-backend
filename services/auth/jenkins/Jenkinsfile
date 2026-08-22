@@ -222,6 +222,9 @@ pipeline {
                                 docker run -d \
                                     --name ${APPLICATION_NAME} \
                                     --restart on-failure \
+                                    --log-driver json-file \
+                                    --log-opt max-size=20m \
+                                    --log-opt max-file=3 \
                                     -p 9002:9002 \
                                     --network hospitia-network \
                                     --env-file /opt/hospitia/${APPLICATION_NAME}/.env \
