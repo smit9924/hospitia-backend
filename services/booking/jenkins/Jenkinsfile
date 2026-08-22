@@ -221,6 +221,7 @@ pipeline {
 
                                 docker run -d \
                                     --name ${APPLICATION_NAME} \
+                                    --label com.hospitia.service=${APPLICATION_NAME} \
                                     --restart on-failure \
                                     -p 9004:9004 \
                                     --network hospitia-network \
