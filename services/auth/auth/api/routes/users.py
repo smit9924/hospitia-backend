@@ -7,12 +7,11 @@ from auth.api.services.user_service import (
     change_user_password,
     get_user_profile_data,
     request_email_verification_otp,
-    signupUser,
+    signup_user,
     update_user_profile,
     validate_username_uniqueness,
     verify_email_otp,
 )
-from auth.database.models.users import Users
 from auth.doc.not_found_exceptions_doc import NOT_FOUND_EXCEPTIONS_DOC
 from auth.doc.security_exceptions_doc import SECURITY_EXCEPTION_DOC
 from auth.doc.validation_exception_doc import VALIDATION_EXCEPTION_DOC
@@ -24,14 +23,25 @@ from auth.schemas.user_schemas import (
     UserSignup,
     VerifyEmailOtpRequest,
 )
-from auth.types.enums import AuthType, UserType
+from auth.types.enums import UserType
+import logging
+
+log = logging.getLogger(__name__)
 
 router = APIRouter(tags=["users"])
 
 _ALL_ROLES = [UserType.ADMIN, UserType.OWNER, UserType.MANAGER, UserType.CUSTOMER]
 
 
-@router.post("/signup", responses={**VALIDATION_EXCEPTION_DOC["UserWithEmailAlreadyExistsException"], **VALIDATION_EXCEPTION_DOC["UserWithUsernameAlreadyExistsException"], **VALIDATION_EXCEPTION_DOC["WeakPasswordException"], **VALIDATION_EXCEPTION_DOC["InvalidUsernameException"]})
+_SIGNUP_RESPONSES = {
+    **VALIDATION_EXCEPTION_DOC["UserWithEmailAlreadyExistsException"],
+    **VALIDATION_EXCEPTION_DOC["UserWithUsernameAlreadyExistsException"],
+    **VALIDATION_EXCEPTION_DOC["WeakPasswordException"],
+    **VALIDATION_EXCEPTION_DOC["InvalidUsernameException"],
+}
+
+
+@router.post("/signup", responses=_SIGNUP_RESPONSES)
 async def signup(session: SessionDep, user_signup: UserSignup) -> Token:
     """
     Register a new OWNER user and authenticate them.
@@ -40,19 +50,21 @@ async def signup(session: SessionDep, user_signup: UserSignup) -> Token:
     registration details. Upon successful registration, the user is
     automatically authenticated and a JWT access token and refresh token are returned.
     """
+    log.info("Started")
+    return signup_user(session=session, user_signup=user_signup, role=UserType.OWNER)
 
-    user = Users(
-        email=user_signup.email,
-        username=user_signup.username,
-        password=user_signup.password,
-        first_name=user_signup.first_name,
-        last_name=user_signup.last_name,
-        auth_type=AuthType.MANUAL,
-        role=UserType.OWNER,
-        is_active=True,
-    )
 
-    return signupUser(session=session, user=user)
+@router.post("/signup-customer", responses=_SIGNUP_RESPONSES)
+async def signup_customer(session: SessionDep, user_signup: UserSignup) -> Token:
+    """
+    Register a new CUSTOMER user and authenticate them.
+
+    Creates a new user account with CUSTOMER user type using the provided
+    registration details. Upon successful registration, the user is
+    automatically authenticated and a JWT access token and refresh token are returned.
+    """
+    log.info("Started")
+    return signup_user(session=session, user_signup=user_signup, role=UserType.CUSTOMER)
 
 
 @router.get("/list")

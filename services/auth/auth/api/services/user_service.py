@@ -39,7 +39,8 @@ from auth.schemas.mq_schemas import (
     MqUserCreatedPayload,
     MqVerifyEmailOtpMessage,
 )
-from auth.schemas.user_schemas import ChangePassword, ProfileData, ProfileUpdate
+from auth.schemas.user_schemas import ChangePassword, ProfileData, ProfileUpdate, UserSignup
+from auth.types.enums import AuthType, UserType
 
 VERIFY_EMAIL_OTP_LENGTH = 6
 log = logging.getLogger(__name__)
@@ -74,7 +75,7 @@ def get_user_profile_data(*, session: Session, user_guid: str) -> ProfileData:
     )
 
 
-def signupUser(*, session: Session, user: Users) -> Token:
+def signup_user(*, session: Session, user_signup: UserSignup, role: UserType) -> Token:
     """
     Sign up a new user and create a JWT token for authentication.
     Publish a user created event to the message queue.
@@ -83,10 +84,22 @@ def signupUser(*, session: Session, user: Users) -> Token:
     ----------
         session : Session
             Active SQLModel session for database operations.
-        user : Users
-            The user object containing the details of the user to be created.
+        user_signup : UserSignup
+            The registration details for the new user.
+        role : UserType
+            The role to assign to the new user.
     """
     log.info("Started")
+    user = Users(
+        email=user_signup.email,
+        username=user_signup.username,
+        password=user_signup.password,
+        first_name=user_signup.first_name,
+        last_name=user_signup.last_name,
+        auth_type=AuthType.MANUAL,
+        role=role,
+        is_active=True,
+    )
     validated_user = user.model_validate(user)
 
     # Validate password streangth
