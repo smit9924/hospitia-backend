@@ -1,10 +1,10 @@
 import logging
 import re
-import uuid
 from datetime import UTC, datetime, timedelta
 
 from sqlmodel import Session
 
+from auth.api.repositories.outbox_repository import add_user_created_outbox
 from auth.api.repositories.user_repository import (
     add_otp,
     create_user,
@@ -34,12 +34,13 @@ from auth.exceptions.definitions.validation_exceptions import (
 )
 from auth.messaging.general import get_mq_client
 from auth.schemas.auth_schemas import JWTSubject, Token
-from auth.schemas.mq_schemas import (
-    MqDomainEvent,
-    MqUserCreatedPayload,
-    MqVerifyEmailOtpMessage,
+from auth.schemas.mq_schemas import MqVerifyEmailOtpMessage
+from auth.schemas.user_schemas import (
+    ChangePassword,
+    ProfileData,
+    ProfileUpdate,
+    UserSignup,
 )
-from auth.schemas.user_schemas import ChangePassword, ProfileData, ProfileUpdate, UserSignup
 from auth.types.enums import AuthType, UserType
 
 VERIFY_EMAIL_OTP_LENGTH = 6
@@ -78,7 +79,7 @@ def get_user_profile_data(*, session: Session, user_guid: str) -> ProfileData:
 def signup_user(*, session: Session, user_signup: UserSignup, role: UserType) -> Token:
     """
     Sign up a new user and create a JWT token for authentication.
-    Publish a user created event to the message queue.
+    Persist a user-created outbox snapshot in the same database transaction.
 
     parameters
     ----------
@@ -114,26 +115,13 @@ def signup_user(*, session: Session, user_signup: UserSignup, role: UserType) ->
 
     created_user = create_user(session=session, validated_user=validated_user)
 
-    if created_user.id is None or created_user.guid is None:
-        log.error("Persisted user without ID")
-        raise UserNotFoundException("Persisted user without ID")
+    # if created_user.id is None or created_user.guid is None:
+    #     log.error("Persisted user without ID")
+    #     raise UserNotFoundException("Persisted user without ID")
 
-    event = MqDomainEvent(
-        event_id=uuid.uuid4(),
-        event_type=settings.USER_CREATED_EVENT_TYPE,
-        occurred_at=datetime.now(UTC),
-        payload=MqUserCreatedPayload(
-            id=created_user.id,
-            guid=created_user.guid,
-            email=created_user.email,
-            username=created_user.username,
-            first_name=created_user.first_name,
-            last_name=created_user.last_name,
-        ).model_dump(mode="json"),
-    )
-    get_mq_client().publish(settings.USER_EVENTS_EXCHANGE, event, settings.USER_CREATED_ROUTING_KEY)
-    log.info("User created event published event_id=%s guid=%s", event.event_id, created_user.guid)
+    add_user_created_outbox(session=session, user=created_user)
     session.commit()
+    log.info("User created outbox written guid=%s", created_user.guid)
 
     access_token, access_token_expiry = create_jwt_access_token(
         subject=JWTSubject (

@@ -91,6 +91,10 @@ class Settings(BaseSettings):
     PASSWORD_RESET_TOKEN_EXPIRE_MINUTES: int = ... # type: ignore
     VERIFY_EMAIL_OTP_TIMEOUT: int = ... # type: ignore
 
+    # User-created transactional outbox worker
+    OUTBOX_POLL_INTERVAL_SECONDS: int = 2
+    OUTBOX_BATCH_SIZE: int = 50
+
     @computed_field
     @property
     def SQLALCHEMY_DATABASE_URI(self) -> PostgresDsn:

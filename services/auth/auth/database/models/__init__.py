@@ -6,5 +6,6 @@ from .base import SQLModel
 from .otp import *  # noqa: F403
 from .security import *  # noqa: F403
 from .users import *  # noqa: F403
+from .users_outbox import *  # noqa: F403
 
 __all__ = ["SQLModel"]

@@ -10,6 +10,7 @@ from auth.logging import configure_logging
 from auth.messaging.base import MQClient
 from auth.messaging.general import get_mq_client
 from auth.middleware import REQUEST_ID_HEADER, RequestContextMiddleware
+from auth.outbox import start_outbox_worker, stop_outbox_worker
 
 configure_logging(settings.logging_settings())
 
@@ -21,11 +22,13 @@ def on_startup() -> None:
     """
     mq_client: MQClient = get_mq_client()
     mq_client.connect()
+    start_outbox_worker()
 
 def on_shutdown() -> None:
     """
     Perform cleanup tasks on application shutdown.
     """
+    stop_outbox_worker()
     mq_client: MQClient = get_mq_client()
     mq_client.close()
 
