@@ -66,6 +66,7 @@ def login(*, session: SessionDep, username: str, password: str, remember_me: boo
         subject=JWTSubject (
             user_guid=str(authenticated_user.guid), # UUID is not JSON serializable, convert to string
             role=authenticated_user.role,
+            email_verified=authenticated_user.is_email_verified,
         )
     )
 
@@ -73,6 +74,7 @@ def login(*, session: SessionDep, username: str, password: str, remember_me: boo
         subject=JWTSubject (
             user_guid=str(authenticated_user.guid), # UUID is not JSON serializable, convert to string
             role=authenticated_user.role,
+            email_verified=authenticated_user.is_email_verified,
         ),
         remember_me=remember_me,
     )

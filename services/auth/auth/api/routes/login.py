@@ -80,6 +80,7 @@ async def refresh_access_token(payload: RefreshTokenRequest) -> AccessToken:
         subject=JWTSubject (
             user_guid=parsed_payload.parsed_subject.user_guid,
             role=parsed_payload.parsed_subject.role,
+            email_verified=parsed_payload.parsed_subject.email_verified,
         )
     )
 

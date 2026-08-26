@@ -127,6 +127,7 @@ def signup_user(*, session: Session, user_signup: UserSignup, role: UserType) ->
         subject=JWTSubject (
             user_guid=str(created_user.guid), # UUID is not JSON serializable, convert to string
             role=created_user.role,
+            email_verified=created_user.is_email_verified,
         )
     )
 
@@ -134,6 +135,7 @@ def signup_user(*, session: Session, user_signup: UserSignup, role: UserType) ->
         subject=JWTSubject (
             user_guid=str(created_user.guid), # UUID is not JSON serializable, convert to string
             role=created_user.role,
+            email_verified=created_user.is_email_verified,
         )
     )
 

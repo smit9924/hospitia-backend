@@ -68,6 +68,7 @@ class JWTSubject(BaseSchema):
     """
     user_guid: str
     role: UserType
+    email_verified: bool
 
 
 class JWTPayload(BaseSchema):
