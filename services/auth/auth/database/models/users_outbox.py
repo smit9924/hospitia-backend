@@ -1,7 +1,9 @@
 import uuid
 
 from pydantic import EmailStr
-from sqlmodel import Boolean, Field
+from sqlmodel import Boolean, Field, Integer
+
+from auth.types.enums import UserType
 
 from .base import SQLModel
 
@@ -30,6 +32,8 @@ class UsersOutbox(SQLModel, table=True):
         User's first name.
     last_name : str | None, optional
         User's last name.
+    role : UserType
+        User role copied from the created user for downstream services.
     is_processed : bool, default=False
         Whether the outbox worker has successfully published this row.
     """
@@ -49,6 +53,8 @@ class UsersOutbox(SQLModel, table=True):
     first_name: str | None = Field(default=None, max_length=255)
 
     last_name: str | None = Field(default=None, max_length=255)
+
+    role: UserType = Field(nullable=False, sa_type=Integer)
 
     is_processed: bool = Field(
         default=False,

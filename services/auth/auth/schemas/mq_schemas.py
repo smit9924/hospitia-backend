@@ -5,6 +5,7 @@ from uuid import UUID
 from pydantic import AnyHttpUrl, EmailStr
 
 from auth.schemas.base_schemas import BaseSchema
+from auth.types.enums import UserType
 
 
 class MqBaseSchema(BaseSchema):
@@ -86,6 +87,8 @@ class MqUserCreatedPayload(MqBaseSchema):
         User's first name.
     last_name : str | None
         User's last name.
+    role : UserType
+        User role for authorization in consuming services.
     """
 
     id: int
@@ -94,6 +97,7 @@ class MqUserCreatedPayload(MqBaseSchema):
     username: str
     first_name: str | None = None
     last_name: str | None = None
+    role: UserType = UserType.CUSTOMER
 
 
 class MqDomainEvent(MqBaseSchema):

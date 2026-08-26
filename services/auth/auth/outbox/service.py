@@ -55,6 +55,7 @@ def _publish_user_created_event(outbox_entry: UsersOutbox) -> None:
             username=outbox_entry.username,
             first_name=outbox_entry.first_name,
             last_name=outbox_entry.last_name,
+            role=outbox_entry.role,
         ).model_dump(mode="json"),
     )
     get_mq_client().publish(

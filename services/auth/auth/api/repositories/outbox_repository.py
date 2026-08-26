@@ -17,6 +17,7 @@ def add_user_created_outbox(*, session: Session, user: Users) -> UsersOutbox:
         username=user.username,
         first_name=user.first_name,
         last_name=user.last_name,
+        role=user.role,
         is_processed=False,
     )
     session.add(outbox_entry)
