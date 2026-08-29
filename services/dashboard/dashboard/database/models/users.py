@@ -1,7 +1,9 @@
 import uuid
 
 from pydantic import EmailStr
-from sqlmodel import Field
+from sqlmodel import Field, Integer
+
+from dashboard.types.enums import UserType
 
 from .base import SQLModel
 
@@ -35,6 +37,8 @@ class UsersReplica(SQLModel, table=True):
         User's first name. Maximum 255 characters.
     last_name : str | None, optional
         User's last name. Maximum 255 characters.
+    role : UserType
+        Replicated user role used for listing and authorization. Indexed.
 
     Notes
     -----
@@ -52,6 +56,12 @@ class UsersReplica(SQLModel, table=True):
     username: str = Field(unique=True, index=True, max_length=255)
     first_name: str | None = Field(default=None, max_length=255)
     last_name: str | None = Field(default=None, max_length=255)
+    role: UserType = Field(
+        default=UserType.CUSTOMER,
+        nullable=False,
+        sa_type=Integer,
+        index=True,
+    )
 
 
 # List all database model classes defined in this file.

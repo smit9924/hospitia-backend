@@ -5,6 +5,7 @@ from uuid import UUID
 from pydantic import AnyHttpUrl, EmailStr
 
 from dashboard.schemas.base_schemas import BaseSchema
+from dashboard.types.enums import UserType
 
 
 class MqBaseSchema(BaseSchema):
@@ -52,6 +53,7 @@ class MqUserCreatedPayload(MqBaseSchema):
     username: str
     first_name: str | None = None
     last_name: str | None = None
+    role: UserType = UserType.CUSTOMER
 
 
 class MqDomainEvent(MqBaseSchema):

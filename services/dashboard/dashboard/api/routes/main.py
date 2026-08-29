@@ -1,11 +1,11 @@
 from fastapi import APIRouter
 
-from dashboard.api.routes import login
+from dashboard.api.routes import users
 
 # from auth.core.config import settings
 
 api_router = APIRouter()
-api_router.include_router(login.router, prefix="/login")
+api_router.include_router(users.router, prefix="/users")
 
 
 # if settings.ENVIRONMENT == "local":

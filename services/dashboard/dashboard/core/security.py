@@ -10,7 +10,9 @@ from dashboard.schemas.auth_schemas import (
     ParsedJWTPayload,
     TokenType,
 )
+import logging
 
+logger = logging.getLogger(__name__)
 
 def decode_jwt_token(token: str, expected_type: TokenType) -> ParsedJWTPayload:
     """
@@ -44,6 +46,7 @@ def decode_jwt_token(token: str, expected_type: TokenType) -> ParsedJWTPayload:
         parsing, indicating an authentication failure.
     """
     try:
+        logger.info(f"Decoding JWT token")
         payload: dict = decode(
             jwt=token,
             key=settings.JWT_ENCRYPTION_SECRET_KEY,
@@ -55,6 +58,7 @@ def decode_jwt_token(token: str, expected_type: TokenType) -> ParsedJWTPayload:
 
         subject = JWTSubject.model_validate_json(payload["sub"])
 
+        logger.info(f"Parsed JWT payload")
         return ParsedJWTPayload(
             exp=payload["exp"],
             sub=payload["sub"],
@@ -64,10 +68,12 @@ def decode_jwt_token(token: str, expected_type: TokenType) -> ParsedJWTPayload:
 
     # Propagate all PyJWT validation errors unchanged.
     # InvalidTokenError is the base class for all JWT-related exceptions.
-    except InvalidTokenError:
-        raise
+    except InvalidTokenError as ex:
+        logger.error(f"Invalid JWT token: {ex}")
+        raise ex
 
     # Mask any unexpected error as a generic authentication failure
     # to avoid leaking internal implementation details.
-    except Exception:
-        raise UserUnauthorizedException
+    except Exception as ex:
+        logger.error(f"Unexpected error: {ex}")
+        raise UserUnauthorizedException from ex
