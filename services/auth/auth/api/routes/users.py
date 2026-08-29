@@ -1,3 +1,4 @@
+import logging
 from typing import Annotated
 
 from fastapi import APIRouter, Depends, Query
@@ -24,7 +25,6 @@ from auth.schemas.user_schemas import (
     VerifyEmailOtpRequest,
 )
 from auth.types.enums import UserType
-import logging
 
 log = logging.getLogger(__name__)
 

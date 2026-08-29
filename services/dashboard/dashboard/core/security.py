@@ -1,4 +1,6 @@
 
+import logging
+
 from jwt import InvalidTokenError, decode
 
 from dashboard.core.config import settings
@@ -10,7 +12,6 @@ from dashboard.schemas.auth_schemas import (
     ParsedJWTPayload,
     TokenType,
 )
-import logging
 
 logger = logging.getLogger(__name__)
 
@@ -46,7 +47,7 @@ def decode_jwt_token(token: str, expected_type: TokenType) -> ParsedJWTPayload:
         parsing, indicating an authentication failure.
     """
     try:
-        logger.info(f"Decoding JWT token")
+        logger.info("Decoding JWT token")
         payload: dict = decode(
             jwt=token,
             key=settings.JWT_ENCRYPTION_SECRET_KEY,
@@ -58,7 +59,7 @@ def decode_jwt_token(token: str, expected_type: TokenType) -> ParsedJWTPayload:
 
         subject = JWTSubject.model_validate_json(payload["sub"])
 
-        logger.info(f"Parsed JWT payload")
+        logger.info("Parsed JWT payload")
         return ParsedJWTPayload(
             exp=payload["exp"],
             sub=payload["sub"],

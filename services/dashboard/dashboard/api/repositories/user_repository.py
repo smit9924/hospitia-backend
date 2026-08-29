@@ -4,7 +4,11 @@ from sqlmodel import Session, col, func, select
 
 from dashboard.database.models.users import UsersReplica
 from dashboard.schemas.mq_schemas import MqUserCreatedPayload
-from dashboard.schemas.user_schemas import UserListItem, UserListQueryParams, UserListResponse
+from dashboard.schemas.user_schemas import (
+    UserListItem,
+    UserListQueryParams,
+    UserListResponse,
+)
 from dashboard.types.enums import UserType
 
 _SORT_COLUMNS = {
