@@ -12,7 +12,11 @@ from auth.core.config import settings
 from auth.database.db import engine
 from auth.database.models.users_outbox import UsersOutbox
 from auth.messaging.general import get_mq_client
-from auth.schemas.mq_schemas import MqDomainEvent, MqUserCreatedPayload, MqWelcomeEmailMessage
+from auth.schemas.mq_schemas import (
+    MqDomainEvent,
+    MqUserCreatedPayload,
+    MqWelcomeEmailMessage,
+)
 from auth.types.enums import UserType
 
 log = logging.getLogger(__name__)

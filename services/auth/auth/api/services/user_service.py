@@ -16,7 +16,11 @@ from auth.api.repositories.user_repository import (
     update_user_data,
     update_user_password,
 )
-from auth.api.services.common_service import generate_otp, generate_strong_password, is_password_strong
+from auth.api.services.common_service import (
+    generate_otp,
+    generate_strong_password,
+    is_password_strong,
+)
 from auth.api.services.login_service import authenticate_manual_user
 from auth.core.config import settings
 from auth.core.security import create_jwt_access_token, create_jwt_refresh_token

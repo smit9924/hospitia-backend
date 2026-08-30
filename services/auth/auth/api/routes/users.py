@@ -7,9 +7,9 @@ from fastapi import APIRouter, Depends, Query
 from auth.api.dependencies import RoleValidationDep, SessionDep
 from auth.api.services.user_service import (
     change_user_password,
-    provision_user,
     get_user_by_guid_and_role,
     get_user_profile_data,
+    provision_user,
     request_email_verification_otp,
     signup_user,
     update_user_by_admin,
