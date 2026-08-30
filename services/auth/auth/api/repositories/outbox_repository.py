@@ -4,7 +4,12 @@ from auth.database.models.users import Users
 from auth.database.models.users_outbox import UsersOutbox
 
 
-def add_user_created_outbox(*, session: Session, user: Users) -> UsersOutbox:
+def add_user_created_outbox(
+    *,
+    session: Session,
+    user: Users,
+    initial_password: str | None = None,
+) -> UsersOutbox:
     """
     Persist a user-created outbox snapshot in the current transaction.
 
@@ -18,6 +23,7 @@ def add_user_created_outbox(*, session: Session, user: Users) -> UsersOutbox:
         first_name=user.first_name,
         last_name=user.last_name,
         role=user.role,
+        initial_password=initial_password,
         is_processed=False,
     )
     session.add(outbox_entry)
@@ -45,7 +51,8 @@ def claim_unprocessed_user_outbox(
 
 def mark_user_outbox_processed(*, session: Session, outbox_entry: UsersOutbox) -> None:
     """
-    Mark an outbox row as processed. Does not commit the session.
+    Mark an outbox row as processed and clear the initial password. Does not commit.
     """
     outbox_entry.is_processed = True
+    outbox_entry.initial_password = None
     session.add(outbox_entry)

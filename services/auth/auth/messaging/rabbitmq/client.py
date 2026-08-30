@@ -62,6 +62,11 @@ class RabbitMQClient(MQClient):
                 exchange_name=settings.EMAIL_NOTIFICATION_EXCHANGE,
                 routing_key=settings.VERIFY_EMAIL_OTP_EMAIL_QUEUE_ROUTING_KEY,
             ),
+            settings.WELCOME_EMAIL_QUEUE: RabbitMQQueue(
+                name=settings.WELCOME_EMAIL_QUEUE,
+                exchange_name=settings.EMAIL_NOTIFICATION_EXCHANGE,
+                routing_key=settings.WELCOME_EMAIL_QUEUE_ROUTING_KEY,
+            ),
             settings.BOOKING_USER_CREATED_QUEUE: RabbitMQQueue(
                 name=settings.BOOKING_USER_CREATED_QUEUE,
                 exchange_name=settings.USER_EVENTS_EXCHANGE,

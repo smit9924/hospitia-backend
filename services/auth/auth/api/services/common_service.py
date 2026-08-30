@@ -1,5 +1,6 @@
 import re
 import secrets
+import string
 
 
 def generate_otp(length: int) -> str:
@@ -55,3 +56,44 @@ def is_password_strong(password: str | None) -> bool:
         return False
 
     return True
+
+
+def generate_strong_password(length: int = 16) -> str:
+    """
+    Generate a cryptographically secure password that satisfies is_password_strong.
+
+    Parameters
+    ----------
+    length : int
+        Desired password length. Must be between 8 and 50 inclusive.
+
+    Returns
+    -------
+    str
+        A randomly generated strong password.
+    """
+    if length < 8 or length > 50:
+        raise ValueError("Password length must be between 8 and 50 characters.")
+
+    uppercase = string.ascii_uppercase
+    lowercase = string.ascii_lowercase
+    digits = string.digits
+    special = "!@#$%^&*(),.?\":{}|<>_-[];'/+=~`"
+
+    # Guarantee at least one character from each required class.
+    required = [
+        secrets.choice(uppercase),
+        secrets.choice(lowercase),
+        secrets.choice(digits),
+        secrets.choice(special),
+    ]
+    alphabet = uppercase + lowercase + digits + special
+    remaining = [secrets.choice(alphabet) for _ in range(length - len(required))]
+    password_chars = required + remaining
+    secrets.SystemRandom().shuffle(password_chars)
+    password = "".join(password_chars)
+
+    if not is_password_strong(password):
+        return generate_strong_password(length)
+
+    return password

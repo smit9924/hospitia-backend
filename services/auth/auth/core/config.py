@@ -73,6 +73,8 @@ class Settings(BaseSettings):
     FORGOT_PASSWORD_EMAIL_QUEUE_ROUTING_KEY: str = ... # type: ignore
     VERIFY_EMAIL_OTP_EMAIL_QUEUE: str = ... # type: ignore
     VERIFY_EMAIL_OTP_EMAIL_QUEUE_ROUTING_KEY: str = ... # type: ignore
+    WELCOME_EMAIL_QUEUE: str = ... # type: ignore
+    WELCOME_EMAIL_QUEUE_ROUTING_KEY: str = ... # type: ignore
 
     # User events topology (Auth declares subscriber queues so events persist if those services are down)
     USER_EVENTS_EXCHANGE: str = ... # type: ignore

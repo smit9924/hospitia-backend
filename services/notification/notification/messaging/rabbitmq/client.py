@@ -69,6 +69,17 @@ class RabbitMQClient(MQClient):
                 exchange_name=settings.EMAIL_NOTIFICATION_EXCHANGE,
                 routing_key=settings.VERIFY_EMAIL_OTP_DEAD_LETTER_EMAIL_QUEUE_ROUTING_KEY,
             ),
+            settings.WELCOME_EMAIL_QUEUE: RabbitMQQueue(
+                name=settings.WELCOME_EMAIL_QUEUE,
+                exchange_name=settings.EMAIL_NOTIFICATION_EXCHANGE,
+                routing_key=settings.WELCOME_EMAIL_QUEUE_ROUTING_KEY,
+                dead_letter_queue=settings.WELCOME_DEAD_LETTER_EMAIL_QUEUE,
+            ),
+            settings.WELCOME_DEAD_LETTER_EMAIL_QUEUE: RabbitMQQueue(
+                name=settings.WELCOME_DEAD_LETTER_EMAIL_QUEUE,
+                exchange_name=settings.EMAIL_NOTIFICATION_EXCHANGE,
+                routing_key=settings.WELCOME_DEAD_LETTER_EMAIL_QUEUE_ROUTING_KEY,
+            ),
         }
 
     # ******************

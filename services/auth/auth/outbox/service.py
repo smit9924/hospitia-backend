@@ -12,9 +12,17 @@ from auth.core.config import settings
 from auth.database.db import engine
 from auth.database.models.users_outbox import UsersOutbox
 from auth.messaging.general import get_mq_client
-from auth.schemas.mq_schemas import MqDomainEvent, MqUserCreatedPayload
+from auth.schemas.mq_schemas import MqDomainEvent, MqUserCreatedPayload, MqWelcomeEmailMessage
+from auth.types.enums import UserType
 
 log = logging.getLogger(__name__)
+
+_ROLE_LABELS = {
+    UserType.ADMIN: "Admin",
+    UserType.OWNER: "Owner",
+    UserType.MANAGER: "Manager",
+    UserType.CUSTOMER: "Customer",
+}
 
 
 def process_pending_user_outbox() -> None:
@@ -34,6 +42,7 @@ def process_pending_user_outbox() -> None:
 
         for outbox_entry in outbox_entries:
             _publish_user_created_event(outbox_entry)
+            _publish_welcome_email_if_needed(outbox_entry)
             mark_user_outbox_processed(session=session, outbox_entry=outbox_entry)
 
         session.commit()
@@ -68,4 +77,30 @@ def _publish_user_created_event(outbox_entry: UsersOutbox) -> None:
         event.event_id,
         outbox_entry.guid,
         outbox_entry.id,
+    )
+
+
+def _publish_welcome_email_if_needed(outbox_entry: UsersOutbox) -> None:
+    """
+    Publish a welcome email when an initial password was stored on the outbox row.
+    """
+    if not outbox_entry.initial_password:
+        return
+
+    role_label = _ROLE_LABELS.get(outbox_entry.role, str(outbox_entry.role))
+    message = MqWelcomeEmailMessage(
+        to=[outbox_entry.email],
+        subject="Welcome to Yatri Bhavan",
+        user_first_name=outbox_entry.first_name or "",
+        user_last_name=outbox_entry.last_name or "",
+        username=outbox_entry.username,
+        password=outbox_entry.initial_password,
+        role=role_label,
+    )
+    get_mq_client().publish(settings.WELCOME_EMAIL_QUEUE, message)
+    log.info(
+        "Welcome email queued guid=%s outbox_id=%s role=%s",
+        outbox_entry.guid,
+        outbox_entry.id,
+        role_label,
     )

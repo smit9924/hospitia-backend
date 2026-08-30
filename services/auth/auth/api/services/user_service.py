@@ -16,7 +16,7 @@ from auth.api.repositories.user_repository import (
     update_user_data,
     update_user_password,
 )
-from auth.api.services.common_service import generate_otp, is_password_strong
+from auth.api.services.common_service import generate_otp, generate_strong_password, is_password_strong
 from auth.api.services.login_service import authenticate_manual_user
 from auth.core.config import settings
 from auth.core.security import create_jwt_access_token, create_jwt_refresh_token
@@ -39,7 +39,9 @@ from auth.schemas.user_schemas import (
     ChangePassword,
     ProfileData,
     ProfileUpdate,
+    UserCreateRequest,
     UserSignup,
+    UserUpdateRequest,
 )
 from auth.types.enums import AuthType, UserType
 
@@ -65,6 +67,103 @@ def get_user_profile_data(*, session: Session, user_guid: str) -> ProfileData:
         raise UserNotFoundException()
 
     log.info("Profile data retrieved guid=%s", user.guid)
+    return _to_profile_data(user)
+
+
+def get_user_by_guid_and_role(
+    *,
+    session: Session,
+    user_guid: str,
+    expected_role: UserType,
+) -> ProfileData:
+    """
+    Retrieve profile data for a user that matches the expected role.
+    """
+    log.info("Started role=%s guid=%s", expected_role, user_guid)
+    user = get_user_by_guid(session=session, guid=user_guid)
+    if not user or user.role != expected_role or user.is_deleted:
+        log.warning(
+            "User not found or role mismatch guid=%s expected_role=%s",
+            user_guid,
+            expected_role,
+        )
+        raise UserNotFoundException()
+
+    log.info("User retrieved guid=%s role=%s", user.guid, user.role)
+    return _to_profile_data(user)
+
+
+def provision_user(
+    *,
+    session: Session,
+    user_create: UserCreateRequest,
+    role: UserType,
+) -> ProfileData:
+    """
+    Create a user with a generated strong password and write a welcome-email outbox row.
+
+    Used when an authorized actor provisions an account for someone else
+    (as opposed to self-service signup).
+    """
+    log.info("Started role=%s", role)
+    generated_password = generate_strong_password()
+
+    user = Users(
+        email=user_create.email,
+        username=user_create.username,
+        password=generated_password,
+        first_name=user_create.first_name,
+        last_name=user_create.last_name,
+        auth_type=AuthType.MANUAL,
+        role=role,
+        is_active=True,
+    )
+    validated_user = user.model_validate(user)
+
+    if not is_valid_username(validated_user.username):
+        log.error("Invalid username")
+        raise InvalidUsernameException()
+
+    created_user = create_user(session=session, validated_user=validated_user)
+    add_user_created_outbox(
+        session=session,
+        user=created_user,
+        initial_password=generated_password,
+    )
+    session.commit()
+    log.info("Provisioned user persisted guid=%s role=%s", created_user.guid, role)
+    return _to_profile_data(created_user)
+
+
+def update_user_by_admin(
+    *,
+    session: Session,
+    expected_role: UserType,
+    user_update: UserUpdateRequest,
+) -> ProfileData:
+    """
+    Update profile fields for a user that matches the expected role.
+    """
+    log.info("Started role=%s guid=%s", expected_role, user_update.guid)
+    user = get_user_by_guid(session=session, guid=user_update.guid)
+    if not user or user.role != expected_role or user.is_deleted:
+        log.warning(
+            "User not found or role mismatch guid=%s expected_role=%s",
+            user_update.guid,
+            expected_role,
+        )
+        raise UserNotFoundException()
+
+    updated_user = update_user_data(
+        session=session,
+        user_guid=user_update.guid,
+        profile_data=user_update,
+    )
+    log.info("Admin-updated user guid=%s role=%s", updated_user.guid, expected_role)
+    return _to_profile_data(updated_user)
+
+
+def _to_profile_data(user: Users) -> ProfileData:
     return ProfileData(
         guid=str(user.guid),
         email=user.email,
@@ -234,15 +333,7 @@ def update_user_profile(*, session: Session, user_guid: str, profile_data: Profi
     user = update_user_data(session=session, user_guid=user_guid, profile_data=profile_data)
 
     log.info("Profile updated guid=%s", user.guid)
-    return ProfileData(
-        guid=str(user.guid),
-        email=user.email,
-        role=user.role,
-        username=user.username,
-        first_name=user.first_name,
-        last_name=user.last_name,
-        is_email_verified=user.is_email_verified,
-    )
+    return _to_profile_data(user)
 
 
 def change_user_password(*, session: Session, user_guid: str, change_password_data: ChangePassword) -> None:

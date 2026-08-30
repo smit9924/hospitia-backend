@@ -1,14 +1,18 @@
 import logging
 from typing import Annotated
+from uuid import UUID
 
 from fastapi import APIRouter, Depends, Query
 
 from auth.api.dependencies import RoleValidationDep, SessionDep
 from auth.api.services.user_service import (
     change_user_password,
+    provision_user,
+    get_user_by_guid_and_role,
     get_user_profile_data,
     request_email_verification_otp,
     signup_user,
+    update_user_by_admin,
     update_user_profile,
     validate_username_uniqueness,
     verify_email_otp,
@@ -21,7 +25,9 @@ from auth.schemas.user_schemas import (
     ChangePassword,
     ProfileData,
     ProfileUpdate,
+    UserCreateRequest,
     UserSignup,
+    UserUpdateRequest,
     VerifyEmailOtpRequest,
 )
 from auth.types.enums import UserType
@@ -31,6 +37,9 @@ log = logging.getLogger(__name__)
 router = APIRouter(tags=["users"])
 
 _ALL_ROLES = [UserType.ADMIN, UserType.OWNER, UserType.MANAGER, UserType.CUSTOMER]
+_ADMIN_ONLY = [UserType.ADMIN]
+_ADMIN_OWNER = [UserType.ADMIN, UserType.OWNER]
+_ADMIN_OWNER_MANAGER = [UserType.ADMIN, UserType.OWNER, UserType.MANAGER]
 
 
 _SIGNUP_RESPONSES = {
@@ -38,6 +47,17 @@ _SIGNUP_RESPONSES = {
     **VALIDATION_EXCEPTION_DOC["UserWithUsernameAlreadyExistsException"],
     **VALIDATION_EXCEPTION_DOC["WeakPasswordException"],
     **VALIDATION_EXCEPTION_DOC["InvalidUsernameException"],
+}
+
+_CREATE_USER_RESPONSES = {
+    **VALIDATION_EXCEPTION_DOC["UserWithEmailAlreadyExistsException"],
+    **VALIDATION_EXCEPTION_DOC["UserWithUsernameAlreadyExistsException"],
+    **VALIDATION_EXCEPTION_DOC["InvalidUsernameException"],
+}
+
+_UPDATE_USER_RESPONSES = {
+    **NOT_FOUND_EXCEPTIONS_DOC["UserNotFoundException"],
+    **VALIDATION_EXCEPTION_DOC["UserWithUsernameAlreadyExistsException"],
 }
 
 
@@ -181,4 +201,210 @@ async def verify_email_otp_endpoint(
         session=session,
         user_guid=token.parsed_subject.user_guid,
         otp=payload.otp,
+    )
+
+
+# ############################
+# Admin users
+# ############################
+
+
+@router.post(
+    "/admins",
+    responses=_CREATE_USER_RESPONSES,
+)
+async def create_admin(
+    session: SessionDep,
+    user_create: UserCreateRequest,
+    _token: Annotated[ParsedJWTPayload, Depends(RoleValidationDep(_ADMIN_ONLY))],
+) -> ProfileData:
+    """Create a new ADMIN user. Password is generated and emailed."""
+    return provision_user(session=session, user_create=user_create, role=UserType.ADMIN)
+
+
+@router.get(
+    "/admins/{guid}",
+    responses={**NOT_FOUND_EXCEPTIONS_DOC["UserNotFoundException"]},
+)
+async def get_admin(
+    guid: UUID,
+    session: SessionDep,
+    _token: Annotated[ParsedJWTPayload, Depends(RoleValidationDep(_ADMIN_ONLY))],
+) -> ProfileData:
+    """Retrieve an ADMIN user by GUID."""
+    return get_user_by_guid_and_role(
+        session=session,
+        user_guid=str(guid),
+        expected_role=UserType.ADMIN,
+    )
+
+
+@router.put(
+    "/admins",
+    responses=_UPDATE_USER_RESPONSES,
+)
+async def update_admin(
+    session: SessionDep,
+    user_update: UserUpdateRequest,
+    _token: Annotated[ParsedJWTPayload, Depends(RoleValidationDep(_ADMIN_ONLY))],
+) -> ProfileData:
+    """Update an ADMIN user's profile fields."""
+    return update_user_by_admin(
+        session=session,
+        expected_role=UserType.ADMIN,
+        user_update=user_update,
+    )
+
+# ############################
+# Owner users
+# ############################
+
+@router.post(
+    "/owners",
+    responses=_CREATE_USER_RESPONSES,
+)
+async def create_owner(
+    session: SessionDep,
+    user_create: UserCreateRequest,
+    _token: Annotated[ParsedJWTPayload, Depends(RoleValidationDep(_ADMIN_ONLY))],
+) -> ProfileData:
+    """Create a new OWNER user. Password is generated and emailed."""
+    return provision_user(session=session, user_create=user_create, role=UserType.OWNER)
+
+
+@router.get(
+    "/owners/{guid}",
+    responses={**NOT_FOUND_EXCEPTIONS_DOC["UserNotFoundException"]},
+)
+async def get_owner(
+    guid: UUID,
+    session: SessionDep,
+    _token: Annotated[ParsedJWTPayload, Depends(RoleValidationDep(_ADMIN_ONLY))],
+) -> ProfileData:
+    """Retrieve an OWNER user by GUID."""
+    return get_user_by_guid_and_role(
+        session=session,
+        user_guid=str(guid),
+        expected_role=UserType.OWNER,
+    )
+
+
+@router.put(
+    "/owners",
+    responses=_UPDATE_USER_RESPONSES,
+)
+async def update_owner(
+    session: SessionDep,
+    user_update: UserUpdateRequest,
+    _token: Annotated[ParsedJWTPayload, Depends(RoleValidationDep(_ADMIN_ONLY))],
+) -> ProfileData:
+    """Update an OWNER user's profile fields."""
+    return update_user_by_admin(
+        session=session,
+        expected_role=UserType.OWNER,
+        user_update=user_update,
+    )
+
+
+# ############################
+# Manager users
+# ############################
+
+
+@router.post(
+    "/managers",
+    responses=_CREATE_USER_RESPONSES,
+)
+async def create_manager(
+    session: SessionDep,
+    user_create: UserCreateRequest,
+    _token: Annotated[ParsedJWTPayload, Depends(RoleValidationDep(_ADMIN_OWNER))],
+) -> ProfileData:
+    """Create a new MANAGER user. Password is generated and emailed."""
+    return provision_user(session=session, user_create=user_create, role=UserType.MANAGER)
+
+
+@router.get(
+    "/managers/{guid}",
+    responses={**NOT_FOUND_EXCEPTIONS_DOC["UserNotFoundException"]},
+)
+async def get_manager(
+    guid: UUID,
+    session: SessionDep,
+    _token: Annotated[ParsedJWTPayload, Depends(RoleValidationDep(_ADMIN_OWNER))],
+) -> ProfileData:
+    """Retrieve a MANAGER user by GUID."""
+    return get_user_by_guid_and_role(
+        session=session,
+        user_guid=str(guid),
+        expected_role=UserType.MANAGER,
+    )
+
+
+@router.put(
+    "/managers",
+    responses=_UPDATE_USER_RESPONSES,
+)
+async def update_manager(
+    session: SessionDep,
+    user_update: UserUpdateRequest,
+    _token: Annotated[ParsedJWTPayload, Depends(RoleValidationDep(_ADMIN_OWNER))],
+) -> ProfileData:
+    """Update a MANAGER user's profile fields."""
+    return update_user_by_admin(
+        session=session,
+        expected_role=UserType.MANAGER,
+        user_update=user_update,
+    )
+
+
+# ############################
+# Customer users
+# ############################
+
+
+@router.post(
+    "/customers",
+    responses=_CREATE_USER_RESPONSES,
+)
+async def create_customer(
+    session: SessionDep,
+    user_create: UserCreateRequest,
+    _token: Annotated[ParsedJWTPayload, Depends(RoleValidationDep(_ADMIN_OWNER_MANAGER))],
+) -> ProfileData:
+    """Create a new CUSTOMER user. Password is generated and emailed."""
+    return provision_user(session=session, user_create=user_create, role=UserType.CUSTOMER)
+
+
+@router.get(
+    "/customers/{guid}",
+    responses={**NOT_FOUND_EXCEPTIONS_DOC["UserNotFoundException"]},
+)
+async def get_customer(
+    guid: UUID,
+    session: SessionDep,
+    _token: Annotated[ParsedJWTPayload, Depends(RoleValidationDep(_ADMIN_OWNER_MANAGER))],
+) -> ProfileData:
+    """Retrieve a CUSTOMER user by GUID."""
+    return get_user_by_guid_and_role(
+        session=session,
+        user_guid=str(guid),
+        expected_role=UserType.CUSTOMER,
+    )
+
+
+@router.put(
+    "/customers",
+    responses=_UPDATE_USER_RESPONSES,
+)
+async def update_customer(
+    session: SessionDep,
+    user_update: UserUpdateRequest,
+    _token: Annotated[ParsedJWTPayload, Depends(RoleValidationDep(_ADMIN_OWNER_MANAGER))],
+) -> ProfileData:
+    """Update a CUSTOMER user's profile fields."""
+    return update_user_by_admin(
+        session=session,
+        expected_role=UserType.CUSTOMER,
+        user_update=user_update,
     )

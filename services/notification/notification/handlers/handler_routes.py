@@ -8,6 +8,7 @@ from notification.exceptions.definitions.messaging_queue_exceptions import (
 from notification.handlers.email_handlers import (
     forgot_password_email_handler,
     verify_email_otp_email_handler,
+    welcome_email_handler,
 )
 
 type MESSAGE_HANDLER = Callable[[dict[str, Any]], None]
@@ -15,6 +16,7 @@ type MESSAGE_HANDLER = Callable[[dict[str, Any]], None]
 MESSAGE_ROUTES: dict[str, MESSAGE_HANDLER] = {
     settings.FORGOT_PASSWORD_EMAIL_QUEUE: forgot_password_email_handler,
     settings.VERIFY_EMAIL_OTP_EMAIL_QUEUE: verify_email_otp_email_handler,
+    settings.WELCOME_EMAIL_QUEUE: welcome_email_handler,
 }
 
 

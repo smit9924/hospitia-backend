@@ -34,6 +34,9 @@ class UsersOutbox(SQLModel, table=True):
         User's last name.
     role : UserType
         User role copied from the created user for downstream services.
+    initial_password : str | None, optional
+        Plaintext password generated for welcome email delivery. Cleared after
+        the outbox worker successfully publishes the welcome email.
     is_processed : bool, default=False
         Whether the outbox worker has successfully published this row.
     """
@@ -55,6 +58,8 @@ class UsersOutbox(SQLModel, table=True):
     last_name: str | None = Field(default=None, max_length=255)
 
     role: UserType = Field(nullable=False, sa_type=Integer)
+
+    initial_password: str | None = Field(default=None, max_length=255)
 
     is_processed: bool = Field(
         default=False,

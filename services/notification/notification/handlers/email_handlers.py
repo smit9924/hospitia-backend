@@ -4,6 +4,7 @@ from typing import Any
 from notification.schemas.mq_schemas import (
     MqForgotPasswordMessage,
     MqVerifyEmailOtpMessage,
+    MqWelcomeEmailMessage,
 )
 from notification.services.email_service import send_html_email
 from notification.services.template_service import render_template
@@ -74,6 +75,40 @@ def verify_email_otp_email_handler(event: dict[str, Any]) -> None:
 
     log.info(
         "Verify email OTP email sent recipient_count=%d subject=%s",
+        len(data.to),
+        data.subject,
+    )
+
+
+def welcome_email_handler(event: dict[str, Any]) -> None:
+    """
+    Handle the welcome email event for newly created users.
+
+    Parameters
+    ----------
+    event : dict[str, Any]
+        The event data containing credentials and user information.
+
+    returns
+    -------
+    None
+    """
+    log.info("Started")
+    data = MqWelcomeEmailMessage(**event)
+
+    html = render_template(
+        "welcome_email.html",
+        data.model_dump(),
+    )
+
+    send_html_email(
+        to=data.to,
+        subject=data.subject,
+        body=html,
+    )
+
+    log.info(
+        "Welcome email sent recipient_count=%d subject=%s",
         len(data.to),
         data.subject,
     )

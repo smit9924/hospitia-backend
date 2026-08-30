@@ -69,6 +69,37 @@ class MqVerifyEmailOtpMessage(MqBaseSchema):
     expiration_time: int
 
 
+class MqWelcomeEmailMessage(MqBaseSchema):
+    """
+    Schema for MQ welcome email messages with initial credentials.
+
+    Attributes
+    ----------
+    to : list[str]
+        List of recipient email addresses.
+    subject : str
+        Subject line of the email.
+    user_first_name : str
+        First name of the user.
+    user_last_name : str
+        Last name of the user.
+    username : str
+        Login username for the new account.
+    password : str
+        Initial plaintext password generated for the user.
+    role : str
+        Human-readable role label for the new account.
+    """
+
+    to: list[str]
+    subject: str
+    user_first_name: str
+    user_last_name: str
+    username: str
+    password: str
+    role: str
+
+
 class MqUserCreatedPayload(MqBaseSchema):
     """
     Payload for a newly created Auth user.
