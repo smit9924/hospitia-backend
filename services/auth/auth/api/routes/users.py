@@ -61,7 +61,7 @@ _UPDATE_USER_RESPONSES = {
 }
 
 
-@router.post("/signup", responses=_SIGNUP_RESPONSES)
+@router.post("/signup", responses={**_SIGNUP_RESPONSES})
 async def signup(session: SessionDep, user_signup: UserSignup) -> Token:
     """
     Register a new OWNER user and authenticate them.
@@ -74,7 +74,8 @@ async def signup(session: SessionDep, user_signup: UserSignup) -> Token:
     return signup_user(session=session, user_signup=user_signup, role=UserType.OWNER)
 
 
-@router.post("/signup-customer", responses=_SIGNUP_RESPONSES)
+
+@router.post("/signup-customer", responses={**_SIGNUP_RESPONSES})
 async def signup_customer(session: SessionDep, user_signup: UserSignup) -> Token:
     """
     Register a new CUSTOMER user and authenticate them.
@@ -211,7 +212,7 @@ async def verify_email_otp_endpoint(
 
 @router.post(
     "/admins",
-    responses=_CREATE_USER_RESPONSES,
+    responses={**_CREATE_USER_RESPONSES},
 )
 async def create_admin(
     session: SessionDep,
@@ -241,7 +242,7 @@ async def get_admin(
 
 @router.put(
     "/admins",
-    responses=_UPDATE_USER_RESPONSES,
+    responses={**_UPDATE_USER_RESPONSES},
 )
 async def update_admin(
     session: SessionDep,
@@ -261,7 +262,7 @@ async def update_admin(
 
 @router.post(
     "/owners",
-    responses=_CREATE_USER_RESPONSES,
+    responses={**_CREATE_USER_RESPONSES},
 )
 async def create_owner(
     session: SessionDep,
@@ -291,7 +292,7 @@ async def get_owner(
 
 @router.put(
     "/owners",
-    responses=_UPDATE_USER_RESPONSES,
+    responses={**_UPDATE_USER_RESPONSES},
 )
 async def update_owner(
     session: SessionDep,
@@ -313,7 +314,7 @@ async def update_owner(
 
 @router.post(
     "/managers",
-    responses=_CREATE_USER_RESPONSES,
+    responses={**_CREATE_USER_RESPONSES},
 )
 async def create_manager(
     session: SessionDep,
@@ -343,7 +344,7 @@ async def get_manager(
 
 @router.put(
     "/managers",
-    responses=_UPDATE_USER_RESPONSES,
+    responses={**_UPDATE_USER_RESPONSES},
 )
 async def update_manager(
     session: SessionDep,
@@ -365,7 +366,7 @@ async def update_manager(
 
 @router.post(
     "/customers",
-    responses=_CREATE_USER_RESPONSES,
+    responses={**_CREATE_USER_RESPONSES},
 )
 async def create_customer(
     session: SessionDep,
@@ -395,7 +396,7 @@ async def get_customer(
 
 @router.put(
     "/customers",
-    responses=_UPDATE_USER_RESPONSES,
+    responses={**_UPDATE_USER_RESPONSES},
 )
 async def update_customer(
     session: SessionDep,

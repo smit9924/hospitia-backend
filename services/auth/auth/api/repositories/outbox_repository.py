@@ -15,6 +15,9 @@ def add_user_created_outbox(
 
     Note: This function does not commit the session.
     """
+    if user.id is None or user.guid is None:
+        raise ValueError("Cannot create outbox entry: user.id is None (user not yet persisted).")
+
     outbox_entry = UsersOutbox(
         user_id=user.id,
         guid=user.guid,
@@ -28,6 +31,7 @@ def add_user_created_outbox(
     )
     session.add(outbox_entry)
     session.flush()
+    session.refresh(outbox_entry)
     return outbox_entry
 
 
@@ -41,8 +45,8 @@ def claim_unprocessed_user_outbox(
     """
     statement = (
         select(UsersOutbox)
-        .where(UsersOutbox.is_processed.is_(False))
-        .order_by(UsersOutbox.id)
+        .where(UsersOutbox.is_processed.is_(False))  # type: ignore[attr-defined]
+        .order_by(UsersOutbox.id)  # type: ignore[arg-type]
         .limit(batch_size)
         .with_for_update(skip_locked=True)
     )
