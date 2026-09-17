@@ -287,7 +287,10 @@ def mark_otps_as_used(*, session: Session, user_id: int | None) -> None:
         raise UserNotFoundException()
 
     mark_all_otps_as_used_statement = (
-        update(Otp).where(Otp.user_id == user_id, Otp.used == False).values(used=True)  # noqa: E712
+        update(Otp).where(
+            Otp.user_id == user_id, # pyright: ignore[reportArgumentType]
+            Otp.used == False) # pyright: ignore[reportArgumentType]
+        .values(used=True)
     )
     session.exec(mark_all_otps_as_used_statement)
     session.commit()
