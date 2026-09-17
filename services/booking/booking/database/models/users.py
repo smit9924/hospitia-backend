@@ -43,7 +43,7 @@ class UsersReplica(SQLModel, table=True):
     - Indexed fields (`id`, `guid`, `email`) enable fast queries
     """
 
-    __tablename__ = "usersreplica"
+    __tablename__ = "usersreplica" # type: ignore
 
     id: int | None = Field(default=None, primary_key=True, index=True)
     user_id: int = Field(unique=True, index=True, nullable=False)
