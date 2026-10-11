@@ -13,6 +13,7 @@ from auth.api.repositories.user_repository import (
     get_user_by_username,
     mark_otp_used_and_email_verified,
     mark_otps_as_used,
+    soft_delete_user,
     update_user_data,
     update_user_password,
 )
@@ -28,7 +29,10 @@ from auth.database.models.users import Users
 from auth.exceptions.definitions.not_found_exceptions import (
     UserNotFoundException,
 )
-from auth.exceptions.definitions.security_exceptions import InvalidCredentialsException
+from auth.exceptions.definitions.security_exceptions import (
+    InvalidCredentialsException,
+    UserUnauthorizedException,
+)
 from auth.exceptions.definitions.validation_exceptions import (
     EmailAlreadyVerifiedException,
     InvalidOtpException,
@@ -110,6 +114,8 @@ def provision_user(
     (as opposed to self-service signup).
     """
     log.info("Started role=%s", role)
+    if role == UserType.INTERNALE:
+        raise UserUnauthorizedException()
     generated_password = generate_strong_password()
 
     user = Users(
@@ -167,6 +173,27 @@ def update_user_by_admin(
     return _to_profile_data(updated_user)
 
 
+def delete_user_by_admin(
+    *,
+    session: Session,
+    user_guid: str,
+    expected_role: UserType,
+) -> None:
+    """Soft-delete a user after confirming that it has the expected role."""
+    log.info("Started role=%s guid=%s", expected_role, user_guid)
+    user = get_user_by_guid(session=session, guid=user_guid)
+    if not user or user.role != expected_role or user.is_deleted:
+        log.warning(
+            "User not found or role mismatch guid=%s expected_role=%s",
+            user_guid,
+            expected_role,
+        )
+        raise UserNotFoundException()
+
+    soft_delete_user(session=session, user=user)
+    log.info("User soft-deleted guid=%s role=%s", user_guid, expected_role)
+
+
 def _to_profile_data(user: Users) -> ProfileData:
     return ProfileData(
         guid=str(user.guid),
@@ -194,6 +221,8 @@ def signup_user(*, session: Session, user_signup: UserSignup, role: UserType) ->
             The role to assign to the new user.
     """
     log.info("Started")
+    if role == UserType.INTERNALE:
+        raise UserUnauthorizedException()
     user = Users(
         email=user_signup.email,
         username=user_signup.username,

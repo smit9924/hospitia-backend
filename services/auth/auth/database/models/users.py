@@ -44,8 +44,9 @@ class Users(SQLModel, table=True):
         integer in the database.
     role : UserType, default=UserType.CUSTOMER
         User's role in the system for permission management. Enum defining
-        access levels (e.g., ADMIN, OWNER, MANAGER, CUSTOMER). Stored as an
-        integer in the database.
+        access levels (e.g., ADMIN, OWNER, MANAGER, CUSTOMER, INTERNALE).
+        INTERNALE is reserved for internal API callers and is not exposed by
+        public user creation APIs. Stored as an integer in the database.
     is_email_verified : bool, default=False
         Whether the user's email address has been verified. Used to enforce
         email verification workflows.

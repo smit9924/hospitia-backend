@@ -1,7 +1,8 @@
+import ipaddress
 from collections.abc import Callable, Generator
 from typing import Annotated
 
-from fastapi import Depends
+from fastapi import Depends, Request
 from fastapi.security import OAuth2PasswordBearer
 from sqlmodel import Session
 
@@ -42,6 +43,21 @@ oauth2_flow = OAuth2PasswordBearer(tokenUrl=f"{settings.API_V1_STR}/login/access
 # OAuth2 token dependency
 # Intended for use in routes that require authentication and authorization
 TokenDep = Annotated[str, Depends(oauth2_flow)]
+
+
+def _validate_internal_request(request: Request) -> None:
+    """Allow internal APIs only from the local VM."""
+    client_host = request.client.host if request.client else None
+    if not client_host:
+        raise UserUnauthorizedException()
+
+    try:
+        client_ip = ipaddress.ip_address(client_host)
+    except ValueError as exc:
+        raise UserUnauthorizedException() from exc
+
+    if not (client_ip.is_loopback and client_ip.version in (4, 6)):
+        raise UserUnauthorizedException()
 
 
 def RoleValidationDep(
@@ -112,3 +128,12 @@ def RoleValidationDep(
         return token_payload
 
     return validate_jwt_token
+
+
+def InternalRequestDep() -> Callable:
+    """Allow internal APIs only from the local VM."""
+
+    async def validate_internal_request(request: Request) -> None:
+        _validate_internal_request(request)
+
+    return validate_internal_request

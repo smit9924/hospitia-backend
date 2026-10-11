@@ -198,6 +198,14 @@ def update_user_data(*, session: Session, user_guid: str, profile_data: ProfileU
 
     return user
 
+
+def soft_delete_user(*, session: Session, user: Users) -> None:
+    """Mark a user as deleted without removing its database record."""
+    user.is_deleted = True
+    user.is_active = False
+    session.add(user)
+    session.commit()
+
 def update_user_password(*, session: Session, user_id: int | None, new_password: str) -> None:
     """
     Update the password for a user.

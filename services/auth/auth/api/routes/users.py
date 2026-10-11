@@ -4,9 +4,14 @@ from uuid import UUID
 
 from fastapi import APIRouter, Depends, Query
 
-from auth.api.dependencies import RoleValidationDep, SessionDep
+from auth.api.dependencies import (
+    InternalRequestDep,
+    RoleValidationDep,
+    SessionDep,
+)
 from auth.api.services.user_service import (
     change_user_password,
+    delete_user_by_admin,
     get_user_by_guid_and_role,
     get_user_profile_data,
     provision_user,
@@ -208,6 +213,44 @@ async def verify_email_otp_endpoint(
 # ############################
 # Admin users
 # ############################
+
+# An ADMIN can create another ADMIN through the authenticated API, but there
+# is no authenticated user before the first ADMIN exists. This internal API
+# bootstraps the first ADMIN from the local VM.
+@router.post(
+    "/internal/admins",
+    responses={
+        **_CREATE_USER_RESPONSES,
+        **SECURITY_EXCEPTION_DOC["UserUnauthorizedException"],
+    },
+)
+async def create_internal_admin(
+    session: SessionDep,
+    user_create: UserCreateRequest,
+    _: Annotated[None, Depends(InternalRequestDep())],
+) -> ProfileData:
+    """Create an ADMIN user from a caller on the internal network."""
+    return provision_user(session=session, user_create=user_create, role=UserType.ADMIN)
+
+
+@router.delete(
+    "/internal/admins/{guid}",
+    responses={
+        **NOT_FOUND_EXCEPTIONS_DOC["UserNotFoundException"],
+        **SECURITY_EXCEPTION_DOC["UserUnauthorizedException"],
+    },
+)
+async def delete_internal_admin(
+    guid: UUID,
+    session: SessionDep,
+    _: Annotated[None, Depends(InternalRequestDep())],
+) -> None:
+    """Soft-delete an ADMIN user from the local VM."""
+    delete_user_by_admin(
+        session=session,
+        user_guid=str(guid),
+        expected_role=UserType.ADMIN,
+    )
 
 
 @router.post(

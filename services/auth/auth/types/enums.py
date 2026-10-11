@@ -53,11 +53,16 @@ class UserType(IntEnum):
     CUSTOMER : int
         End user or client with standard access to services and features.
         Value: 4
+    INTERNALE : int
+        Reserved role for authenticated internal API callers. This role must
+        not be exposed through public user creation or public API access.
+        Value: 5
     """
     ADMIN = 1
     OWNER = 2
     MANAGER = 3
     CUSTOMER = 4
+    INTERNALE = 5
 
 class TokenType(IntEnum):
     """
