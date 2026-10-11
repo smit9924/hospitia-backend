@@ -31,6 +31,27 @@ class UserType(IntEnum):
     MANAGER = 3
     CUSTOMER = 4
 
+class OrganizationRole(IntEnum):
+    """
+    Role of a user within an organization, derived from the user's
+    ``usersreplica`` record.
+
+    Attributes
+    ----------
+    OWNER : int
+        Owns the organization. Every organization must have at least one
+        active OWNER mapping at all times.
+        Value: 1
+    MANAGER : int
+        Delegated day-to-day management access to the organization, granted
+        by an Admin or Owner. Read-only with respect to organization
+        create/update/delete operations.
+        Value: 2
+    """
+    OWNER = 1
+    MANAGER = 2
+
+
 class TokenType(IntEnum):
     """
     JWT token types for distinguishing access and refresh tokens.

@@ -1,7 +1,9 @@
 import uuid
 
 from pydantic import EmailStr
-from sqlmodel import Field
+from sqlmodel import Field, Integer
+
+from booking.types.enums import UserType
 
 from .base import SQLModel
 
@@ -35,6 +37,9 @@ class UsersReplica(SQLModel, table=True):
         User's first name. Maximum 255 characters.
     last_name : str | None, optional
         User's last name. Maximum 255 characters.
+    role : UserType
+        Auth service role for the user. Used for role-based authorization
+        and scoping within the Booking Service.
 
     Notes
     -----
@@ -52,6 +57,7 @@ class UsersReplica(SQLModel, table=True):
     username: str = Field(unique=True, index=True, max_length=255)
     first_name: str | None = Field(default=None, max_length=255)
     last_name: str | None = Field(default=None, max_length=255)
+    role: UserType = Field(nullable=False, index=True, default=UserType.CUSTOMER, sa_type=Integer)
 
 
 # List all database model classes defined in this file.

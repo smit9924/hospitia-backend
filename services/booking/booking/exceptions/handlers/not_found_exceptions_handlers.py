@@ -2,6 +2,10 @@ from fastapi import Request, status
 from fastapi.responses import JSONResponse
 
 from booking.exceptions.definitions.not_found_exceptions import (
+    AddressNotFoundException,
+    OrganizationNotFoundException,
+    OrganizationTypeNotFoundException,
+    OrganizationUserMappingNotFoundException,
     UserNotFoundException,
 )
 from booking.schemas.common_schemas import ApiErrorResponse
@@ -32,6 +36,86 @@ def user_not_found_exception_handler(
     JSONResponse
         HTTP 404 Not Found response with a structured error payload describing
         the missing user resource.
+    """
+
+    response = ApiErrorResponse(
+        metadata=None,
+        errorCode=exc.errorCode,
+        message=exc.message,
+    )
+
+    return JSONResponse(
+        status_code=status.HTTP_404_NOT_FOUND,
+        content=response.model_dump(),
+    )
+
+
+def organization_type_not_found_exception_handler(
+    _request: Request,
+    exc: OrganizationTypeNotFoundException,
+) -> JSONResponse:
+    """
+    Handle organization type not found exceptions.
+    """
+
+    response = ApiErrorResponse(
+        metadata=None,
+        errorCode=exc.errorCode,
+        message=exc.message,
+    )
+
+    return JSONResponse(
+        status_code=status.HTTP_404_NOT_FOUND,
+        content=response.model_dump(),
+    )
+
+
+def address_not_found_exception_handler(
+    _request: Request,
+    exc: AddressNotFoundException,
+) -> JSONResponse:
+    """
+    Handle address not found exceptions.
+    """
+
+    response = ApiErrorResponse(
+        metadata=None,
+        errorCode=exc.errorCode,
+        message=exc.message,
+    )
+
+    return JSONResponse(
+        status_code=status.HTTP_404_NOT_FOUND,
+        content=response.model_dump(),
+    )
+
+
+def organization_not_found_exception_handler(
+    _request: Request,
+    exc: OrganizationNotFoundException,
+) -> JSONResponse:
+    """
+    Handle organization not found exceptions.
+    """
+
+    response = ApiErrorResponse(
+        metadata=None,
+        errorCode=exc.errorCode,
+        message=exc.message,
+    )
+
+    return JSONResponse(
+        status_code=status.HTTP_404_NOT_FOUND,
+        content=response.model_dump(),
+    )
+
+
+def organization_user_mapping_not_found_exception_handler(
+    _request: Request,
+    exc: OrganizationUserMappingNotFoundException,
+) -> JSONResponse:
+    """
+    Handle organization-user mapping not found exceptions.
     """
 
     response = ApiErrorResponse(

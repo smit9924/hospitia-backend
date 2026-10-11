@@ -15,10 +15,49 @@ from jwt import (
 )
 
 from booking.exceptions.definitions.security_exceptions import (
+    OrganizationAccessForbiddenException,
     UserUnauthorizedException,
 )
 from booking.schemas.common_schemas import ApiErrorResponse
 from booking.types.error_codes import ErrorCodes
+
+
+def organization_access_forbidden_exception_handler(
+    _request: Request,
+    exc: OrganizationAccessForbiddenException,
+) -> JSONResponse:
+    """
+    Handle organization access forbidden exceptions.
+
+    Description
+    -----------
+    Generates a standardized API error response when an authenticated,
+    correctly-roled user attempts to access or modify an organization they
+    are not associated with.
+
+    Parameters
+    ----------
+    _request : Request
+        The incoming FastAPI request object.
+    exc : OrganizationAccessForbiddenException
+        Exception containing details about the forbidden access attempt.
+
+    Returns
+    -------
+    JSONResponse
+        HTTP 403 Forbidden response with a structured error payload.
+    """
+
+    response = ApiErrorResponse(
+        metadata=None,
+        errorCode=exc.errorCode,
+        message=exc.message,
+    )
+
+    return JSONResponse(
+        status_code=status.HTTP_403_FORBIDDEN,
+        content=response.model_dump(),
+    )
 
 
 def user_unauthorized_exception_handler(

@@ -19,16 +19,32 @@ from booking.exceptions.definitions.messaging_queue_exceptions import (
     MQNotFoundException,
 )
 from booking.exceptions.definitions.not_found_exceptions import (
+    AddressNotFoundException,
+    OrganizationNotFoundException,
+    OrganizationTypeNotFoundException,
+    OrganizationUserMappingNotFoundException,
     UserNotFoundException,
 )
 from booking.exceptions.definitions.security_exceptions import (
+    OrganizationAccessForbiddenException,
     UserUnauthorizedException,
+)
+from booking.exceptions.definitions.validation_exceptions import (
+    OrganizationHasActiveDependenciesException,
+    OrganizationMustHaveActiveOwnerException,
+    OrganizationTypeAlreadyExistsException,
+    OrganizationTypeHasActiveOrganizationsException,
+    UserRoleMismatchForOrganizationException,
 )
 from booking.exceptions.handlers.messaging_queue_exceptions_handlers import (
     mq_message_publish_exception_handler,
     mq_not_found_exception_handler,
 )
 from booking.exceptions.handlers.not_found_exceptions_handlers import (
+    address_not_found_exception_handler,
+    organization_not_found_exception_handler,
+    organization_type_not_found_exception_handler,
+    organization_user_mapping_not_found_exception_handler,
     user_not_found_exception_handler,
 )
 from booking.exceptions.handlers.security_exceptions_handlers import (
@@ -43,7 +59,15 @@ from booking.exceptions.handlers.security_exceptions_handlers import (
     invalid_signature_error_exception_handler,
     invalid_token_error_exception_handler,
     missing_required_claim_error_exception_handler,
+    organization_access_forbidden_exception_handler,
     user_unauthorized_exception_handler,
+)
+from booking.exceptions.handlers.validation_exception_handlers import (
+    organization_has_active_dependencies_exception_handler,
+    organization_must_have_active_owner_exception_handler,
+    organization_type_already_exists_exception_handler,
+    organization_type_has_active_organizations_exception_handler,
+    user_role_mismatch_for_organization_exception_handler,
 )
 
 
@@ -55,6 +79,7 @@ def get_exception_handlers() -> dict[Any, Any]:
     return {
         # Register CUSTOM SECURITY EXCEPTION handlers
         UserUnauthorizedException: user_unauthorized_exception_handler,
+        OrganizationAccessForbiddenException: organization_access_forbidden_exception_handler,
 
         # Register PYJWT SECURITY EXCEPTION handlers
         ExpiredSignatureError: expired_signature_error_exception_handler,
@@ -71,6 +96,17 @@ def get_exception_handlers() -> dict[Any, Any]:
 
         # Register NOT FOUND EXCEPTION handlers
         UserNotFoundException: user_not_found_exception_handler,
+        OrganizationTypeNotFoundException: organization_type_not_found_exception_handler,
+        AddressNotFoundException: address_not_found_exception_handler,
+        OrganizationNotFoundException: organization_not_found_exception_handler,
+        OrganizationUserMappingNotFoundException: organization_user_mapping_not_found_exception_handler,
+
+        # Register VALIDATION EXCEPTION handlers
+        OrganizationTypeAlreadyExistsException: organization_type_already_exists_exception_handler,
+        OrganizationTypeHasActiveOrganizationsException: organization_type_has_active_organizations_exception_handler,
+        OrganizationHasActiveDependenciesException: organization_has_active_dependencies_exception_handler,
+        OrganizationMustHaveActiveOwnerException: organization_must_have_active_owner_exception_handler,
+        UserRoleMismatchForOrganizationException: user_role_mismatch_for_organization_exception_handler,
 
         # Register MESSAGING QUEUE EXCEPTION handlers
         MQNotFoundException: mq_not_found_exception_handler,
