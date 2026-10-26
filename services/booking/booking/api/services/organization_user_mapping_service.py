@@ -220,6 +220,6 @@ def build_mapping_response(
             username=user.username,
             email=user.email,
         ),
-        role=OrganizationRole(user.role),
+        role=OrganizationRole.from_user_type(user.role),
         is_active=mapping.is_active,
     )

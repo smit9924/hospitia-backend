@@ -47,9 +47,38 @@ class OrganizationRole(IntEnum):
         by an Admin or Owner. Read-only with respect to organization
         create/update/delete operations.
         Value: 2
+
+    Notes
+    -----
+    Values differ from `UserType` (the role stored on ``usersreplica``), so
+    never compare the two directly; convert with `user_type` /
+    `from_user_type` instead.
     """
     OWNER = 1
     MANAGER = 2
+
+    @property
+    def user_type(self) -> UserType:
+        """`UserType` a user must hold to fill this organization role."""
+        if self is OrganizationRole.OWNER:
+            return UserType.OWNER
+        return UserType.MANAGER
+
+    @classmethod
+    def from_user_type(cls, user_type: UserType) -> "OrganizationRole":
+        """
+        Resolve the organization role for a user's `UserType`.
+
+        Raises
+        ------
+        ValueError
+            If the user type has no organization role (e.g. ADMIN, CUSTOMER).
+        """
+        if user_type == UserType.OWNER:
+            return cls.OWNER
+        if user_type == UserType.MANAGER:
+            return cls.MANAGER
+        raise ValueError(f"UserType {user_type!r} has no organization role.")
 
 
 class TokenType(IntEnum):
