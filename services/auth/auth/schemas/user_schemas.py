@@ -59,3 +59,4 @@ class ChangePassword(BaseSchema):
 
 class VerifyEmailOtpRequest(BaseSchema):
     otp: str
+    refresh_token: str | None = None

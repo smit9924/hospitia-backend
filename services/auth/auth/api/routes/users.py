@@ -190,6 +190,7 @@ async def request_email_verification_otp_endpoint(
         **VALIDATION_EXCEPTION_DOC["EmailAlreadyVerifiedException"],
         **VALIDATION_EXCEPTION_DOC["InvalidOtpException"],
         **SECURITY_EXCEPTION_DOC["UserUnauthorizedException"],
+        **SECURITY_EXCEPTION_DOC["InvalidTokenException"],
     },
 )
 async def verify_email_otp_endpoint(
@@ -199,14 +200,19 @@ async def verify_email_otp_endpoint(
     ],
     session: SessionDep,
     payload: VerifyEmailOtpRequest,
-) -> dict[str, str]:
+) -> Token:
     """
     Verify the authenticated user's email address using an OTP.
+
+    On success, a fresh access token and refresh token carrying the verified
+    email state are returned. If the current refresh token is provided, the
+    new refresh token keeps its expiry.
     """
     return verify_email_otp(
         session=session,
         user_guid=token.parsed_subject.user_guid,
         otp=payload.otp,
+        refresh_token=payload.refresh_token,
     )
 
 

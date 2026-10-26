@@ -4,24 +4,24 @@ from typing import Annotated
 from fastapi import APIRouter, Depends
 from fastapi.security import OAuth2PasswordRequestForm
 
-from auth.api.dependencies import SessionDep, decode_jwt_token
+from auth.api.dependencies import SessionDep
 from auth.api.services.login_service import (
     forgot_password_user,
     login,
     reset_password_user,
 )
-from auth.core.security import create_jwt_access_token
+from auth.api.services.login_service import (
+    refresh_access_token as refresh_access_token_service,
+)
 from auth.doc.security_exceptions_doc import SECURITY_EXCEPTION_DOC
 from auth.doc.validation_exception_doc import VALIDATION_EXCEPTION_DOC
 from auth.schemas.auth_schemas import (
     AccessToken,
     ForgotPasswordRequest,
-    JWTSubject,
     LoginRequest,
     RefreshTokenRequest,
     ResetPasswordRequest,
     Token,
-    TokenType,
 )
 
 router = APIRouter(tags=["login"])
@@ -64,32 +64,16 @@ async def login_access_token(session: SessionDep, form_data: Annotated[OAuth2Pas
 
 
 @router.post("/refresh-token", response_model=AccessToken, responses={**SECURITY_EXCEPTION_DOC["InvalidTokenException"], **SECURITY_EXCEPTION_DOC["UserUnauthorizedException"]})
-async def refresh_access_token(payload: RefreshTokenRequest) -> AccessToken:
+async def refresh_access_token(session: SessionDep, payload: RefreshTokenRequest) -> AccessToken:
     """
     Refresh an expired access token using a valid refresh token.
 
     Validates the provided JWT refresh token and, if valid, issues a new
-    JWT access token with updated expiration. This allows clients to
-    maintain authenticated sessions without requiring users to re-enter
-    credentials after access tokens expire.
+    JWT access token with updated expiration. Claims are built from the
+    user's current state, so role or email verification changes apply on
+    the next refresh. Missing, deleted or inactive users are rejected.
     """
-    log.info("Started")
-    parsed_payload = decode_jwt_token(payload.refresh_token, expected_type=TokenType.REFRESH)
-
-    new_access_token, new_access_token_expiry = create_jwt_access_token(
-        subject=JWTSubject (
-            user_guid=parsed_payload.parsed_subject.user_guid,
-            role=parsed_payload.parsed_subject.role,
-            email_verified=parsed_payload.parsed_subject.email_verified,
-        )
-    )
-
-    log.info("Access token refreshed user_guid=%s", parsed_payload.parsed_subject.user_guid)
-    return AccessToken(
-        access_token=new_access_token,
-        access_token_expiry=new_access_token_expiry,
-        token_type="bearer"
-    )
+    return refresh_access_token_service(session=session, refresh_token=payload.refresh_token)
 
 
 @router.post("/forgot-password")

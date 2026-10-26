@@ -9,6 +9,7 @@ from auth.api.repositories.user_repository import (
     add_security_token,
     find_unused_secure_token_for_update,
     get_user_by_email_or_username,
+    get_user_by_guid,
     mark_security_tokens_as_used,
 )
 from auth.api.services.common_service import is_password_strong
@@ -16,6 +17,7 @@ from auth.core.config import settings
 from auth.core.security import (
     create_jwt_access_token,
     create_jwt_refresh_token,
+    decode_jwt_token,
     generate_secure_token,
     get_password_hash,
     hash_secure_token,
@@ -27,15 +29,17 @@ from auth.exceptions.definitions.security_exceptions import (
     InvalidCredentialsException,
     InvalidTokenException,
     UserInactiveException,
+    UserUnauthorizedException,
 )
 from auth.exceptions.definitions.validation_exceptions import WeakPasswordException
 from auth.messaging.general import get_mq_client
 from auth.schemas.auth_schemas import (
+    AccessToken,
     JWTSubject,
     Token,
 )
 from auth.schemas.mq_schemas import MqForgotPasswordMessage
-from auth.types.enums import AuthType
+from auth.types.enums import AuthType, TokenType
 
 log = logging.getLogger(__name__)
 
@@ -85,6 +89,51 @@ def login(*, session: SessionDep, username: str, password: str, remember_me: boo
         access_token_expiry=access_token_expiry,
         refresh_token=refresh_token,
         refresh_token_expiry=refresh_token_expiry,
+        token_type="bearer"
+    )
+
+def refresh_access_token(*, session: Session, refresh_token: str) -> AccessToken:
+    """
+    Issue a new access token from a valid refresh token.
+
+    The new access token's claims (role, email verification) are built from
+    the user's current database state rather than copied from the refresh
+    token, so changes such as a completed email verification take effect on
+    the next refresh.
+
+    parameters
+    ----------
+        session : Session
+            Active SQLModel session for database operations.
+        refresh_token : str
+            The JWT refresh token presented by the client.
+
+    Raises
+    ------
+    UserUnauthorizedException
+        If the token's user no longer exists, is soft-deleted or is inactive.
+    """
+    log.info("Started")
+    parsed_payload = decode_jwt_token(refresh_token, expected_type=TokenType.REFRESH)
+    user_guid = parsed_payload.parsed_subject.user_guid
+
+    user = get_user_by_guid(session=session, guid=user_guid)
+    if not user or user.is_deleted or not user.is_active:
+        log.warning("Refresh denied for missing, deleted or inactive user guid=%s", user_guid)
+        raise UserUnauthorizedException()
+
+    new_access_token, new_access_token_expiry = create_jwt_access_token(
+        subject=JWTSubject (
+            user_guid=str(user.guid), # UUID is not JSON serializable, convert to string
+            role=user.role,
+            email_verified=user.is_email_verified,
+        )
+    )
+
+    log.info("Access token refreshed user_guid=%s", user.guid)
+    return AccessToken(
+        access_token=new_access_token,
+        access_token_expiry=new_access_token_expiry,
         token_type="bearer"
     )
 

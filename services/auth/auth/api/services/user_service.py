@@ -2,6 +2,7 @@ import logging
 import re
 from datetime import UTC, datetime, timedelta
 
+from jwt import InvalidTokenError
 from sqlmodel import Session
 
 from auth.api.repositories.outbox_repository import add_user_created_outbox
@@ -24,13 +25,18 @@ from auth.api.services.common_service import (
 )
 from auth.api.services.login_service import authenticate_manual_user
 from auth.core.config import settings
-from auth.core.security import create_jwt_access_token, create_jwt_refresh_token
+from auth.core.security import (
+    create_jwt_access_token,
+    create_jwt_refresh_token,
+    decode_jwt_token,
+)
 from auth.database.models.users import Users
 from auth.exceptions.definitions.not_found_exceptions import (
     UserNotFoundException,
 )
 from auth.exceptions.definitions.security_exceptions import (
     InvalidCredentialsException,
+    InvalidTokenException,
     UserUnauthorizedException,
 )
 from auth.exceptions.definitions.validation_exceptions import (
@@ -51,7 +57,7 @@ from auth.schemas.user_schemas import (
     UserSignup,
     UserUpdateRequest,
 )
-from auth.types.enums import AuthType, UserType
+from auth.types.enums import AuthType, TokenType, UserType
 
 VERIFY_EMAIL_OTP_LENGTH = 6
 log = logging.getLogger(__name__)
@@ -435,9 +441,20 @@ def request_email_verification_otp(*, session: Session, user_guid: str) -> dict[
     return {"message": "A verification OTP has been sent to your email"}
 
 
-def verify_email_otp(*, session: Session, user_guid: str, otp: str) -> dict[str, str]:
+def verify_email_otp(
+    *,
+    session: Session,
+    user_guid: str,
+    otp: str,
+    refresh_token: str | None = None,
+) -> Token:
     """
-    Validate an email verification OTP and mark the user's email as verified.
+    Validate an email verification OTP, mark the user's email as verified
+    and issue a fresh token pair carrying the verified state.
+
+    When the caller's current refresh token is provided, the new refresh
+    token keeps its expiry so verification neither extends nor shortens the
+    session. Otherwise the default refresh token expiry is used.
     """
     log.info("Started")
     user = get_user_by_guid(session=session, guid=user_guid)
@@ -451,6 +468,22 @@ def verify_email_otp(*, session: Session, user_guid: str, otp: str) -> dict[str,
 
     if user.id is None:
         raise UserNotFoundException("Persisted user without ID")
+
+    # Validate the refresh token before touching the OTP so a bad token
+    # leaves the OTP unused and the email unverified.
+    refresh_token_expiry: datetime | None = None
+    if refresh_token is not None:
+        try:
+            parsed_refresh_token = decode_jwt_token(refresh_token, expected_type=TokenType.REFRESH)
+        except (InvalidTokenError, UserUnauthorizedException):
+            log.warning("Invalid refresh token guid=%s", user_guid)
+            raise InvalidTokenException()
+
+        if parsed_refresh_token.parsed_subject.user_guid != user_guid:
+            log.warning("Refresh token belongs to another user guid=%s", user_guid)
+            raise InvalidTokenException()
+
+        refresh_token_expiry = parsed_refresh_token.exp
 
     otp_record = get_latest_unused_otp_for_user(session=session, user_id=user.id)
     now = datetime.now(UTC)
@@ -474,4 +507,29 @@ def verify_email_otp(*, session: Session, user_guid: str, otp: str) -> dict[str,
     )
 
     log.info("Email verified guid=%s", user.guid)
-    return {"message": "Email verified successfully"}
+
+    access_token, access_token_expiry = create_jwt_access_token(
+        subject=JWTSubject (
+            user_guid=str(user.guid), # UUID is not JSON serializable, convert to string
+            role=user.role,
+            email_verified=user.is_email_verified,
+        )
+    )
+
+    new_refresh_token, refresh_token_expiry = create_jwt_refresh_token(
+        subject=JWTSubject (
+            user_guid=str(user.guid), # UUID is not JSON serializable, convert to string
+            role=user.role,
+            email_verified=user.is_email_verified,
+        ),
+        expires_at=refresh_token_expiry,
+    )
+
+    log.info("Tokens reissued after email verification guid=%s", user.guid)
+    return Token(
+        access_token=access_token,
+        access_token_expiry=access_token_expiry,
+        refresh_token=new_refresh_token,
+        refresh_token_expiry=refresh_token_expiry,
+        token_type="bearer"
+    )
