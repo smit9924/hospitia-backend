@@ -34,3 +34,20 @@ class OrganizationAccessForbiddenException(BaseException):
         message: str = "You do not have access to this organization."
     ) -> None:
         super().__init__(ErrorCodes.ORGANIZATION_ACCESS_FORBIDDEN, message)
+
+
+class ActiveOrganizationInvalidException(BaseException):
+    """
+    Raised when the active organization sent by the client cannot be used:
+    the organization does not exist, is inactive, or the caller has no
+    active mapping to it.
+
+    All three cases share one error so the response never reveals whether
+    an organization with the supplied GUID exists.
+    """
+
+    def __init__(
+        self,
+        message: str = "The active organization is no longer available."
+    ) -> None:
+        super().__init__(ErrorCodes.ACTIVE_ORGANIZATION_INVALID, message)

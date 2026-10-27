@@ -32,6 +32,21 @@ SECURITY_EXCEPTION_DOC = {
             },
         }
     },
+    "ActiveOrganizationInvalidException": {
+        403: {
+            "description": "The active organization does not exist, is inactive, or the caller is not a member of it.",
+            "model": ApiErrorResponse[None],
+            "content": {
+                "application/json": {
+                    "example": {
+                        "metadata": None,
+                        "message": "The active organization is no longer available.",
+                        "errorCode": ErrorCodes.ACTIVE_ORGANIZATION_INVALID,
+                    }
+                }
+            },
+        }
+    },
     "InvalidTokenException": {
         401: {
             "description": "The access token is invalid, expired, or malformed.",

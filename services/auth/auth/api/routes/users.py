@@ -28,6 +28,7 @@ from auth.doc.validation_exception_doc import VALIDATION_EXCEPTION_DOC
 from auth.schemas.auth_schemas import ParsedJWTPayload, Token
 from auth.schemas.user_schemas import (
     ChangePassword,
+    ManagerCreateRequest,
     ProfileData,
     ProfileUpdate,
     UserCreateRequest,
@@ -367,11 +368,22 @@ async def update_owner(
 )
 async def create_manager(
     session: SessionDep,
-    user_create: UserCreateRequest,
-    _token: Annotated[ParsedJWTPayload, Depends(RoleValidationDep(_ADMIN_OWNER))],
+    user_create: ManagerCreateRequest,
+    token: Annotated[ParsedJWTPayload, Depends(RoleValidationDep(_ADMIN_OWNER))],
 ) -> ProfileData:
-    """Create a new MANAGER user. Password is generated and emailed."""
-    return provision_user(session=session, user_create=user_create, role=UserType.MANAGER)
+    """
+    Create a new MANAGER user. Password is generated and emailed.
+
+    `organizationGuid` is forwarded to the Booking Service, which maps the
+    manager to that organization after validating it.
+    """
+    return provision_user(
+        session=session,
+        user_create=user_create,
+        role=UserType.MANAGER,
+        organization_guid=user_create.organization_guid,
+        created_by_guid=token.parsed_subject.user_guid,
+    )
 
 
 @router.get(

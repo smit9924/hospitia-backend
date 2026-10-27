@@ -2,6 +2,7 @@ from fastapi import Request, status
 from fastapi.responses import JSONResponse
 
 from booking.exceptions.definitions.validation_exceptions import (
+    ActiveOrganizationRequiredException,
     OrganizationHasActiveDependenciesException,
     OrganizationMustHaveActiveOwnerException,
     OrganizationTypeAlreadyExistsException,
@@ -97,6 +98,26 @@ def user_role_mismatch_for_organization_exception_handler(
 ) -> JSONResponse:
     """
     Handle user role mismatch for organization exceptions.
+    """
+
+    response = ApiErrorResponse(
+        metadata=None,
+        errorCode=exc.errorCode,
+        message=exc.message,
+    )
+
+    return JSONResponse(
+        status_code=status.HTTP_400_BAD_REQUEST,
+        content=response.model_dump(),
+    )
+
+
+def active_organization_required_exception_handler(
+    _request: Request,
+    exc: ActiveOrganizationRequiredException,
+) -> JSONResponse:
+    """
+    Handle active organization required exceptions.
     """
 
     response = ApiErrorResponse(

@@ -45,6 +45,9 @@ class MqForgotPasswordMessage(MqBaseSchema):
 class MqUserCreatedPayload(MqBaseSchema):
     """
     Payload for a newly created Auth user.
+
+    `organization_guid` and `created_by_guid` are set only when a MANAGER is
+    provisioned; older events without them remain valid.
     """
 
     id: int
@@ -54,6 +57,8 @@ class MqUserCreatedPayload(MqBaseSchema):
     first_name: str | None = None
     last_name: str | None = None
     role: UserType = UserType.CUSTOMER
+    organization_guid: UUID | None = None
+    created_by_guid: UUID | None = None
 
 
 class MqDomainEvent(MqBaseSchema):

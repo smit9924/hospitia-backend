@@ -37,6 +37,12 @@ class UsersOutbox(SQLModel, table=True):
     initial_password : str | None, optional
         Plaintext password generated for welcome email delivery. Cleared after
         the outbox worker successfully publishes the welcome email.
+    organization_guid : uuid.UUID | None, optional
+        Booking Service organization the user must be mapped to. Set only
+        when a MANAGER is provisioned.
+    created_by_guid : uuid.UUID | None, optional
+        Public identifier of the user who provisioned this user. Set only
+        when a MANAGER is provisioned.
     is_processed : bool, default=False
         Whether the outbox worker has successfully published this row.
     """
@@ -60,6 +66,10 @@ class UsersOutbox(SQLModel, table=True):
     role: UserType = Field(nullable=False, sa_type=Integer)
 
     initial_password: str | None = Field(default=None, max_length=255)
+
+    organization_guid: uuid.UUID | None = Field(default=None, nullable=True)
+
+    created_by_guid: uuid.UUID | None = Field(default=None, nullable=True)
 
     is_processed: bool = Field(
         default=False,

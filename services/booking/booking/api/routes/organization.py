@@ -3,12 +3,18 @@ from uuid import UUID
 
 from fastapi import APIRouter, Depends, Query
 
-from booking.api.dependencies import RoleValidationDep, SessionDep
+from booking.api.dependencies import (
+    ActiveOrganizationDep,
+    RoleValidationDep,
+    SessionDep,
+)
 from booking.api.services.organization_service import (
     _resolve_actor,
     build_organization_response,
     delete_organization,
+    get_active_organization_summary,
     get_organization,
+    list_organization_memberships,
     list_organizations_as_admin,
     list_organizations_as_manager,
     list_organizations_as_owner,
@@ -26,6 +32,7 @@ from booking.doc.security_exceptions_doc import SECURITY_EXCEPTION_DOC
 from booking.doc.validation_exception_doc import VALIDATION_EXCEPTION_DOC
 from booking.schemas.auth_schemas import ParsedJWTPayload
 from booking.schemas.organization_schemas import (
+    ActiveOrganization,
     OrganizationAdminMappingRequest,
     OrganizationCreateAdminRequest,
     OrganizationCreateOwnerRequest,
@@ -33,6 +40,8 @@ from booking.schemas.organization_schemas import (
     OrganizationListResponse,
     OrganizationManagerMappingRequest,
     OrganizationMappingResponse,
+    OrganizationMembershipListResponse,
+    OrganizationMembershipSummary,
     OrganizationOwnerMappingRequest,
     OrganizationResponse,
 )
@@ -42,6 +51,7 @@ _ADMIN_ONLY = [UserType.ADMIN]
 _OWNER_ONLY = [UserType.OWNER]
 _ADMIN_OWNER = [UserType.ADMIN, UserType.OWNER]
 _ADMIN_OWNER_MANAGER = [UserType.ADMIN, UserType.OWNER, UserType.MANAGER]
+_OWNER_MANAGER = [UserType.OWNER, UserType.MANAGER]
 
 router = APIRouter(tags=["organization"])
 
@@ -206,9 +216,36 @@ async def upsert_manager_mapping_route(
     return build_mapping_response(session=session, mapping=mapping, organization_guid=organization_guid)
 
 
+@router.get("/memberships", responses={**_AUTH_RESPONSES, **NOT_FOUND_EXCEPTIONS_DOC["UserNotFoundException"]})
+async def list_organization_memberships_route(
+    session: SessionDep,
+    token: Annotated[ParsedJWTPayload, Depends(RoleValidationDep(_OWNER_MANAGER))],
+) -> OrganizationMembershipListResponse:
+    """
+    List every active organization the caller (Owner or Manager) is
+    actively mapped to, sorted by name. Not paginated: the client uses it
+    to resolve the caller's active organization.
+    """
+    actor_user_id = _resolve_actor(session=session, guid=token.parsed_subject.user_guid)
+    return list_organization_memberships(session=session, user_id=actor_user_id)
+
+
+@router.get("/active", responses={**_AUTH_RESPONSES, **VALIDATION_EXCEPTION_DOC["ActiveOrganizationRequiredException"], **SECURITY_EXCEPTION_DOC["ActiveOrganizationInvalidException"]})
+async def get_active_organization_route(
+    session: SessionDep,
+    active_organization: Annotated[ActiveOrganization, Depends(ActiveOrganizationDep(_OWNER_MANAGER))],
+) -> OrganizationMembershipSummary:
+    """
+    Validate the caller's active organization (sent in the
+    `X-Active-Organization-Guid` header) and return its summary.
+    """
+    return get_active_organization_summary(session=session, active_organization=active_organization)
+
+
 # NOTE: this catch-all-guid route must stay LAST in the router — Starlette
 # matches routes in registration order, and "/{guid}" would otherwise shadow
-# the static "/admin", "/owner", "/manager" and "/delete" paths above.
+# the static "/admin", "/owner", "/manager", "/delete", "/memberships" and
+# "/active" paths above.
 @router.get("/{guid}", responses={**_AUTH_RESPONSES, **NOT_FOUND_EXCEPTIONS_DOC["UserNotFoundException"], **NOT_FOUND_EXCEPTIONS_DOC["OrganizationNotFoundException"], **SECURITY_EXCEPTION_DOC["OrganizationAccessForbiddenException"]})
 async def get_organization_route(
     session: SessionDep,

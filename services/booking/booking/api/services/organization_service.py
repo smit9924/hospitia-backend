@@ -1,10 +1,14 @@
+import logging
 from uuid import UUID
 
 from sqlmodel import Session
 
 from booking.api.repositories.organization_repository import (
     create_organization,
+    get_active_member_organization,
     get_organization_by_guid,
+    get_organization_membership_summary,
+    list_active_member_organizations,
     list_organizations_for_admin,
     list_organizations_for_manager,
     list_organizations_for_owner,
@@ -36,23 +40,29 @@ from booking.exceptions.definitions.not_found_exceptions import (
     UserNotFoundException,
 )
 from booking.exceptions.definitions.security_exceptions import (
+    ActiveOrganizationInvalidException,
     OrganizationAccessForbiddenException,
 )
 from booking.exceptions.definitions.validation_exceptions import (
     UserRoleMismatchForOrganizationException,
 )
 from booking.schemas.organization_schemas import (
+    ActiveOrganization,
     AddressInput,
     AddressResponse,
     OrganizationCreateAdminRequest,
     OrganizationCreateOwnerRequest,
     OrganizationListQueryParams,
     OrganizationListResponse,
+    OrganizationMembershipListResponse,
+    OrganizationMembershipSummary,
     OrganizationMemberSummary,
     OrganizationResponse,
 )
 from booking.schemas.organization_type_schemas import OrganizationTypeResponse
 from booking.types.enums import UserType
+
+log = logging.getLogger(__name__)
 
 
 def _resolve_actor(*, session: Session, guid: str) -> int:
@@ -690,3 +700,101 @@ def list_organizations_as_manager(
         Paginated organization results.
     """
     return list_organizations_for_manager(session=session, manager_user_id=manager_user_id, query=query)
+
+
+def list_organization_memberships(*, session: Session, user_id: int) -> OrganizationMembershipListResponse:
+    """List every active organization a user is actively mapped to.
+
+    Used by the client to resolve the caller's active organization, so the
+    result is not paginated.
+
+    Parameters
+    ----------
+    session : Session
+        Active database session used to query organizations.
+    user_id : int
+        Internal ID of the user whose memberships should be listed.
+
+    Returns
+    -------
+    OrganizationMembershipListResponse
+        Organizations sorted by name; empty when the user has none.
+    """
+    return OrganizationMembershipListResponse(
+        items=list_active_member_organizations(session=session, user_id=user_id)
+    )
+
+
+def resolve_active_organization(
+    *, session: Session, user_guid: str, organization_guid: UUID
+) -> ActiveOrganization:
+    """Validate the active organization supplied by a caller.
+
+    The organization must exist, be active, and the caller must hold an
+    active mapping to it. Every failure raises the same exception so the
+    response never reveals whether an organization exists.
+
+    Parameters
+    ----------
+    session : Session
+        Active database session used to query the user and organization.
+    user_guid : str
+        External GUID of the authenticated caller.
+    organization_guid : UUID
+        Active organization GUID sent by the caller.
+
+    Returns
+    -------
+    ActiveOrganization
+        The resolved organization (internal ID and GUID).
+
+    Raises
+    ------
+    ActiveOrganizationInvalidException
+        If the caller is unknown, or the organization is missing, inactive,
+        or not actively mapped to the caller.
+    """
+    user = get_user_replica_by_guid(session=session, guid=user_guid)
+    organization = None
+    if user is not None and user.id is not None:
+        organization = get_active_member_organization(
+            session=session, user_id=user.id, organization_guid=organization_guid
+        )
+
+    if organization is None or organization.id is None:
+        log.debug(
+            "Active organization rejected user_guid=%s organization_guid=%s",
+            user_guid,
+            organization_guid,
+        )
+        raise ActiveOrganizationInvalidException()
+
+    return ActiveOrganization(id=organization.id, guid=organization.guid)
+
+
+def get_active_organization_summary(
+    *, session: Session, active_organization: ActiveOrganization
+) -> OrganizationMembershipSummary:
+    """Build the summary of an already-validated active organization.
+
+    Parameters
+    ----------
+    session : Session
+        Active database session used to query the organization.
+    active_organization : ActiveOrganization
+        Organization resolved by `ActiveOrganizationDep`.
+
+    Returns
+    -------
+    OrganizationMembershipSummary
+        Summary used by the client to display the active organization.
+
+    Raises
+    ------
+    ActiveOrganizationInvalidException
+        If the organization disappeared after it was resolved.
+    """
+    summary = get_organization_membership_summary(session=session, organization_id=active_organization.id)
+    if summary is None:
+        raise ActiveOrganizationInvalidException()
+    return summary

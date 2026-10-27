@@ -15,6 +15,7 @@ from jwt import (
 )
 
 from booking.exceptions.definitions.security_exceptions import (
+    ActiveOrganizationInvalidException,
     OrganizationAccessForbiddenException,
     UserUnauthorizedException,
 )
@@ -41,6 +42,44 @@ def organization_access_forbidden_exception_handler(
         The incoming FastAPI request object.
     exc : OrganizationAccessForbiddenException
         Exception containing details about the forbidden access attempt.
+
+    Returns
+    -------
+    JSONResponse
+        HTTP 403 Forbidden response with a structured error payload.
+    """
+
+    response = ApiErrorResponse(
+        metadata=None,
+        errorCode=exc.errorCode,
+        message=exc.message,
+    )
+
+    return JSONResponse(
+        status_code=status.HTTP_403_FORBIDDEN,
+        content=response.model_dump(),
+    )
+
+
+def active_organization_invalid_exception_handler(
+    _request: Request,
+    exc: ActiveOrganizationInvalidException,
+) -> JSONResponse:
+    """
+    Handle active organization invalid exceptions.
+
+    Description
+    -----------
+    Generates a standardized API error response when the active
+    organization supplied by the client does not exist, is inactive, or
+    the caller is not actively mapped to it.
+
+    Parameters
+    ----------
+    _request : Request
+        The incoming FastAPI request object.
+    exc : ActiveOrganizationInvalidException
+        Exception containing details about the rejected active organization.
 
     Returns
     -------
