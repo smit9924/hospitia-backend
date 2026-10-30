@@ -65,7 +65,7 @@ from booking.types.enums import UserType
 log = logging.getLogger(__name__)
 
 
-def _resolve_actor(*, session: Session, guid: str) -> int:
+def get_user_id_from_user_guid(*, session: Session, guid: str) -> int:
     """Resolve a user GUID to its internal user ID.
 
     Parameters

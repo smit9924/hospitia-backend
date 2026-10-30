@@ -9,11 +9,11 @@ from booking.api.dependencies import (
     SessionDep,
 )
 from booking.api.services.organization_service import (
-    _resolve_actor,
     build_organization_response,
     delete_organization,
     get_active_organization_summary,
     get_organization,
+    get_user_id_from_user_guid,
     list_organization_memberships,
     list_organizations_as_admin,
     list_organizations_as_manager,
@@ -72,7 +72,7 @@ async def upsert_organization_admin_route(
     Create or update an organization as an Admin. On create, `ownerUserGuid`
     is required and establishes the organization's initial OWNER mapping.
     """
-    actor_user_id = _resolve_actor(session=session, guid=token.parsed_subject.user_guid)
+    actor_user_id = get_user_id_from_user_guid(session=session, guid=token.parsed_subject.user_guid)
     organization = upsert_organization_as_admin(session=session, payload=payload, actor_user_id=actor_user_id)
     return build_organization_response(session=session, organization=organization)
 
@@ -88,7 +88,7 @@ async def upsert_organization_owner_route(
     Create or update an organization as its Owner. On create, the
     authenticated Owner is automatically associated as OWNER.
     """
-    actor_user_id = _resolve_actor(session=session, guid=token.parsed_subject.user_guid)
+    actor_user_id = get_user_id_from_user_guid(session=session, guid=token.parsed_subject.user_guid)
     organization = upsert_organization_as_owner(session=session, payload=payload, actor_user_id=actor_user_id)
     return build_organization_response(session=session, organization=organization)
 
@@ -103,7 +103,7 @@ async def delete_organization_route(
     Soft-delete an organization. Admins may delete any organization; Owners
     may only delete organizations they actively own.
     """
-    actor_user_id = _resolve_actor(session=session, guid=token.parsed_subject.user_guid)
+    actor_user_id = get_user_id_from_user_guid(session=session, guid=token.parsed_subject.user_guid)
     delete_organization(
         session=session,
         guid=guid,
@@ -136,7 +136,7 @@ async def upsert_admin_membership_route(
     Admin-only umbrella endpoint: assign/replace the OWNER or MANAGER
     mapping on any organization.
     """
-    actor_user_id = _resolve_actor(session=session, guid=token.parsed_subject.user_guid)
+    actor_user_id = get_user_id_from_user_guid(session=session, guid=token.parsed_subject.user_guid)
     mapping, organization_guid = assign_membership_as_admin(session=session, payload=payload, actor_user_id=actor_user_id)
     return build_mapping_response(session=session, mapping=mapping, organization_guid=organization_guid)
 
@@ -153,7 +153,7 @@ async def list_organizations_owner_route(
     """
     if token.parsed_subject.role == UserType.ADMIN:
         return list_organizations_as_admin(session=session, query=query)
-    actor_user_id = _resolve_actor(session=session, guid=token.parsed_subject.user_guid)
+    actor_user_id = get_user_id_from_user_guid(session=session, guid=token.parsed_subject.user_guid)
     return list_organizations_as_owner(session=session, owner_user_id=actor_user_id, query=query)
 
 
@@ -169,7 +169,7 @@ async def upsert_owner_mapping_route(
     organization. Admin-only — an Owner can never reassign their own
     organization's ownership.
     """
-    actor_user_id = _resolve_actor(session=session, guid=token.parsed_subject.user_guid)
+    actor_user_id = get_user_id_from_user_guid(session=session, guid=token.parsed_subject.user_guid)
     mapping, organization_guid = assign_owner(session=session, payload=payload, actor_user_id=actor_user_id)
     return build_mapping_response(session=session, mapping=mapping, organization_guid=organization_guid)
 
@@ -187,7 +187,7 @@ async def list_organizations_manager_route(
     """
     if token.parsed_subject.role == UserType.ADMIN:
         return list_organizations_as_admin(session=session, query=query)
-    actor_user_id = _resolve_actor(session=session, guid=token.parsed_subject.user_guid)
+    actor_user_id = get_user_id_from_user_guid(session=session, guid=token.parsed_subject.user_guid)
     if token.parsed_subject.role == UserType.OWNER:
         return list_organizations_as_owner(session=session, owner_user_id=actor_user_id, query=query)
     return list_organizations_as_manager(session=session, manager_user_id=actor_user_id, query=query)
@@ -205,7 +205,7 @@ async def upsert_manager_mapping_route(
     any organization; Owner is restricted server-side to organizations they
     actively own. Managers cannot call this endpoint (read-only).
     """
-    actor_user_id = _resolve_actor(session=session, guid=token.parsed_subject.user_guid)
+    actor_user_id = get_user_id_from_user_guid(session=session, guid=token.parsed_subject.user_guid)
     mapping, organization_guid = assign_manager(
         session=session,
         payload=payload,
@@ -226,7 +226,7 @@ async def list_organization_memberships_route(
     actively mapped to, sorted by name. Not paginated: the client uses it
     to resolve the caller's active organization.
     """
-    actor_user_id = _resolve_actor(session=session, guid=token.parsed_subject.user_guid)
+    actor_user_id = get_user_id_from_user_guid(session=session, guid=token.parsed_subject.user_guid)
     return list_organization_memberships(session=session, user_id=actor_user_id)
 
 
@@ -257,7 +257,7 @@ async def get_organization_route(
     Owners/Managers may only view organizations they are actively
     associated with.
     """
-    actor_user_id = _resolve_actor(session=session, guid=token.parsed_subject.user_guid)
+    actor_user_id = get_user_id_from_user_guid(session=session, guid=token.parsed_subject.user_guid)
     organization = get_organization(
         session=session,
         guid=guid,

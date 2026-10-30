@@ -4,7 +4,7 @@ from uuid import UUID
 from fastapi import APIRouter, Depends, Query
 
 from booking.api.dependencies import RoleValidationDep, SessionDep
-from booking.api.services.organization_service import _resolve_actor
+from booking.api.services.organization_service import get_user_id_from_user_guid
 from booking.api.services.organization_type_service import (
     delete_organization_type,
     get_organization_type,
@@ -40,7 +40,7 @@ async def upsert_organization_type_route(
     Create a new organization type, or update an existing one when `guid`
     is supplied. Admin-only.
     """
-    actor_user_id = _resolve_actor(session=session, guid=token.parsed_subject.user_guid)
+    actor_user_id = get_user_id_from_user_guid(session=session, guid=token.parsed_subject.user_guid)
     return upsert_organization_type(session=session, payload=payload, actor_user_id=actor_user_id)
 
 
