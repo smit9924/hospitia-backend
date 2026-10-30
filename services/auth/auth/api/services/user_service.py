@@ -1,6 +1,7 @@
 import logging
 import re
 from datetime import UTC, datetime, timedelta
+from uuid import UUID
 
 from jwt import InvalidTokenError
 from sqlmodel import Session
@@ -112,12 +113,16 @@ def provision_user(
     session: Session,
     user_create: UserCreateRequest,
     role: UserType,
+    organization_guid: UUID | None = None,
+    created_by_guid: str | None = None,
 ) -> ProfileData:
     """
     Create a user with a generated strong password and write a welcome-email outbox row.
 
     Used when an authorized actor provisions an account for someone else
-    (as opposed to self-service signup).
+    (as opposed to self-service signup). `organization_guid` and
+    `created_by_guid` are passed through the outbox to the Booking Service,
+    which maps a provisioned MANAGER to that organization.
     """
     log.info("Started role=%s", role)
     if role == UserType.INTERNALE:
@@ -145,6 +150,8 @@ def provision_user(
         session=session,
         user=created_user,
         initial_password=generated_password,
+        organization_guid=organization_guid,
+        created_by_guid=UUID(created_by_guid) if created_by_guid else None,
     )
     session.commit()
     log.info("Provisioned user persisted guid=%s role=%s", created_user.guid, role)

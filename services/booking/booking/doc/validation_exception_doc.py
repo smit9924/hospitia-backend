@@ -77,4 +77,19 @@ VALIDATION_EXCEPTION_DOC = {
             },
         }
     },
+    "ActiveOrganizationRequiredException": {
+        400: {
+            "description": "The X-Active-Organization-Guid header is missing or is not a valid UUID.",
+            "model": ApiErrorResponse[None],
+            "content": {
+                "application/json": {
+                    "example": {
+                        "metadata": None,
+                        "message": "An active organization is required for this request.",
+                        "errorCode": ErrorCodes.ACTIVE_ORGANIZATION_REQUIRED,
+                    }
+                }
+            },
+        }
+    },
 }

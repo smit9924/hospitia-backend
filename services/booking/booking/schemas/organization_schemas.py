@@ -152,3 +152,29 @@ class OrganizationListResponse(BaseSchema):
     total_count: int
     page_number: int
     page_size: int
+
+
+class OrganizationMembershipSummary(BaseSchema):
+    """
+    Lightweight view of an organization the caller is actively mapped to.
+    Used to resolve and display the caller's active organization.
+    """
+
+    guid: UUID
+    name: str
+    organization_type_name: str
+    city: str | None
+
+
+class OrganizationMembershipListResponse(BaseSchema):
+    items: list[OrganizationMembershipSummary]
+
+
+class ActiveOrganization(BaseSchema):
+    """
+    Active organization resolved by `ActiveOrganizationDep` for the current
+    request. Internal use only: `id` must never be exposed through the API.
+    """
+
+    id: int
+    guid: UUID

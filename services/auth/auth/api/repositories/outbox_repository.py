@@ -1,3 +1,5 @@
+import uuid
+
 from sqlmodel import Session, select
 
 from auth.database.models.users import Users
@@ -9,9 +11,14 @@ def add_user_created_outbox(
     session: Session,
     user: Users,
     initial_password: str | None = None,
+    organization_guid: uuid.UUID | None = None,
+    created_by_guid: uuid.UUID | None = None,
 ) -> UsersOutbox:
     """
     Persist a user-created outbox snapshot in the current transaction.
+
+    `organization_guid` and `created_by_guid` are forwarded to the Booking
+    Service so it can map a provisioned MANAGER to an organization.
 
     Note: This function does not commit the session.
     """
@@ -27,6 +34,8 @@ def add_user_created_outbox(
         last_name=user.last_name,
         role=user.role,
         initial_password=initial_password,
+        organization_guid=organization_guid,
+        created_by_guid=created_by_guid,
         is_processed=False,
     )
     session.add(outbox_entry)

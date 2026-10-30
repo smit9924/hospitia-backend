@@ -1,15 +1,22 @@
 from collections.abc import Callable, Generator
 from typing import Annotated
+from uuid import UUID
 
-from fastapi import Depends
+from fastapi import Depends, Header
 from fastapi.security import OAuth2PasswordBearer
 from sqlmodel import Session
 
+from booking.api.services.organization_service import resolve_active_organization
 from booking.core.config import settings
 from booking.core.security import decode_jwt_token
 from booking.database.db import engine
 from booking.exceptions.definitions.security_exceptions import UserUnauthorizedException
+from booking.exceptions.definitions.validation_exceptions import (
+    ActiveOrganizationRequiredException,
+)
 from booking.schemas.auth_schemas import ParsedJWTPayload
+from booking.schemas.organization_schemas import ActiveOrganization
+from booking.types.constants import ACTIVE_ORGANIZATION_HEADER
 from booking.types.enums import TokenType, UserType
 
 
@@ -110,3 +117,63 @@ def RoleValidationDep(
         return token_payload
 
     return validate_jwt_token
+
+
+def ActiveOrganizationDep(
+    roles: list[UserType] | None = None,
+) -> Callable:
+    """
+    Dependency factory resolving the caller's active organization.
+
+    Creates and returns a FastAPI dependency function that:
+    - Authenticates and authorizes the caller via `RoleValidationDep(roles)`
+    - Reads the active organization GUID from the
+      `X-Active-Organization-Guid` request header
+    - Validates that the organization exists, is active, and that the
+      caller is actively mapped to it
+
+    Endpoints opt in by depending on the returned function; the client's
+    GUID is never trusted without this validation.
+
+    Parameters
+    ----------
+    roles : list[UserType] | None
+        Roles allowed to call the endpoint. Only OWNER and MANAGER users
+        belong to organizations.
+
+    Returns
+    -------
+    Callable
+        A FastAPI-compatible dependency function returning
+        `ActiveOrganization`.
+    """
+
+    validate_jwt_token = RoleValidationDep(roles)
+
+    async def resolve_active_organization_dep(
+        session: SessionDep,
+        token: Annotated[ParsedJWTPayload, Depends(validate_jwt_token)],
+        active_organization_guid: Annotated[str | None, Header(alias=ACTIVE_ORGANIZATION_HEADER)] = None,
+    ) -> ActiveOrganization:
+        """
+        Parse the active organization header and resolve it for the caller.
+
+        Raises
+        ------
+        ActiveOrganizationRequiredException
+            If the header is missing or is not a valid UUID.
+        ActiveOrganizationInvalidException
+            If the organization cannot be used by the caller.
+        """
+        try:
+            organization_guid = UUID((active_organization_guid or "").strip())
+        except ValueError:
+            raise ActiveOrganizationRequiredException()
+
+        return resolve_active_organization(
+            session=session,
+            user_guid=token.parsed_subject.user_guid,
+            organization_guid=organization_guid,
+        )
+
+    return resolve_active_organization_dep

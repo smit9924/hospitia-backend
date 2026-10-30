@@ -41,7 +41,7 @@ def get_mapping(
         .where(
             OrganizationUserMapping.organization_id == organization_id,
             OrganizationUserMapping.user_id == user_id,
-            UsersReplica.role == role,
+            UsersReplica.role == role.user_type,
         )
     ).first()
 
@@ -71,7 +71,7 @@ def get_active_owner_mapping(*, session: Session, organization_id: int) -> Organ
         .join(UsersReplica, UsersReplica.id == OrganizationUserMapping.user_id)
         .where(
             OrganizationUserMapping.organization_id == organization_id,
-            UsersReplica.role == OrganizationRole.OWNER,
+            UsersReplica.role == OrganizationRole.OWNER.user_type,
             OrganizationUserMapping.is_active == True,  # noqa: E712
         )
     ).first()

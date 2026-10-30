@@ -12,6 +12,7 @@ from booking.schemas.organization_schemas import (
     OrganizationListItem,
     OrganizationListQueryParams,
     OrganizationListResponse,
+    OrganizationMembershipSummary,
 )
 from booking.types.enums import UserType
 
@@ -453,3 +454,121 @@ def list_organizations_for_manager(
         query=query,
         organization_id_filter=Organization.id.in_(managed_organization_ids), # type: ignore
     )
+
+
+def _to_membership_summary(
+    organization: Organization,
+    organization_type: OrganizationType,
+    address: Address,
+) -> OrganizationMembershipSummary:
+    """Map an organization row and its type/address into a membership summary."""
+    return OrganizationMembershipSummary(
+        guid=organization.guid,
+        name=organization.name,
+        organization_type_name=organization_type.name,
+        city=address.city,
+    )
+
+
+def list_active_member_organizations(*, session: Session, user_id: int) -> list[OrganizationMembershipSummary]:
+    """List active organizations a user is actively mapped to, by name.
+
+    Parameters
+    ----------
+    session : Session
+        Active database session used to execute the query.
+    user_id : int
+        Internal ID of the user whose active mappings are used.
+
+    Returns
+    -------
+    list[OrganizationMembershipSummary]
+        Organizations where both the organization and the user's mapping
+        are active, sorted by name ascending. Empty when there are none.
+
+    Raises
+    ------
+    SQLAlchemyError
+        If the database query cannot be executed.
+    """
+    rows = session.exec(
+        select(Organization, OrganizationType, Address)  # type: ignore
+        .join(OrganizationUserMapping, OrganizationUserMapping.organization_id == Organization.id)
+        .join(OrganizationType, Organization.organization_type_id == OrganizationType.id)
+        .join(Address, Organization.address_id == Address.id)
+        .where(
+            OrganizationUserMapping.user_id == user_id,
+            OrganizationUserMapping.is_active == True,  # noqa: E712
+            Organization.is_active == True,  # noqa: E712
+        )
+        .order_by(col(Organization.name).asc())
+    ).all()
+    return [_to_membership_summary(*row) for row in rows]
+
+
+def get_active_member_organization(
+    *, session: Session, user_id: int, organization_guid: UUID
+) -> Organization | None:
+    """Fetch an active organization only if the user is actively mapped to it.
+
+    Parameters
+    ----------
+    session : Session
+        Active database session used to execute the query.
+    user_id : int
+        Internal ID of the user whose mapping must be active.
+    organization_guid : UUID
+        Organization GUID to look up.
+
+    Returns
+    -------
+    Organization | None
+        The organization, or ``None`` when it does not exist, is inactive,
+        or the user has no active mapping to it.
+
+    Raises
+    ------
+    SQLAlchemyError
+        If the database query cannot be executed.
+    """
+    return session.exec(
+        select(Organization)
+        .join(OrganizationUserMapping, OrganizationUserMapping.organization_id == Organization.id)  # pyright: ignore[reportArgumentType]
+        .where(
+            Organization.guid == organization_guid,
+            Organization.is_active == True,  # noqa: E712
+            OrganizationUserMapping.user_id == user_id,
+            OrganizationUserMapping.is_active == True,  # noqa: E712
+        )
+    ).first()
+
+
+def get_organization_membership_summary(
+    *, session: Session, organization_id: int
+) -> OrganizationMembershipSummary | None:
+    """Build the membership summary of a single organization.
+
+    Parameters
+    ----------
+    session : Session
+        Active database session used to execute the query.
+    organization_id : int
+        Internal ID of the organization.
+
+    Returns
+    -------
+    OrganizationMembershipSummary | None
+        Summary of the organization, or ``None`` if it does not exist.
+
+    Raises
+    ------
+    SQLAlchemyError
+        If the database query cannot be executed.
+    """
+    row = session.exec(
+        select(Organization, OrganizationType, Address)  # type: ignore
+        .join(OrganizationType, Organization.organization_type_id == OrganizationType.id)
+        .join(Address, Organization.address_id == Address.id)
+        .where(Organization.id == organization_id)
+    ).first()
+    return _to_membership_summary(*row) if row is not None else None

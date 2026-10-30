@@ -26,10 +26,12 @@ from booking.exceptions.definitions.not_found_exceptions import (
     UserNotFoundException,
 )
 from booking.exceptions.definitions.security_exceptions import (
+    ActiveOrganizationInvalidException,
     OrganizationAccessForbiddenException,
     UserUnauthorizedException,
 )
 from booking.exceptions.definitions.validation_exceptions import (
+    ActiveOrganizationRequiredException,
     OrganizationHasActiveDependenciesException,
     OrganizationMustHaveActiveOwnerException,
     OrganizationTypeAlreadyExistsException,
@@ -48,6 +50,7 @@ from booking.exceptions.handlers.not_found_exceptions_handlers import (
     user_not_found_exception_handler,
 )
 from booking.exceptions.handlers.security_exceptions_handlers import (
+    active_organization_invalid_exception_handler,
     decode_error_exception_handler,
     expired_signature_error_exception_handler,
     immature_signature_error_exception_handler,
@@ -63,6 +66,7 @@ from booking.exceptions.handlers.security_exceptions_handlers import (
     user_unauthorized_exception_handler,
 )
 from booking.exceptions.handlers.validation_exception_handlers import (
+    active_organization_required_exception_handler,
     organization_has_active_dependencies_exception_handler,
     organization_must_have_active_owner_exception_handler,
     organization_type_already_exists_exception_handler,
@@ -80,6 +84,7 @@ def get_exception_handlers() -> dict[Any, Any]:
         # Register CUSTOM SECURITY EXCEPTION handlers
         UserUnauthorizedException: user_unauthorized_exception_handler,
         OrganizationAccessForbiddenException: organization_access_forbidden_exception_handler,
+        ActiveOrganizationInvalidException: active_organization_invalid_exception_handler,
 
         # Register PYJWT SECURITY EXCEPTION handlers
         ExpiredSignatureError: expired_signature_error_exception_handler,
@@ -107,6 +112,7 @@ def get_exception_handlers() -> dict[Any, Any]:
         OrganizationHasActiveDependenciesException: organization_has_active_dependencies_exception_handler,
         OrganizationMustHaveActiveOwnerException: organization_must_have_active_owner_exception_handler,
         UserRoleMismatchForOrganizationException: user_role_mismatch_for_organization_exception_handler,
+        ActiveOrganizationRequiredException: active_organization_required_exception_handler,
 
         # Register MESSAGING QUEUE EXCEPTION handlers
         MQNotFoundException: mq_not_found_exception_handler,

@@ -67,3 +67,16 @@ class UserRoleMismatchForOrganizationException(BaseException):
         message: str = "The selected user does not have the required role for this assignment."
     ) -> None:
         super().__init__(ErrorCodes.USER_ROLE_MISMATCH_FOR_ORGANIZATION, message)
+
+
+class ActiveOrganizationRequiredException(BaseException):
+    """
+    Raised when an endpoint that requires an active organization receives
+    no `X-Active-Organization-Guid` header, or a value that is not a UUID.
+    """
+
+    def __init__(
+        self,
+        message: str = "An active organization is required for this request."
+    ) -> None:
+        super().__init__(ErrorCodes.ACTIVE_ORGANIZATION_REQUIRED, message)

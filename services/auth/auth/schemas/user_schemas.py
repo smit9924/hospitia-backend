@@ -1,3 +1,5 @@
+from uuid import UUID
+
 from pydantic import EmailStr
 
 from auth.types.enums import UserType
@@ -24,6 +26,18 @@ class UserCreateRequest(BaseSchema):
     last_name: str
     email: EmailStr
     username: str
+
+
+class ManagerCreateRequest(UserCreateRequest):
+    """
+    Payload for creating a MANAGER user.
+
+    `organization_guid` is forwarded to the Booking Service in the
+    user-created event, which maps the new manager to that organization.
+    Auth does not validate it because it holds no organization data.
+    """
+
+    organization_guid: UUID
 
 
 class ProfileData(BaseSchema):

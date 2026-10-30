@@ -120,6 +120,12 @@ class MqUserCreatedPayload(MqBaseSchema):
         User's last name.
     role : UserType
         User role for authorization in consuming services.
+    organization_guid : UUID | None
+        Organization the new user must be mapped to. Set only when a
+        MANAGER is provisioned.
+    created_by_guid : UUID | None
+        Public identifier of the user who provisioned this user. Set only
+        when a MANAGER is provisioned.
     """
 
     id: int
@@ -129,6 +135,8 @@ class MqUserCreatedPayload(MqBaseSchema):
     first_name: str | None = None
     last_name: str | None = None
     role: UserType = UserType.CUSTOMER
+    organization_guid: UUID | None = None
+    created_by_guid: UUID | None = None
 
 
 class MqDomainEvent(MqBaseSchema):
