@@ -57,10 +57,22 @@ from auth.schemas.user_schemas import (
     UserSignup,
     UserUpdateRequest,
 )
-from auth.types.enums import AuthType, TokenType, UserType
+from auth.types.enums import AuthType, EnvironmentName, TokenType, UserType
 
 VERIFY_EMAIL_OTP_LENGTH = 6
+# Local development only: provisioned users get this password instead of a generated one.
+LOCAL_DEFAULT_USER_PASSWORD = "Password@123"
 log = logging.getLogger(__name__)
+
+
+def _is_local_environment() -> bool:
+    """
+    Whether the service runs in local development (ENVIRONMENT=local).
+
+    Locally, new users are created with a verified email, and provisioned users
+    get LOCAL_DEFAULT_USER_PASSWORD, so developers can log in without Mailpit.
+    """
+    return settings.ENVIRONMENT == EnvironmentName.LOCAL
 
 
 def get_user_profile_data(*, session: Session, user_guid: str) -> ProfileData:
@@ -118,11 +130,15 @@ def provision_user(
 
     Used when an authorized actor provisions an account for someone else
     (as opposed to self-service signup).
+
+    In local development the password is LOCAL_DEFAULT_USER_PASSWORD and the
+    email is created already verified.
     """
     log.info("Started role=%s", role)
     if role == UserType.INTERNALE:
         raise UserUnauthorizedException()
-    generated_password = generate_strong_password()
+    is_local = _is_local_environment()
+    generated_password = LOCAL_DEFAULT_USER_PASSWORD if is_local else generate_strong_password()
 
     user = Users(
         email=user_create.email,
@@ -133,6 +149,7 @@ def provision_user(
         auth_type=AuthType.MANUAL,
         role=role,
         is_active=True,
+        is_email_verified=is_local,
     )
     validated_user = user.model_validate(user)
 
@@ -225,6 +242,8 @@ def signup_user(*, session: Session, user_signup: UserSignup, role: UserType) ->
             The registration details for the new user.
         role : UserType
             The role to assign to the new user.
+
+    In local development the email is created already verified.
     """
     log.info("Started")
     if role == UserType.INTERNALE:
@@ -238,6 +257,7 @@ def signup_user(*, session: Session, user_signup: UserSignup, role: UserType) ->
         auth_type=AuthType.MANUAL,
         role=role,
         is_active=True,
+        is_email_verified=_is_local_environment(),
     )
     validated_user = user.model_validate(user)
 
