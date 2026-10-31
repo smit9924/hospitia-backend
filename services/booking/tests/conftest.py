@@ -69,7 +69,8 @@ def client(session: Session) -> Generator[TestClient]:
 
 def build_access_token(user: UsersReplica) -> str:
     """Sign an access token for `user` the way the auth service does."""
-    subject = {"userGuid": str(user.guid), "role": int(user.role), "emailVerified": True}
+    # Same claim layout as the auth service issues.
+    subject = {"user_guid": str(user.guid), "role": int(user.role), "email_verified": True}
     return jwt.encode(
         {
             "sub": json.dumps(subject),
