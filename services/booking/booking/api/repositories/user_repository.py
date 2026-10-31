@@ -1,4 +1,6 @@
 
+from uuid import UUID
+
 from sqlmodel import Session, select
 
 from booking.database.models.users import UsersReplica
@@ -64,15 +66,17 @@ def upsert_user_replica(*, session: Session, payload: MqUserCreatedPayload) -> U
     return replica
 
 
-def get_user_replica_by_guid(*, session: Session, guid: str) -> UsersReplica | None:
+def get_user_replica_by_guid(*, session: Session, guid: str | UUID) -> UsersReplica | None:
     """Resolve a user's replica row by its public GUID.
 
     Parameters
     ----------
     session : Session
         Active database session used to execute the query.
-    guid : str
-        Public GUID of the user replica.
+    guid : str | UUID
+        Public GUID of the user replica. Strings (e.g. from the JWT subject)
+        are converted to ``UUID`` so the comparison works on every database
+        backend, including the SQLite test database.
 
     Returns
     -------
@@ -85,7 +89,7 @@ def get_user_replica_by_guid(*, session: Session, guid: str) -> UsersReplica | N
         If the database query cannot be executed.
     """
     return session.exec(
-        select(UsersReplica).where(UsersReplica.guid == guid)
+        select(UsersReplica).where(UsersReplica.guid == UUID(str(guid)))
     ).first()
 
 
