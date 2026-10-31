@@ -240,20 +240,21 @@ def _build_organization_list_statement(
     owner_alias = aliased(UsersReplica)
     created_by_alias = aliased(UsersReplica)
     updated_by_alias = aliased(UsersReplica)
+    owner_user_ids = select(UsersReplica.id).where(UsersReplica.role == UserType.OWNER)
 
     statement = (
         select(Organization, OrganizationType, Address, owner_alias, created_by_alias, updated_by_alias) # type: ignore
         .join(OrganizationType, Organization.organization_type_id == OrganizationType.id)
         .join(Address, Organization.address_id == Address.id)
+        # Join only the active OWNER mapping: joining every active mapping
+        # (managers included) would repeat the organization once per member.
         .outerjoin(
             owner_mapping,
             (owner_mapping.organization_id == Organization.id)
-            & (owner_mapping.is_active == True),  # noqa: E712
+            & (owner_mapping.is_active == True)  # noqa: E712
+            & col(owner_mapping.user_id).in_(owner_user_ids),
         )
-        .outerjoin(
-            owner_alias,
-            (owner_alias.id == owner_mapping.user_id) & (owner_alias.role == UserType.OWNER),
-        )
+        .outerjoin(owner_alias, owner_alias.id == owner_mapping.user_id)
         .outerjoin(created_by_alias, created_by_alias.id == Organization.created_by)
         .outerjoin(updated_by_alias, updated_by_alias.id == Organization.updated_by)
         .where(Organization.is_active == True)  # noqa: E712

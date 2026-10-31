@@ -92,4 +92,109 @@ VALIDATION_EXCEPTION_DOC = {
             },
         }
     },
+    "CurrencyUnitAlreadyExistsException": {
+        409: {
+            "description": "A currency unit with this code already exists.",
+            "model": ApiErrorResponse[None],
+            "content": {
+                "application/json": {
+                    "example": {
+                        "metadata": None,
+                        "message": "A currency unit with this code already exists.",
+                        "errorCode": ErrorCodes.CURRENCY_UNIT_ALREADY_EXISTS,
+                    }
+                }
+            },
+        }
+    },
+    "CurrencyUnitInUseException": {
+        409: {
+            "description": "Cannot delete a currency unit that is still in use.",
+            "model": ApiErrorResponse[None],
+            "content": {
+                "application/json": {
+                    "example": {
+                        "metadata": None,
+                        "message": "Cannot delete a currency unit that is still in use.",
+                        "errorCode": ErrorCodes.CURRENCY_UNIT_IN_USE,
+                    }
+                }
+            },
+        }
+    },
+    "RoomAmenityAlreadyExistsException": {
+        409: {
+            "description": "A room amenity with this name already exists.",
+            "model": ApiErrorResponse[None],
+            "content": {
+                "application/json": {
+                    "example": {
+                        "metadata": None,
+                        "message": "A room amenity with this name already exists.",
+                        "errorCode": ErrorCodes.ROOM_AMENITY_ALREADY_EXISTS,
+                    }
+                }
+            },
+        }
+    },
+    "RoomAmenityInUseException": {
+        409: {
+            "description": "Cannot delete a room amenity that is still in use.",
+            "model": ApiErrorResponse[None],
+            "content": {
+                "application/json": {
+                    "example": {
+                        "metadata": None,
+                        "message": "Cannot delete a room amenity that is still in use.",
+                        "errorCode": ErrorCodes.ROOM_AMENITY_IN_USE,
+                    }
+                }
+            },
+        }
+    },
+    "RoomTypeAlreadyExistsException": {
+        409: {
+            "description": "A room type with this name already exists in this organization.",
+            "model": ApiErrorResponse[None],
+            "content": {
+                "application/json": {
+                    "example": {
+                        "metadata": None,
+                        "message": "A room type with this name already exists in this organization.",
+                        "errorCode": ErrorCodes.ROOM_TYPE_ALREADY_EXISTS,
+                    }
+                }
+            },
+        }
+    },
+    "RoomTypeAmenityNotAvailableException": {
+        400: {
+            "description": "One or more selected amenities are not available for this organization.",
+            "model": ApiErrorResponse[None],
+            "content": {
+                "application/json": {
+                    "example": {
+                        "metadata": None,
+                        "message": "One or more selected amenities are not available for this organization.",
+                        "errorCode": ErrorCodes.ROOM_TYPE_AMENITY_NOT_AVAILABLE,
+                    }
+                }
+            },
+        }
+    },
+    "RoomTypeOrganizationRequiredException": {
+        400: {
+            "description": "Select the organization the room type belongs to.",
+            "model": ApiErrorResponse[None],
+            "content": {
+                "application/json": {
+                    "example": {
+                        "metadata": None,
+                        "message": "Select the organization the room type belongs to.",
+                        "errorCode": ErrorCodes.ROOM_TYPE_ORGANIZATION_REQUIRED,
+                    }
+                }
+            },
+        }
+    },
 }

@@ -62,4 +62,19 @@ SECURITY_EXCEPTION_DOC = {
             },
         }
     },
+    "RoomAmenityModificationForbiddenException": {
+        403: {
+            "description": "Only admins can change default room amenities.",
+            "model": ApiErrorResponse[None],
+            "content": {
+                "application/json": {
+                    "example": {
+                        "metadata": None,
+                        "message": "Only admins can change default room amenities.",
+                        "errorCode": ErrorCodes.ROOM_AMENITY_MODIFICATION_FORBIDDEN,
+                    }
+                }
+            },
+        }
+    },
 }

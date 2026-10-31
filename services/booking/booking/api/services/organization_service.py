@@ -25,6 +25,9 @@ from booking.api.repositories.organization_user_mapping_repository import (
     is_user_active_manager_of_organization,
     is_user_active_owner_of_organization,
 )
+from booking.api.repositories.room_type_repository import (
+    has_active_room_types_in_organization,
+)
 from booking.api.repositories.user_repository import (
     get_user_replica_by_guid,
     get_user_replica_by_id,
@@ -44,6 +47,7 @@ from booking.exceptions.definitions.security_exceptions import (
     OrganizationAccessForbiddenException,
 )
 from booking.exceptions.definitions.validation_exceptions import (
+    OrganizationHasActiveDependenciesException,
     UserRoleMismatchForOrganizationException,
 )
 from booking.schemas.organization_schemas import (
@@ -421,12 +425,40 @@ def upsert_organization_as_owner(
     )
 
 
-def check_organization_deletable(*, session: Session, organization_id: int) -> None:  # noqa: ARG001
+def get_active_organization_or_raise(*, session: Session, guid: UUID) -> Organization:
+    """Fetch an active organization by GUID, raising when it is missing.
+
+    Used by admin flows that act on an organization chosen in the request
+    (e.g. room types and room amenities).
+
+    Parameters
+    ----------
+    session : Session
+        Active database session used to query the organization.
+    guid : UUID
+        Organization GUID to look up.
+
+    Returns
+    -------
+    Organization
+        The active organization.
+
+    Raises
+    ------
+    OrganizationNotFoundException
+        If the organization does not exist or is inactive.
     """
-    Extensibility hook for forward-looking dependency checks. Booking
-    Service does not yet have bookings/properties/payments tables — extend
-    this with a check per dependency (each raising
-    OrganizationHasActiveDependenciesException) as those tables land.
+    organization = get_organization_by_guid(session=session, guid=guid)
+    if organization is None or organization.id is None or not organization.is_active:
+        raise OrganizationNotFoundException()
+    return organization
+
+
+def check_organization_deletable(*, session: Session, organization_id: int) -> None:
+    """Block deleting an organization that still has active dependencies.
+
+    Add one check per dependency (each raising
+    OrganizationHasActiveDependenciesException) as new tables land.
     Active OWNER/MANAGER mappings are intentionally NOT checked here:
     deleting the organization makes the "must have an active owner"
     invariant moot, and mapping rows are kept as historical record.
@@ -434,16 +466,19 @@ def check_organization_deletable(*, session: Session, organization_id: int) -> N
     Parameters
     ----------
     session : Session
-        Active database session reserved for future dependency checks.
+        Active database session used for the dependency checks.
     organization_id : int
         Internal ID of the organization to validate.
 
-    Returns
-    -------
-    None
-        No dependency checks are currently required.
+    Raises
+    ------
+    OrganizationHasActiveDependenciesException
+        If the organization still has an active room type.
     """
-    return
+    if has_active_room_types_in_organization(session=session, organization_id=organization_id):
+        raise OrganizationHasActiveDependenciesException(
+            message="Cannot delete an organization that still has active room types."
+        )
 
 
 def delete_organization(
