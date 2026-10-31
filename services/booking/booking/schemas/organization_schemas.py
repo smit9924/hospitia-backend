@@ -17,7 +17,7 @@ class AddressInput(BaseSchema):
     city: str = Field(min_length=1, max_length=100)
     state: str = Field(min_length=1, max_length=100)
     country: str = Field(min_length=1, max_length=100)
-    postal_code: str = Field(min_length=1, max_length=20)
+    postal_code: int = Field(strict=True, ge=1, le=9_999_999)
 
 
 class AddressResponse(AddressInput):

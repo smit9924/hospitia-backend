@@ -31,8 +31,8 @@ class Address(AuditMixin, GUIDMixin, SQLModel, table=True):
         State/province name. Required, indexed.
     country : str
         Country name. Required, indexed.
-    postal_code : str
-        Postal/ZIP code. Required.
+    postal_code : int
+        Postal/ZIP code. Required. Maximum 7 digits, no leading zeros.
     created_at, updated_at, created_by, updated_by
         Audit fields, see `AuditMixin`.
     """
@@ -46,7 +46,7 @@ class Address(AuditMixin, GUIDMixin, SQLModel, table=True):
     city: str = Field(max_length=100, nullable=False, index=True)
     state: str = Field(max_length=100, nullable=False, index=True)
     country: str = Field(max_length=100, nullable=False, index=True)
-    postal_code: str = Field(max_length=20, nullable=False)
+    postal_code: int = Field(nullable=False)
 
 
 __all__ = [
