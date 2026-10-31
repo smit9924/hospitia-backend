@@ -24,11 +24,13 @@ from booking.exceptions.definitions.not_found_exceptions import (
     OrganizationNotFoundException,
     OrganizationTypeNotFoundException,
     OrganizationUserMappingNotFoundException,
+    RoomAmenityNotFoundException,
     UserNotFoundException,
 )
 from booking.exceptions.definitions.security_exceptions import (
     ActiveOrganizationInvalidException,
     OrganizationAccessForbiddenException,
+    RoomAmenityModificationForbiddenException,
     UserUnauthorizedException,
 )
 from booking.exceptions.definitions.validation_exceptions import (
@@ -39,6 +41,8 @@ from booking.exceptions.definitions.validation_exceptions import (
     OrganizationMustHaveActiveOwnerException,
     OrganizationTypeAlreadyExistsException,
     OrganizationTypeHasActiveOrganizationsException,
+    RoomAmenityAlreadyExistsException,
+    RoomAmenityInUseException,
     UserRoleMismatchForOrganizationException,
 )
 from booking.exceptions.handlers.messaging_queue_exceptions_handlers import (
@@ -51,6 +55,7 @@ from booking.exceptions.handlers.not_found_exceptions_handlers import (
     organization_not_found_exception_handler,
     organization_type_not_found_exception_handler,
     organization_user_mapping_not_found_exception_handler,
+    room_amenity_not_found_exception_handler,
     user_not_found_exception_handler,
 )
 from booking.exceptions.handlers.security_exceptions_handlers import (
@@ -67,6 +72,7 @@ from booking.exceptions.handlers.security_exceptions_handlers import (
     invalid_token_error_exception_handler,
     missing_required_claim_error_exception_handler,
     organization_access_forbidden_exception_handler,
+    room_amenity_modification_forbidden_exception_handler,
     user_unauthorized_exception_handler,
 )
 from booking.exceptions.handlers.validation_exception_handlers import (
@@ -77,6 +83,8 @@ from booking.exceptions.handlers.validation_exception_handlers import (
     organization_must_have_active_owner_exception_handler,
     organization_type_already_exists_exception_handler,
     organization_type_has_active_organizations_exception_handler,
+    room_amenity_already_exists_exception_handler,
+    room_amenity_in_use_exception_handler,
     user_role_mismatch_for_organization_exception_handler,
 )
 
@@ -91,6 +99,7 @@ def get_exception_handlers() -> dict[Any, Any]:
         UserUnauthorizedException: user_unauthorized_exception_handler,
         OrganizationAccessForbiddenException: organization_access_forbidden_exception_handler,
         ActiveOrganizationInvalidException: active_organization_invalid_exception_handler,
+        RoomAmenityModificationForbiddenException: room_amenity_modification_forbidden_exception_handler,
 
         # Register PYJWT SECURITY EXCEPTION handlers
         ExpiredSignatureError: expired_signature_error_exception_handler,
@@ -112,6 +121,7 @@ def get_exception_handlers() -> dict[Any, Any]:
         OrganizationNotFoundException: organization_not_found_exception_handler,
         OrganizationUserMappingNotFoundException: organization_user_mapping_not_found_exception_handler,
         CurrencyUnitNotFoundException: currency_unit_not_found_exception_handler,
+        RoomAmenityNotFoundException: room_amenity_not_found_exception_handler,
 
         # Register VALIDATION EXCEPTION handlers
         OrganizationTypeAlreadyExistsException: organization_type_already_exists_exception_handler,
@@ -122,6 +132,8 @@ def get_exception_handlers() -> dict[Any, Any]:
         ActiveOrganizationRequiredException: active_organization_required_exception_handler,
         CurrencyUnitAlreadyExistsException: currency_unit_already_exists_exception_handler,
         CurrencyUnitInUseException: currency_unit_in_use_exception_handler,
+        RoomAmenityAlreadyExistsException: room_amenity_already_exists_exception_handler,
+        RoomAmenityInUseException: room_amenity_in_use_exception_handler,
 
         # Register MESSAGING QUEUE EXCEPTION handlers
         MQNotFoundException: mq_not_found_exception_handler,

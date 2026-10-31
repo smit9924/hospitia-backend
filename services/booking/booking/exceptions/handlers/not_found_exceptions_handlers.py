@@ -7,6 +7,7 @@ from booking.exceptions.definitions.not_found_exceptions import (
     OrganizationNotFoundException,
     OrganizationTypeNotFoundException,
     OrganizationUserMappingNotFoundException,
+    RoomAmenityNotFoundException,
     UserNotFoundException,
 )
 from booking.schemas.common_schemas import ApiErrorResponse
@@ -137,6 +138,26 @@ def currency_unit_not_found_exception_handler(
 ) -> JSONResponse:
     """
     Handle currency unit not found exceptions.
+    """
+
+    response = ApiErrorResponse(
+        metadata=None,
+        errorCode=exc.errorCode,
+        message=exc.message,
+    )
+
+    return JSONResponse(
+        status_code=status.HTTP_404_NOT_FOUND,
+        content=response.model_dump(),
+    )
+
+
+def room_amenity_not_found_exception_handler(
+    _request: Request,
+    exc: RoomAmenityNotFoundException,
+) -> JSONResponse:
+    """
+    Handle room amenity not found exceptions.
     """
 
     response = ApiErrorResponse(

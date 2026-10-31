@@ -421,6 +421,35 @@ def upsert_organization_as_owner(
     )
 
 
+def get_active_organization_or_raise(*, session: Session, guid: UUID) -> Organization:
+    """Fetch an active organization by GUID, raising when it is missing.
+
+    Used by admin flows that act on an organization chosen in the request
+    (e.g. room types and room amenities).
+
+    Parameters
+    ----------
+    session : Session
+        Active database session used to query the organization.
+    guid : UUID
+        Organization GUID to look up.
+
+    Returns
+    -------
+    Organization
+        The active organization.
+
+    Raises
+    ------
+    OrganizationNotFoundException
+        If the organization does not exist or is inactive.
+    """
+    organization = get_organization_by_guid(session=session, guid=guid)
+    if organization is None or organization.id is None or not organization.is_active:
+        raise OrganizationNotFoundException()
+    return organization
+
+
 def check_organization_deletable(*, session: Session, organization_id: int) -> None:  # noqa: ARG001
     """
     Extensibility hook for forward-looking dependency checks. Booking

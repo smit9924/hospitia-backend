@@ -6,16 +6,22 @@ from fastapi import Depends, Header
 from fastapi.security import OAuth2PasswordBearer
 from sqlmodel import Session
 
-from booking.api.services.organization_service import resolve_active_organization
+from booking.api.services.organization_service import (
+	get_user_id_from_user_guid,
+	resolve_active_organization,
+)
 from booking.core.config import settings
 from booking.core.security import decode_jwt_token
 from booking.database.db import engine
 from booking.exceptions.definitions.security_exceptions import UserUnauthorizedException
 from booking.exceptions.definitions.validation_exceptions import (
-    ActiveOrganizationRequiredException,
+	ActiveOrganizationRequiredException,
 )
 from booking.schemas.auth_schemas import ParsedJWTPayload
-from booking.schemas.organization_schemas import ActiveOrganization
+from booking.schemas.organization_schemas import (
+	ActiveOrganization,
+	OrganizationScopedActor,
+)
 from booking.types.constants import ACTIVE_ORGANIZATION_HEADER
 from booking.types.enums import TokenType, UserType
 
@@ -165,15 +171,85 @@ def ActiveOrganizationDep(
         ActiveOrganizationInvalidException
             If the organization cannot be used by the caller.
         """
-        try:
-            organization_guid = UUID((active_organization_guid or "").strip())
-        except ValueError:
-            raise ActiveOrganizationRequiredException()
-
         return resolve_active_organization(
             session=session,
             user_guid=token.parsed_subject.user_guid,
-            organization_guid=organization_guid,
+            organization_guid=parse_active_organization_header(active_organization_guid),
         )
 
     return resolve_active_organization_dep
+
+
+def parse_active_organization_header(active_organization_guid: str | None) -> UUID:
+    """
+    Parse the `X-Active-Organization-Guid` header value.
+
+    Raises
+    ------
+    ActiveOrganizationRequiredException
+        If the header is missing or is not a valid UUID.
+    """
+    try:
+        return UUID((active_organization_guid or "").strip())
+    except ValueError:
+        raise ActiveOrganizationRequiredException()
+
+
+def OrganizationScopedActorDep(
+    roles: list[UserType] | None = None,
+) -> Callable:
+    """
+    Dependency factory for endpoints shared by admins and organization members.
+
+    Creates and returns a FastAPI dependency function that:
+    - Authenticates and authorizes the caller via `RoleValidationDep(roles)`
+    - For an ADMIN, returns an unscoped actor (admins may act on any
+      organization and have no active organization)
+    - For an OWNER or MANAGER, resolves and validates the active
+      organization exactly like `ActiveOrganizationDep`
+
+    Parameters
+    ----------
+    roles : list[UserType] | None
+        Roles allowed to call the endpoint.
+
+    Returns
+    -------
+    Callable
+        A FastAPI-compatible dependency function returning
+        `OrganizationScopedActor`.
+    """
+
+    validate_jwt_token = RoleValidationDep(roles)
+
+    async def resolve_organization_scoped_actor_dep(
+        session: SessionDep,
+        token: Annotated[ParsedJWTPayload, Depends(validate_jwt_token)],
+        active_organization_guid: Annotated[str | None, Header(alias=ACTIVE_ORGANIZATION_HEADER)] = None,
+    ) -> OrganizationScopedActor:
+        """
+        Resolve the caller and, for organization members, their active organization.
+
+        Raises
+        ------
+        UserNotFoundException
+            If the caller has no user replica.
+        ActiveOrganizationRequiredException
+            If a member omits the header or sends an invalid UUID.
+        ActiveOrganizationInvalidException
+            If a member's active organization cannot be used.
+        """
+        user_guid = token.parsed_subject.user_guid
+        user_id = get_user_id_from_user_guid(session=session, guid=user_guid)
+
+        if token.parsed_subject.role == UserType.ADMIN:
+            return OrganizationScopedActor(user_id=user_id, is_admin=True, active_organization=None)
+
+        active_organization = resolve_active_organization(
+            session=session,
+            user_guid=user_guid,
+            organization_guid=parse_active_organization_header(active_organization_guid),
+        )
+        return OrganizationScopedActor(user_id=user_id, is_admin=False, active_organization=active_organization)
+
+    return resolve_organization_scoped_actor_dep

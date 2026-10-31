@@ -78,4 +78,19 @@ NOT_FOUND_EXCEPTIONS_DOC = {
             },
         }
     },
+    "RoomAmenityNotFoundException": {
+        404: {
+            "description": "The requested room amenity was not found.",
+            "model": ApiErrorResponse[None],
+            "content": {
+                "application/json": {
+                    "example": {
+                        "metadata": None,
+                        "message": "The requested room amenity was not found.",
+                        "errorCode": ErrorCodes.ROOM_AMENITY_NOT_FOUND,
+                    }
+                }
+            },
+        }
+    },
 }

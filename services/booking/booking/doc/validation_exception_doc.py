@@ -122,4 +122,34 @@ VALIDATION_EXCEPTION_DOC = {
             },
         }
     },
+    "RoomAmenityAlreadyExistsException": {
+        409: {
+            "description": "A room amenity with this name already exists.",
+            "model": ApiErrorResponse[None],
+            "content": {
+                "application/json": {
+                    "example": {
+                        "metadata": None,
+                        "message": "A room amenity with this name already exists.",
+                        "errorCode": ErrorCodes.ROOM_AMENITY_ALREADY_EXISTS,
+                    }
+                }
+            },
+        }
+    },
+    "RoomAmenityInUseException": {
+        409: {
+            "description": "Cannot delete a room amenity that is still in use.",
+            "model": ApiErrorResponse[None],
+            "content": {
+                "application/json": {
+                    "example": {
+                        "metadata": None,
+                        "message": "Cannot delete a room amenity that is still in use.",
+                        "errorCode": ErrorCodes.ROOM_AMENITY_IN_USE,
+                    }
+                }
+            },
+        }
+    },
 }

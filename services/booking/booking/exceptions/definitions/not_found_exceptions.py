@@ -76,3 +76,15 @@ class CurrencyUnitNotFoundException(BaseException):
         message: str = "The requested currency unit was not found."
     ) -> None:
         super().__init__(ErrorCodes.CURRENCY_UNIT_NOT_FOUND, message)
+
+
+class RoomAmenityNotFoundException(BaseException):
+    """
+    Raised when a requested room amenity does not exist, was deleted, or belongs to another organization.
+    """
+
+    def __init__(
+        self,
+        message: str = "The requested room amenity was not found."
+    ) -> None:
+        super().__init__(ErrorCodes.ROOM_AMENITY_NOT_FOUND, message)

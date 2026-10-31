@@ -104,3 +104,27 @@ class CurrencyUnitInUseException(BaseException):
         message: str = "Cannot delete a currency unit that is still in use."
     ) -> None:
         super().__init__(ErrorCodes.CURRENCY_UNIT_IN_USE, message)
+
+
+class RoomAmenityAlreadyExistsException(BaseException):
+    """
+    Raised when an active room amenity with the same name (case-insensitive) already exists in the same scope, or a custom amenity repeats a default amenity name.
+    """
+
+    def __init__(
+        self,
+        message: str = "A room amenity with this name already exists."
+    ) -> None:
+        super().__init__(ErrorCodes.ROOM_AMENITY_ALREADY_EXISTS, message)
+
+
+class RoomAmenityInUseException(BaseException):
+    """
+    Raised when attempting to delete a room amenity that an active room type still uses.
+    """
+
+    def __init__(
+        self,
+        message: str = "Cannot delete a room amenity that is still in use."
+    ) -> None:
+        super().__init__(ErrorCodes.ROOM_AMENITY_IN_USE, message)

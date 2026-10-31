@@ -9,6 +9,8 @@ from booking.exceptions.definitions.validation_exceptions import (
     OrganizationMustHaveActiveOwnerException,
     OrganizationTypeAlreadyExistsException,
     OrganizationTypeHasActiveOrganizationsException,
+    RoomAmenityAlreadyExistsException,
+    RoomAmenityInUseException,
     UserRoleMismatchForOrganizationException,
 )
 from booking.schemas.common_schemas import ApiErrorResponse
@@ -160,6 +162,46 @@ def currency_unit_in_use_exception_handler(
 ) -> JSONResponse:
     """
     Handle currency unit in use exceptions.
+    """
+
+    response = ApiErrorResponse(
+        metadata=None,
+        errorCode=exc.errorCode,
+        message=exc.message,
+    )
+
+    return JSONResponse(
+        status_code=status.HTTP_409_CONFLICT,
+        content=response.model_dump(),
+    )
+
+
+def room_amenity_already_exists_exception_handler(
+    _request: Request,
+    exc: RoomAmenityAlreadyExistsException,
+) -> JSONResponse:
+    """
+    Handle room amenity already exists exceptions.
+    """
+
+    response = ApiErrorResponse(
+        metadata=None,
+        errorCode=exc.errorCode,
+        message=exc.message,
+    )
+
+    return JSONResponse(
+        status_code=status.HTTP_409_CONFLICT,
+        content=response.model_dump(),
+    )
+
+
+def room_amenity_in_use_exception_handler(
+    _request: Request,
+    exc: RoomAmenityInUseException,
+) -> JSONResponse:
+    """
+    Handle room amenity in use exceptions.
     """
 
     response = ApiErrorResponse(

@@ -178,3 +178,24 @@ class ActiveOrganization(BaseSchema):
 
     id: int
     guid: UUID
+
+
+class OrganizationScopedActor(BaseSchema):
+    """
+    Caller of an endpoint that serves both admins and organization members,
+    resolved by `OrganizationScopedActorDep`. Internal use only.
+
+    Attributes
+    ----------
+    user_id : int
+        Internal ID of the caller's user replica.
+    is_admin : bool
+        Whether the caller is an admin. Admins are not tied to an
+        organization and may act on any organization.
+    active_organization : ActiveOrganization | None
+        The caller's validated active organization; ``None`` for admins.
+    """
+
+    user_id: int
+    is_admin: bool
+    active_organization: ActiveOrganization | None

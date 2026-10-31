@@ -17,6 +17,7 @@ from jwt import (
 from booking.exceptions.definitions.security_exceptions import (
     ActiveOrganizationInvalidException,
     OrganizationAccessForbiddenException,
+    RoomAmenityModificationForbiddenException,
     UserUnauthorizedException,
 )
 from booking.schemas.common_schemas import ApiErrorResponse
@@ -545,5 +546,25 @@ def decode_error_exception_handler(
 
     return JSONResponse(
         status_code=status.HTTP_401_UNAUTHORIZED,
+        content=response.model_dump(),
+    )
+
+
+def room_amenity_modification_forbidden_exception_handler(
+    _request: Request,
+    exc: RoomAmenityModificationForbiddenException,
+) -> JSONResponse:
+    """
+    Handle room amenity modification forbidden exceptions.
+    """
+
+    response = ApiErrorResponse(
+        metadata=None,
+        errorCode=exc.errorCode,
+        message=exc.message,
+    )
+
+    return JSONResponse(
+        status_code=status.HTTP_403_FORBIDDEN,
         content=response.model_dump(),
     )
