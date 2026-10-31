@@ -1,6 +1,3 @@
 .env
 bin/
 .venv
-__pycache__
-*.pyc
-.pytest_cache
