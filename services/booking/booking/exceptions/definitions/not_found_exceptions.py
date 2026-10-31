@@ -88,3 +88,15 @@ class RoomAmenityNotFoundException(BaseException):
         message: str = "The requested room amenity was not found."
     ) -> None:
         super().__init__(ErrorCodes.ROOM_AMENITY_NOT_FOUND, message)
+
+
+class RoomTypeNotFoundException(BaseException):
+    """
+    Raised when a requested room type does not exist, was deleted, or belongs to another organization.
+    """
+
+    def __init__(
+        self,
+        message: str = "The requested room type was not found."
+    ) -> None:
+        super().__init__(ErrorCodes.ROOM_TYPE_NOT_FOUND, message)

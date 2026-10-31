@@ -25,6 +25,7 @@ from booking.exceptions.definitions.not_found_exceptions import (
     OrganizationTypeNotFoundException,
     OrganizationUserMappingNotFoundException,
     RoomAmenityNotFoundException,
+    RoomTypeNotFoundException,
     UserNotFoundException,
 )
 from booking.exceptions.definitions.security_exceptions import (
@@ -43,6 +44,9 @@ from booking.exceptions.definitions.validation_exceptions import (
     OrganizationTypeHasActiveOrganizationsException,
     RoomAmenityAlreadyExistsException,
     RoomAmenityInUseException,
+    RoomTypeAlreadyExistsException,
+    RoomTypeAmenityNotAvailableException,
+    RoomTypeOrganizationRequiredException,
     UserRoleMismatchForOrganizationException,
 )
 from booking.exceptions.handlers.messaging_queue_exceptions_handlers import (
@@ -56,6 +60,7 @@ from booking.exceptions.handlers.not_found_exceptions_handlers import (
     organization_type_not_found_exception_handler,
     organization_user_mapping_not_found_exception_handler,
     room_amenity_not_found_exception_handler,
+    room_type_not_found_exception_handler,
     user_not_found_exception_handler,
 )
 from booking.exceptions.handlers.security_exceptions_handlers import (
@@ -85,6 +90,9 @@ from booking.exceptions.handlers.validation_exception_handlers import (
     organization_type_has_active_organizations_exception_handler,
     room_amenity_already_exists_exception_handler,
     room_amenity_in_use_exception_handler,
+    room_type_already_exists_exception_handler,
+    room_type_amenity_not_available_exception_handler,
+    room_type_organization_required_exception_handler,
     user_role_mismatch_for_organization_exception_handler,
 )
 
@@ -122,6 +130,7 @@ def get_exception_handlers() -> dict[Any, Any]:
         OrganizationUserMappingNotFoundException: organization_user_mapping_not_found_exception_handler,
         CurrencyUnitNotFoundException: currency_unit_not_found_exception_handler,
         RoomAmenityNotFoundException: room_amenity_not_found_exception_handler,
+        RoomTypeNotFoundException: room_type_not_found_exception_handler,
 
         # Register VALIDATION EXCEPTION handlers
         OrganizationTypeAlreadyExistsException: organization_type_already_exists_exception_handler,
@@ -134,6 +143,9 @@ def get_exception_handlers() -> dict[Any, Any]:
         CurrencyUnitInUseException: currency_unit_in_use_exception_handler,
         RoomAmenityAlreadyExistsException: room_amenity_already_exists_exception_handler,
         RoomAmenityInUseException: room_amenity_in_use_exception_handler,
+        RoomTypeAlreadyExistsException: room_type_already_exists_exception_handler,
+        RoomTypeAmenityNotAvailableException: room_type_amenity_not_available_exception_handler,
+        RoomTypeOrganizationRequiredException: room_type_organization_required_exception_handler,
 
         # Register MESSAGING QUEUE EXCEPTION handlers
         MQNotFoundException: mq_not_found_exception_handler,

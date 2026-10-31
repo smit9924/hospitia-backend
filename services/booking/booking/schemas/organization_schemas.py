@@ -180,6 +180,13 @@ class ActiveOrganization(BaseSchema):
     guid: UUID
 
 
+class OrganizationReference(BaseSchema):
+    """Minimal public reference to an organization (e.g. the owner of a record)."""
+
+    guid: UUID
+    name: str
+
+
 class OrganizationScopedActor(BaseSchema):
     """
     Caller of an endpoint that serves both admins and organization members,

@@ -128,3 +128,39 @@ class RoomAmenityInUseException(BaseException):
         message: str = "Cannot delete a room amenity that is still in use."
     ) -> None:
         super().__init__(ErrorCodes.ROOM_AMENITY_IN_USE, message)
+
+
+class RoomTypeAlreadyExistsException(BaseException):
+    """
+    Raised when an active room type of the same organization already uses the name (case-insensitive).
+    """
+
+    def __init__(
+        self,
+        message: str = "A room type with this name already exists in this organization."
+    ) -> None:
+        super().__init__(ErrorCodes.ROOM_TYPE_ALREADY_EXISTS, message)
+
+
+class RoomTypeAmenityNotAvailableException(BaseException):
+    """
+    Raised when a room type selects an amenity that does not exist, was deleted, or is a custom amenity of another organization.
+    """
+
+    def __init__(
+        self,
+        message: str = "One or more selected amenities are not available for this organization."
+    ) -> None:
+        super().__init__(ErrorCodes.ROOM_TYPE_AMENITY_NOT_AVAILABLE, message)
+
+
+class RoomTypeOrganizationRequiredException(BaseException):
+    """
+    Raised when an admin creates a room type without choosing its organization.
+    """
+
+    def __init__(
+        self,
+        message: str = "Select the organization the room type belongs to."
+    ) -> None:
+        super().__init__(ErrorCodes.ROOM_TYPE_ORGANIZATION_REQUIRED, message)

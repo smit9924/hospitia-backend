@@ -9,6 +9,8 @@ from .organization import *  # noqa: F403
 from .organization_type import *  # noqa: F403
 from .organization_user_mapping import *  # noqa: F403
 from .room_amenity import *  # noqa: F403
+from .room_type import *  # noqa: F403
+from .room_type_amenity_mapping import *  # noqa: F403
 from .users import *  # noqa: F403
 
 __all__ = ["SQLModel"]

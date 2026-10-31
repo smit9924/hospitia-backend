@@ -5,6 +5,7 @@ from uuid import UUID
 from pydantic import BeforeValidator, Field, StringConstraints
 
 from .base_schemas import BaseSchema
+from .organization_schemas import OrganizationReference
 
 
 def _blank_to_none(value: object) -> object:
@@ -45,20 +46,13 @@ class RoomAmenityUpsertRequest(BaseSchema):
     organization_guid: UUID | None = None
 
 
-class RoomAmenityOrganizationSummary(BaseSchema):
-    """Organization that owns a custom room amenity."""
-
-    guid: UUID
-    name: str
-
-
 class RoomAmenityResponse(BaseSchema):
     guid: UUID
     name: str
     description: str | None
     is_default: bool
     # Owning organization of a custom amenity; null for a default amenity.
-    organization: RoomAmenityOrganizationSummary | None
+    organization: OrganizationReference | None
     created_at: datetime
     updated_at: datetime
 

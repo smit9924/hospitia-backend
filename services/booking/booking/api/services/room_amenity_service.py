@@ -32,6 +32,9 @@ from booking.api.repositories.room_amenity_repository import (
     soft_delete_room_amenity,
     update_room_amenity,
 )
+from booking.api.repositories.room_type_repository import (
+    has_active_room_types_using_amenity,
+)
 from booking.api.services.organization_service import get_active_organization_or_raise
 from booking.database.models.room_amenity import RoomAmenity
 from booking.exceptions.definitions.not_found_exceptions import (
@@ -42,6 +45,7 @@ from booking.exceptions.definitions.security_exceptions import (
 )
 from booking.exceptions.definitions.validation_exceptions import (
     RoomAmenityAlreadyExistsException,
+    RoomAmenityInUseException,
 )
 from booking.schemas.organization_schemas import OrganizationScopedActor
 from booking.schemas.room_amenity_schemas import (
@@ -246,20 +250,26 @@ def get_room_amenity(*, session: Session, actor: OrganizationScopedActor, guid: 
     return RoomAmenityResponse.model_validate(room_amenity, from_attributes=True)
 
 
-def ensure_room_amenity_is_not_in_use(*, session: Session, room_amenity_id: int) -> None:  # noqa: ARG001
+def ensure_room_amenity_is_not_in_use(*, session: Session, room_amenity_id: int) -> None:
     """Block deleting an amenity that active records still use.
 
-    Extensibility hook: add one check per referencing table (each raising
-    `RoomAmenityInUseException`) as those tables land.
+    Add one check per referencing table here as new tables reference
+    room amenities.
 
     Parameters
     ----------
     session : Session
-        Active database session reserved for the dependency checks.
+        Active database session.
     room_amenity_id : int
         Internal ID of the amenity to validate.
+
+    Raises
+    ------
+    RoomAmenityInUseException
+        If an active room type lists the amenity.
     """
-    return
+    if has_active_room_types_using_amenity(session=session, room_amenity_id=room_amenity_id):
+        raise RoomAmenityInUseException(message="Cannot delete a room amenity that active room types use.")
 
 
 def delete_room_amenity(*, session: Session, actor: OrganizationScopedActor, guid: UUID) -> None:

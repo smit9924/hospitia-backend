@@ -14,12 +14,16 @@ from booking.api.repositories.currency_unit_repository import (
 from booking.api.repositories.currency_unit_repository import (
     list_currency_units as list_currency_units_repo,
 )
+from booking.api.repositories.room_type_repository import (
+    has_active_room_types_using_currency_unit,
+)
 from booking.database.models.currency_unit import CurrencyUnit
 from booking.exceptions.definitions.not_found_exceptions import (
     CurrencyUnitNotFoundException,
 )
 from booking.exceptions.definitions.validation_exceptions import (
     CurrencyUnitAlreadyExistsException,
+    CurrencyUnitInUseException,
 )
 from booking.schemas.currency_unit_schemas import (
     CurrencyUnitListQueryParams,
@@ -169,20 +173,26 @@ def get_currency_unit(*, session: Session, guid: UUID) -> CurrencyUnitResponse:
     return CurrencyUnitResponse.model_validate(currency_unit, from_attributes=True)
 
 
-def ensure_currency_unit_is_not_in_use(*, session: Session, currency_unit_id: int) -> None:  # noqa: ARG001
+def ensure_currency_unit_is_not_in_use(*, session: Session, currency_unit_id: int) -> None:
     """Block deleting a currency unit that active records still reference.
 
-    Extensibility hook: add one check per referencing table (each raising
-    `CurrencyUnitInUseException`) as those tables land.
+    Add one check per referencing table here as new tables reference
+    currency units.
 
     Parameters
     ----------
     session : Session
-        Active database session reserved for the dependency checks.
+        Active database session.
     currency_unit_id : int
         Internal ID of the currency unit to validate.
+
+    Raises
+    ------
+    CurrencyUnitInUseException
+        If an active room type is priced in the currency unit.
     """
-    return
+    if has_active_room_types_using_currency_unit(session=session, currency_unit_id=currency_unit_id):
+        raise CurrencyUnitInUseException(message="Cannot delete a currency unit that active room types use.")
 
 
 def delete_currency_unit(*, session: Session, guid: UUID, actor_user_id: int) -> None:

@@ -152,4 +152,49 @@ VALIDATION_EXCEPTION_DOC = {
             },
         }
     },
+    "RoomTypeAlreadyExistsException": {
+        409: {
+            "description": "A room type with this name already exists in this organization.",
+            "model": ApiErrorResponse[None],
+            "content": {
+                "application/json": {
+                    "example": {
+                        "metadata": None,
+                        "message": "A room type with this name already exists in this organization.",
+                        "errorCode": ErrorCodes.ROOM_TYPE_ALREADY_EXISTS,
+                    }
+                }
+            },
+        }
+    },
+    "RoomTypeAmenityNotAvailableException": {
+        400: {
+            "description": "One or more selected amenities are not available for this organization.",
+            "model": ApiErrorResponse[None],
+            "content": {
+                "application/json": {
+                    "example": {
+                        "metadata": None,
+                        "message": "One or more selected amenities are not available for this organization.",
+                        "errorCode": ErrorCodes.ROOM_TYPE_AMENITY_NOT_AVAILABLE,
+                    }
+                }
+            },
+        }
+    },
+    "RoomTypeOrganizationRequiredException": {
+        400: {
+            "description": "Select the organization the room type belongs to.",
+            "model": ApiErrorResponse[None],
+            "content": {
+                "application/json": {
+                    "example": {
+                        "metadata": None,
+                        "message": "Select the organization the room type belongs to.",
+                        "errorCode": ErrorCodes.ROOM_TYPE_ORGANIZATION_REQUIRED,
+                    }
+                }
+            },
+        }
+    },
 }

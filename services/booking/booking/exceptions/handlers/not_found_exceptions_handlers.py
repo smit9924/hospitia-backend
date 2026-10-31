@@ -8,6 +8,7 @@ from booking.exceptions.definitions.not_found_exceptions import (
     OrganizationTypeNotFoundException,
     OrganizationUserMappingNotFoundException,
     RoomAmenityNotFoundException,
+    RoomTypeNotFoundException,
     UserNotFoundException,
 )
 from booking.schemas.common_schemas import ApiErrorResponse
@@ -158,6 +159,26 @@ def room_amenity_not_found_exception_handler(
 ) -> JSONResponse:
     """
     Handle room amenity not found exceptions.
+    """
+
+    response = ApiErrorResponse(
+        metadata=None,
+        errorCode=exc.errorCode,
+        message=exc.message,
+    )
+
+    return JSONResponse(
+        status_code=status.HTTP_404_NOT_FOUND,
+        content=response.model_dump(),
+    )
+
+
+def room_type_not_found_exception_handler(
+    _request: Request,
+    exc: RoomTypeNotFoundException,
+) -> JSONResponse:
+    """
+    Handle room type not found exceptions.
     """
 
     response = ApiErrorResponse(
