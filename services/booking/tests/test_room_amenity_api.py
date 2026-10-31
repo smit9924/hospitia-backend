@@ -160,7 +160,7 @@ def test_custom_amenities_of_deleted_organizations_are_hidden_from_admin(
     session.commit()
 
     assert client.get(ROOM_AMENITY_URL, headers=admin_user.headers).json()["totalCount"] == 0
-    assert client.get(f"{ROOM_AMENITY_URL}/{custom['guid']}", headers=admin_user.headers).status_code == 404
+    assert client.get(f"{ROOM_AMENITY_URL}/detail", params={"guid": custom["guid"]}, headers=admin_user.headers).status_code == 404
 
 
 def test_member_cannot_see_or_change_other_organizations_amenities(
@@ -173,7 +173,7 @@ def test_member_cannot_see_or_change_other_organizations_amenities(
     foreign = create_amenity(client, admin_user.headers, name="Fridge", organizationGuid=str(other_organization.guid))
     owner_headers = owner_user.headers_with_active_organization(organization)
 
-    get_response = client.get(f"{ROOM_AMENITY_URL}/{foreign['guid']}", headers=owner_headers)
+    get_response = client.get(f"{ROOM_AMENITY_URL}/detail", params={"guid": foreign["guid"]}, headers=owner_headers)
     update_response = client.put(f"{ROOM_AMENITY_URL}/create", json={"guid": foreign["guid"], "name": "Mine"}, headers=owner_headers)
     delete_response = client.delete(f"{ROOM_AMENITY_URL}/delete", params={"guid": foreign["guid"]}, headers=owner_headers)
 
@@ -191,7 +191,7 @@ def test_member_can_read_but_not_change_default_amenities(
     default = create_amenity(client, admin_user.headers, name="Television")
     manager_headers = manager_user.headers_with_active_organization(organization)
 
-    assert client.get(f"{ROOM_AMENITY_URL}/{default['guid']}", headers=manager_headers).status_code == 200
+    assert client.get(f"{ROOM_AMENITY_URL}/detail", params={"guid": default["guid"]}, headers=manager_headers).status_code == 200
     update_response = client.put(f"{ROOM_AMENITY_URL}/create", json={"guid": default["guid"], "name": "TV"}, headers=manager_headers)
     delete_response = client.delete(f"{ROOM_AMENITY_URL}/delete", params={"guid": default["guid"]}, headers=manager_headers)
 
@@ -240,7 +240,7 @@ def test_deleted_amenity_is_gone_and_its_name_can_be_reused(
     fridge = create_amenity(client, owner_headers, name="Fridge")
 
     assert client.delete(f"{ROOM_AMENITY_URL}/delete", params={"guid": fridge["guid"]}, headers=owner_headers).status_code == 204
-    assert client.get(f"{ROOM_AMENITY_URL}/{fridge['guid']}", headers=owner_headers).status_code == 404
+    assert client.get(f"{ROOM_AMENITY_URL}/detail", params={"guid": fridge["guid"]}, headers=owner_headers).status_code == 404
     assert client.delete(f"{ROOM_AMENITY_URL}/delete", params={"guid": fridge["guid"]}, headers=owner_headers).status_code == 404
     create_amenity(client, owner_headers, name="fridge")
 

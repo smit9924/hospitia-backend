@@ -296,7 +296,7 @@ def test_members_cannot_reach_other_organizations_room_types(
     foreign = create_room_type(client, other_owner.headers_with_active_organization(other_organization), room_type_payload(inr))
 
     responses = [
-        client.get(f"{ROOM_TYPE_URL}/{foreign['guid']}", headers=owner_headers),
+        client.get(f"{ROOM_TYPE_URL}/detail", params={"guid": foreign["guid"]}, headers=owner_headers),
         client.put(f"{ROOM_TYPE_URL}/create", json=room_type_payload(inr, guid=foreign["guid"]), headers=owner_headers),
         client.delete(f"{ROOM_TYPE_URL}/delete", params={"guid": foreign["guid"]}, headers=owner_headers),
     ]
@@ -349,7 +349,7 @@ def test_deleted_room_type_is_gone(client: TestClient, owner_headers: dict[str, 
     room_type = create_room_type(client, owner_headers, room_type_payload(inr))
 
     assert client.delete(f"{ROOM_TYPE_URL}/delete", params={"guid": room_type["guid"]}, headers=owner_headers).status_code == 204
-    assert client.get(f"{ROOM_TYPE_URL}/{room_type['guid']}", headers=owner_headers).status_code == 404
+    assert client.get(f"{ROOM_TYPE_URL}/detail", params={"guid": room_type["guid"]}, headers=owner_headers).status_code == 404
     assert client.delete(f"{ROOM_TYPE_URL}/delete", params={"guid": room_type["guid"]}, headers=owner_headers).status_code == 404
 
 

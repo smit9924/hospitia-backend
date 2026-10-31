@@ -104,10 +104,10 @@ async def list_selectable_room_amenities_route(
     )
 
 
-@router.get("/{guid}", responses={**_AUTH_RESPONSES, **NOT_FOUND_EXCEPTIONS_DOC["RoomAmenityNotFoundException"]})
+@router.get("/detail", responses={**_AUTH_RESPONSES, **NOT_FOUND_EXCEPTIONS_DOC["RoomAmenityNotFoundException"]})
 async def get_room_amenity_route(
     session: SessionDep,
-    guid: UUID,
+    guid: Annotated[UUID, Query()],
     actor: _RoomAmenityActorDep,
 ) -> RoomAmenityResponse:
     """

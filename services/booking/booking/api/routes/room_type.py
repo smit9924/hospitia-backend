@@ -93,10 +93,10 @@ async def list_room_types_route(
     return list_room_types(session=session, actor=actor, query=query)
 
 
-@router.get("/{guid}", responses={**_AUTH_RESPONSES, **NOT_FOUND_EXCEPTIONS_DOC["RoomTypeNotFoundException"]})
+@router.get("/detail", responses={**_AUTH_RESPONSES, **NOT_FOUND_EXCEPTIONS_DOC["RoomTypeNotFoundException"]})
 async def get_room_type_route(
     session: SessionDep,
-    guid: UUID,
+    guid: Annotated[UUID, Query()],
     actor: _RoomTypeActorDep,
 ) -> RoomTypeResponse:
     """

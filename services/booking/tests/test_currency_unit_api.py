@@ -119,7 +119,7 @@ def test_deleted_currency_unit_disappears_and_its_code_can_be_reused(client: Tes
     delete_response = client.delete(f"{CURRENCY_UNIT_URL}/delete", params={"guid": created["guid"]}, headers=admin_user.headers)
     assert delete_response.status_code == 204
 
-    assert client.get(f"{CURRENCY_UNIT_URL}/{created['guid']}", headers=admin_user.headers).status_code == 404
+    assert client.get(f"{CURRENCY_UNIT_URL}/detail", params={"guid": created["guid"]}, headers=admin_user.headers).status_code == 404
     assert client.get(CURRENCY_UNIT_URL, headers=admin_user.headers).json()["totalCount"] == 0
     assert client.delete(f"{CURRENCY_UNIT_URL}/delete", params={"guid": created["guid"]}, headers=admin_user.headers).status_code == 404
 

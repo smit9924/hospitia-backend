@@ -90,10 +90,10 @@ async def list_currency_unit_options_route(
     return list_currency_unit_options(session=session)
 
 
-@router.get("/{guid}", responses={**_AUTH_RESPONSES, **NOT_FOUND_EXCEPTIONS_DOC["CurrencyUnitNotFoundException"]})
+@router.get("/detail", responses={**_AUTH_RESPONSES, **NOT_FOUND_EXCEPTIONS_DOC["CurrencyUnitNotFoundException"]})
 async def get_currency_unit_route(
     session: SessionDep,
-    guid: UUID,
+    guid: Annotated[UUID, Query()],
     _token: Annotated[ParsedJWTPayload, Depends(RoleValidationDep(_ADMIN_ONLY))],
 ) -> CurrencyUnitResponse:
     """
