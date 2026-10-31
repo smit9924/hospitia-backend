@@ -3,6 +3,8 @@ from fastapi.responses import JSONResponse
 
 from booking.exceptions.definitions.validation_exceptions import (
     ActiveOrganizationRequiredException,
+    CurrencyUnitAlreadyExistsException,
+    CurrencyUnitInUseException,
     OrganizationHasActiveDependenciesException,
     OrganizationMustHaveActiveOwnerException,
     OrganizationTypeAlreadyExistsException,
@@ -128,5 +130,45 @@ def active_organization_required_exception_handler(
 
     return JSONResponse(
         status_code=status.HTTP_400_BAD_REQUEST,
+        content=response.model_dump(),
+    )
+
+
+def currency_unit_already_exists_exception_handler(
+    _request: Request,
+    exc: CurrencyUnitAlreadyExistsException,
+) -> JSONResponse:
+    """
+    Handle currency unit already exists exceptions.
+    """
+
+    response = ApiErrorResponse(
+        metadata=None,
+        errorCode=exc.errorCode,
+        message=exc.message,
+    )
+
+    return JSONResponse(
+        status_code=status.HTTP_409_CONFLICT,
+        content=response.model_dump(),
+    )
+
+
+def currency_unit_in_use_exception_handler(
+    _request: Request,
+    exc: CurrencyUnitInUseException,
+) -> JSONResponse:
+    """
+    Handle currency unit in use exceptions.
+    """
+
+    response = ApiErrorResponse(
+        metadata=None,
+        errorCode=exc.errorCode,
+        message=exc.message,
+    )
+
+    return JSONResponse(
+        status_code=status.HTTP_409_CONFLICT,
         content=response.model_dump(),
     )

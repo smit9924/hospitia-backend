@@ -80,3 +80,27 @@ class ActiveOrganizationRequiredException(BaseException):
         message: str = "An active organization is required for this request."
     ) -> None:
         super().__init__(ErrorCodes.ACTIVE_ORGANIZATION_REQUIRED, message)
+
+
+class CurrencyUnitAlreadyExistsException(BaseException):
+    """
+    Raised when an active currency unit already uses the requested ISO 4217 alphabetic or numeric code.
+    """
+
+    def __init__(
+        self,
+        message: str = "A currency unit with this code already exists."
+    ) -> None:
+        super().__init__(ErrorCodes.CURRENCY_UNIT_ALREADY_EXISTS, message)
+
+
+class CurrencyUnitInUseException(BaseException):
+    """
+    Raised when attempting to delete a currency unit that is still referenced by an active record (e.g. a room type).
+    """
+
+    def __init__(
+        self,
+        message: str = "Cannot delete a currency unit that is still in use."
+    ) -> None:
+        super().__init__(ErrorCodes.CURRENCY_UNIT_IN_USE, message)

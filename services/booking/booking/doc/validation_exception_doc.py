@@ -92,4 +92,34 @@ VALIDATION_EXCEPTION_DOC = {
             },
         }
     },
+    "CurrencyUnitAlreadyExistsException": {
+        409: {
+            "description": "A currency unit with this code already exists.",
+            "model": ApiErrorResponse[None],
+            "content": {
+                "application/json": {
+                    "example": {
+                        "metadata": None,
+                        "message": "A currency unit with this code already exists.",
+                        "errorCode": ErrorCodes.CURRENCY_UNIT_ALREADY_EXISTS,
+                    }
+                }
+            },
+        }
+    },
+    "CurrencyUnitInUseException": {
+        409: {
+            "description": "Cannot delete a currency unit that is still in use.",
+            "model": ApiErrorResponse[None],
+            "content": {
+                "application/json": {
+                    "example": {
+                        "metadata": None,
+                        "message": "Cannot delete a currency unit that is still in use.",
+                        "errorCode": ErrorCodes.CURRENCY_UNIT_IN_USE,
+                    }
+                }
+            },
+        }
+    },
 }

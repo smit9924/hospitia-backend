@@ -63,4 +63,19 @@ NOT_FOUND_EXCEPTIONS_DOC = {
             },
         }
     },
+    "CurrencyUnitNotFoundException": {
+        404: {
+            "description": "The requested currency unit was not found.",
+            "model": ApiErrorResponse[None],
+            "content": {
+                "application/json": {
+                    "example": {
+                        "metadata": None,
+                        "message": "The requested currency unit was not found.",
+                        "errorCode": ErrorCodes.CURRENCY_UNIT_NOT_FOUND,
+                    }
+                }
+            },
+        }
+    },
 }

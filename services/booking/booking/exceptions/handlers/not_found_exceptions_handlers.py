@@ -3,6 +3,7 @@ from fastapi.responses import JSONResponse
 
 from booking.exceptions.definitions.not_found_exceptions import (
     AddressNotFoundException,
+    CurrencyUnitNotFoundException,
     OrganizationNotFoundException,
     OrganizationTypeNotFoundException,
     OrganizationUserMappingNotFoundException,
@@ -116,6 +117,26 @@ def organization_user_mapping_not_found_exception_handler(
 ) -> JSONResponse:
     """
     Handle organization-user mapping not found exceptions.
+    """
+
+    response = ApiErrorResponse(
+        metadata=None,
+        errorCode=exc.errorCode,
+        message=exc.message,
+    )
+
+    return JSONResponse(
+        status_code=status.HTTP_404_NOT_FOUND,
+        content=response.model_dump(),
+    )
+
+
+def currency_unit_not_found_exception_handler(
+    _request: Request,
+    exc: CurrencyUnitNotFoundException,
+) -> JSONResponse:
+    """
+    Handle currency unit not found exceptions.
     """
 
     response = ApiErrorResponse(
