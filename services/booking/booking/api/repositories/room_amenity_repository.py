@@ -5,10 +5,6 @@ from sqlalchemy import ColumnElement
 from sqlalchemy.orm import selectinload
 from sqlmodel import Session, col, func, or_, select
 
-from booking.api.repositories.list_query_helpers import (
-    apply_sorting_and_pagination,
-    build_contains_pattern,
-)
 from booking.database.models.organization import Organization
 from booking.database.models.room_amenity import RoomAmenity
 from booking.schemas.room_amenity_schemas import (
@@ -255,19 +251,21 @@ def _list_room_amenities_page(
     )
     count_statement = select(func.count()).select_from(RoomAmenity).where(_IS_ACTIVE, visibility_filter)
 
-    search_pattern = build_contains_pattern(query.search_term)
-    if search_pattern:
+    search_term = (query.search_term or "").strip()
+    if search_term:
+        search_pattern = f"%{search_term}%"
         search_filter = col(RoomAmenity.name).ilike(search_pattern)
         statement = statement.where(search_filter)
         count_statement = count_statement.where(search_filter)
 
-    statement = apply_sorting_and_pagination(
-        statement=statement,
-        sort_column=_SORT_COLUMNS[query.sort_by],
-        sort_direction=query.sort_direction,
-        page_number=query.page_number,
-        page_size=query.page_size,
-    )
+    sort_column = _SORT_COLUMNS[query.sort_by]
+    if query.sort_direction == "desc":
+        statement = statement.order_by(col(sort_column).desc())
+    else:
+        statement = statement.order_by(col(sort_column).asc())
+
+    offset = (query.page_number - 1) * query.page_size
+    statement = statement.offset(offset).limit(query.page_size)
 
     total_count = session.exec(count_statement).one()
     room_amenities = session.exec(statement).all()

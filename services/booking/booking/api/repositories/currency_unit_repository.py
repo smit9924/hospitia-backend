@@ -2,10 +2,6 @@ from uuid import UUID
 
 from sqlmodel import Session, col, func, or_, select
 
-from booking.api.repositories.list_query_helpers import (
-    apply_sorting_and_pagination,
-    build_contains_pattern,
-)
 from booking.database.models.currency_unit import CurrencyUnit
 from booking.schemas.currency_unit_schemas import (
     CurrencyUnitListQueryParams,
@@ -246,8 +242,9 @@ def list_currency_units(
     statement = select(CurrencyUnit).where(active_filter)
     count_statement = select(func.count()).select_from(CurrencyUnit).where(active_filter)
 
-    search_pattern = build_contains_pattern(query.search_term)
-    if search_pattern:
+    search_term = (query.search_term or "").strip()
+    if search_term:
+        search_pattern = f"%{search_term}%"
         search_filter = or_(
             col(CurrencyUnit.currency_code).ilike(search_pattern),
             col(CurrencyUnit.numeric_code).ilike(search_pattern),
@@ -256,13 +253,14 @@ def list_currency_units(
         statement = statement.where(search_filter)
         count_statement = count_statement.where(search_filter)
 
-    statement = apply_sorting_and_pagination(
-        statement=statement,
-        sort_column=_SORT_COLUMNS[query.sort_by],
-        sort_direction=query.sort_direction,
-        page_number=query.page_number,
-        page_size=query.page_size,
-    )
+    sort_column = _SORT_COLUMNS[query.sort_by]
+    if query.sort_direction == "desc":
+        statement = statement.order_by(col(sort_column).desc())
+    else:
+        statement = statement.order_by(col(sort_column).asc())
+
+    offset = (query.page_number - 1) * query.page_size
+    statement = statement.offset(offset).limit(query.page_size)
 
     total_count = session.exec(count_statement).one()
     currency_units = session.exec(statement).all()

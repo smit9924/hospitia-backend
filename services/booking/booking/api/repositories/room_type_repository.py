@@ -7,10 +7,6 @@ from sqlalchemy import ColumnElement
 from sqlalchemy.orm import selectinload
 from sqlmodel import Session, col, delete, func, select
 
-from booking.api.repositories.list_query_helpers import (
-    apply_sorting_and_pagination,
-    build_contains_pattern,
-)
 from booking.database.models.organization import Organization
 from booking.database.models.room_amenity import RoomAmenity
 from booking.database.models.room_type import RoomType
@@ -312,8 +308,9 @@ def list_room_types_page(
     else:
         filters.append(RoomType.organization_id == organization_id)
 
-    search_pattern = build_contains_pattern(query.search_term)
-    if search_pattern:
+    search_term = (query.search_term or "").strip()
+    if search_term:
+        search_pattern = f"%{search_term}%"
         filters.append(col(RoomType.name).ilike(search_pattern))
 
     statement = (
@@ -321,13 +318,14 @@ def list_room_types_page(
         .options(selectinload(RoomType.organization), selectinload(RoomType.currency_unit))  # type: ignore[arg-type]
         .where(*filters)
     )
-    statement = apply_sorting_and_pagination(
-        statement=statement,
-        sort_column=_SORT_COLUMNS[query.sort_by],
-        sort_direction=query.sort_direction,
-        page_number=query.page_number,
-        page_size=query.page_size,
-    )
+    sort_column = _SORT_COLUMNS[query.sort_by]
+    if query.sort_direction == "desc":
+        statement = statement.order_by(col(sort_column).desc())
+    else:
+        statement = statement.order_by(col(sort_column).asc())
+
+    offset = (query.page_number - 1) * query.page_size
+    statement = statement.offset(offset).limit(query.page_size)
     count_statement = select(func.count()).select_from(RoomType).where(*filters)
 
     return list(session.exec(statement).all()), session.exec(count_statement).one()
