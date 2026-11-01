@@ -4,35 +4,9 @@ from uuid import UUID
 
 from pydantic import BeforeValidator, Field, StringConstraints
 
+from booking.utils.text_utils import strip_and_uppercase_text, strip_text
+
 from .base_schemas import BaseSchema
-
-
-def _strip_and_uppercase(value: object) -> object:
-    """Trim and uppercase text input before pattern validation runs."""
-    return value.strip().upper() if isinstance(value, str) else value
-
-
-def _strip(value: object) -> object:
-    """Trim text input before pattern validation runs."""
-    return value.strip() if isinstance(value, str) else value
-
-
-# ISO 4217 alphabetic code: three letters, stored uppercase ("inr" -> "INR").
-CurrencyCode = Annotated[
-    str,
-    BeforeValidator(_strip_and_uppercase),
-    StringConstraints(pattern=r"^[A-Z]{3}$"),
-]
-# ISO 4217 numeric code: exactly three digits, leading zeros kept (e.g. "036").
-CurrencyNumericCode = Annotated[
-    str,
-    BeforeValidator(_strip),
-    StringConstraints(pattern=r"^[0-9]{3}$"),
-]
-CurrencyName = Annotated[
-    str,
-    StringConstraints(strip_whitespace=True, min_length=1, max_length=100),
-]
 
 
 class CurrencyUnitCreateRequest(BaseSchema):
@@ -44,9 +18,11 @@ class CurrencyUnitCreateRequest(BaseSchema):
     (0 to 4); null means ISO 4217 defines none ("N.A.").
     """
 
-    currency_code: CurrencyCode
-    numeric_code: CurrencyNumericCode
-    currency_name: CurrencyName
+    # ISO 4217 alphabetic code: three letters, stored uppercase ("inr" -> "INR").
+    currency_code: Annotated[str, BeforeValidator(strip_and_uppercase_text), StringConstraints(pattern=r"^[A-Z]{3}$")]
+    # ISO 4217 numeric code: exactly three digits, leading zeros kept (e.g. "036").
+    numeric_code: Annotated[str, BeforeValidator(strip_text), StringConstraints(pattern=r"^[0-9]{3}$")]
+    currency_name: Annotated[str, StringConstraints(strip_whitespace=True, min_length=1, max_length=100)]
     minor_unit: int | None = Field(default=None, ge=0, le=4)
 
 

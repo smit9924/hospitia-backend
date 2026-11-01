@@ -10,6 +10,7 @@ from booking.database.models.room_type import (
     ROOM_TYPE_MAX_COST_PER_NIGHT,
     ROOM_TYPE_MIN_CAPACITY,
 )
+from booking.utils.text_utils import blank_text_to_none
 
 from .base_schemas import BaseSchema
 from .currency_unit_schemas import CurrencyUnitOption
@@ -18,24 +19,6 @@ from .room_amenity_schemas import RoomAmenityOption
 
 # A room type cannot list more amenities than this in one request.
 MAX_AMENITIES_PER_ROOM_TYPE = 100
-
-
-def _blank_to_none(value: object) -> object:
-    """Treat a blank optional text value as "not provided"."""
-    if isinstance(value, str) and not value.strip():
-        return None
-    return value
-
-
-RoomTypeName = Annotated[
-    str,
-    StringConstraints(strip_whitespace=True, min_length=1, max_length=100),
-]
-# Optional; blank text is stored as null.
-RoomTypeDescription = Annotated[
-    Annotated[str, StringConstraints(strip_whitespace=True, max_length=500)] | None,
-    BeforeValidator(_blank_to_none),
-]
 
 
 class RoomTypeAttributes(BaseSchema):
@@ -47,8 +30,12 @@ class RoomTypeAttributes(BaseSchema):
     of the room type's amenities; duplicates are ignored.
     """
 
-    name: RoomTypeName
-    description: RoomTypeDescription = None
+    name: Annotated[str, StringConstraints(strip_whitespace=True, min_length=1, max_length=100)]
+    # Optional; blank text is stored as null.
+    description: Annotated[
+        Annotated[str, StringConstraints(strip_whitespace=True, max_length=500)] | None,
+        BeforeValidator(blank_text_to_none),
+    ] = None
     capacity: int = Field(strict=True, ge=ROOM_TYPE_MIN_CAPACITY, le=ROOM_TYPE_MAX_CAPACITY)
     cost_per_night: Decimal = Field(ge=0, le=ROOM_TYPE_MAX_COST_PER_NIGHT, decimal_places=2, allow_inf_nan=False)
     currency_unit_guid: UUID

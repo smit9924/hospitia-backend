@@ -4,29 +4,24 @@ from uuid import UUID
 
 from pydantic import BeforeValidator, Field, StringConstraints
 
+from booking.utils.text_utils import blank_text_to_none
+
 from .base_schemas import BaseSchema
 from .organization_schemas import OrganizationReference
 
 
-def _blank_to_none(value: object) -> object:
-    """Treat a blank optional text value as "not provided"."""
-    if isinstance(value, str) and not value.strip():
-        return None
-    return value
+class RoomAmenityAttributes(BaseSchema):
+    """Room amenity fields shared by the create and update requests."""
+
+    name: Annotated[str, StringConstraints(strip_whitespace=True, min_length=1, max_length=100)]
+    # Optional; blank text is stored as null.
+    description: Annotated[
+        Annotated[str, StringConstraints(strip_whitespace=True, max_length=500)] | None,
+        BeforeValidator(blank_text_to_none),
+    ] = None
 
 
-RoomAmenityName = Annotated[
-    str,
-    StringConstraints(strip_whitespace=True, min_length=1, max_length=100),
-]
-# Optional; blank text is stored as null.
-RoomAmenityDescription = Annotated[
-    Annotated[str, StringConstraints(strip_whitespace=True, max_length=500)] | None,
-    BeforeValidator(_blank_to_none),
-]
-
-
-class RoomAmenityCreateRequest(BaseSchema):
+class RoomAmenityCreateRequest(RoomAmenityAttributes):
     """
     Request payload for creating a room amenity.
 
@@ -36,20 +31,16 @@ class RoomAmenityCreateRequest(BaseSchema):
     amenities of their active organization.
     """
 
-    name: RoomAmenityName
-    description: RoomAmenityDescription = None
     organization_guid: UUID | None = None
 
 
-class RoomAmenityUpdateRequest(BaseSchema):
+class RoomAmenityUpdateRequest(RoomAmenityAttributes):
     """
     Request payload for updating the room amenity identified by `guid`.
     An amenity's scope (default or owning organization) never changes.
     """
 
     guid: UUID
-    name: RoomAmenityName
-    description: RoomAmenityDescription = None
 
 
 class RoomAmenityResponse(BaseSchema):
