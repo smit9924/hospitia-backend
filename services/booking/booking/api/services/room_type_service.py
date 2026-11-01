@@ -10,7 +10,8 @@ A room type belongs to one organization for its whole life.
   their existence is never revealed.
 
 A room type may use the default amenities and the custom amenities of its
-own organization, priced in any active currency unit.
+own organization, priced in any active currency unit. A room type that
+active rooms still use cannot be deleted.
 """
 
 from collections.abc import Sequence
@@ -21,6 +22,7 @@ from sqlmodel import Session
 from booking.api.repositories.room_amenity_repository import (
     get_active_room_amenities_by_guids,
 )
+from booking.api.repositories.room_repository import has_active_rooms_for_room_type
 from booking.api.repositories.room_type_repository import (
     create_room_type as create_room_type_repo,
 )
@@ -28,6 +30,7 @@ from booking.api.repositories.room_type_repository import (
     find_active_room_type_by_name,
     get_active_amenities_by_room_type_id,
     get_active_room_type_by_guid,
+    list_active_room_types_of_organization,
     list_room_types_page,
     soft_delete_room_type,
 )
@@ -47,6 +50,7 @@ from booking.exceptions.definitions.not_found_exceptions import (
 from booking.exceptions.definitions.validation_exceptions import (
     RoomTypeAlreadyExistsException,
     RoomTypeAmenityNotAvailableException,
+    RoomTypeInUseException,
     RoomTypeOrganizationRequiredException,
 )
 from booking.schemas.currency_unit_schemas import CurrencyUnitOption
@@ -59,6 +63,7 @@ from booking.schemas.room_type_schemas import (
     RoomTypeCreateRequest,
     RoomTypeListQueryParams,
     RoomTypeListResponse,
+    RoomTypeOption,
     RoomTypeResponse,
     RoomTypeUpdateRequest,
 )
@@ -438,8 +443,12 @@ def delete_room_type(*, session: Session, actor: OrganizationScopedActor, guid: 
     ------
     RoomTypeNotFoundException
         If the room type is missing, deleted, or not visible to the actor.
+    RoomTypeInUseException
+        If an active room still uses the room type.
     """
     room_type = _get_visible_room_type_or_raise(session=session, actor=actor, guid=guid)
+    if has_active_rooms_for_room_type(session=session, room_type_id=room_type.id):  # type: ignore[arg-type]
+        raise RoomTypeInUseException()
     soft_delete_room_type(session=session, room_type=room_type, actor_id=actor.user_id)
 
 
@@ -486,3 +495,42 @@ def list_room_types(
         page_number=query.page_number,
         page_size=query.page_size,
     )
+
+
+def list_room_type_options(
+    *,
+    session: Session,
+    actor: OrganizationScopedActor,
+    organization_guid: UUID | None,
+) -> list[RoomTypeOption]:
+    """Return the active room types a room of the organization may use, ordered by name.
+
+    Parameters
+    ----------
+    session : Session
+        Active database session.
+    actor : OrganizationScopedActor
+        The caller and, for owners and managers, their active organization.
+    organization_guid : UUID | None
+        Organization chosen by an admin; ignored for owners and managers.
+        An admin who has not chosen an organization gets an empty list.
+
+    Returns
+    -------
+    list[RoomTypeOption]
+        The organization's active room types.
+
+    Raises
+    ------
+    OrganizationNotFoundException
+        If an admin chooses an organization that does not exist or is
+        inactive.
+    """
+    if actor.is_admin:
+        if organization_guid is None:
+            return []
+        organization_id = get_active_organization_or_raise(session=session, guid=organization_guid).id
+    else:
+        organization_id = get_member_active_organization_id(actor)
+    room_types = list_active_room_types_of_organization(session=session, organization_id=organization_id)  # type: ignore[arg-type]
+    return [RoomTypeOption.model_validate(room_type, from_attributes=True) for room_type in room_types]

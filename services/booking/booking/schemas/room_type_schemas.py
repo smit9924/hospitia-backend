@@ -102,6 +102,29 @@ class RoomTypeListQueryParams(BaseSchema):
     page_number: int = Field(default=1, ge=1)
 
 
+class RoomTypeOption(BaseSchema):
+    """
+    Compact room type offered for selection (e.g. the room form's room type
+    drop-down) and embedded in room responses.
+    """
+
+    guid: UUID
+    name: str
+
+
+class RoomTypeOptionsQueryParams(BaseSchema):
+    """
+    Query parameters for listing the room types a room of the organization
+    may use.
+
+    `organization_guid` is read only for admins, who are not tied to an
+    organization; owners and managers always get their active
+    organization's room types.
+    """
+
+    organization_guid: UUID | None = None
+
+
 class RoomTypeListResponse(BaseSchema):
     items: list[RoomTypeResponse]
     total_count: int

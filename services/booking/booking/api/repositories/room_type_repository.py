@@ -436,3 +436,27 @@ def has_active_room_types_in_organization(*, session: Session, organization_id: 
     """
     statement = select(func.count()).select_from(RoomType).where(RoomType.organization_id == organization_id, _IS_ACTIVE)
     return session.exec(statement).one() > 0
+
+
+def list_active_room_types_of_organization(*, session: Session, organization_id: int) -> list[RoomType]:
+    """List the active room types of one organization, ordered by name.
+
+    Parameters
+    ----------
+    session : Session
+        Active database session used to execute the query.
+    organization_id : int
+        Internal ID of the organization.
+
+    Returns
+    -------
+    list[RoomType]
+        Active room types ordered by name, case-insensitively.
+    """
+    return list(
+        session.exec(
+            select(RoomType)
+            .where(RoomType.organization_id == organization_id, _IS_ACTIVE)
+            .order_by(func.lower(RoomType.name))
+        ).all()
+    )

@@ -25,6 +25,9 @@ from booking.api.repositories.organization_user_mapping_repository import (
     is_user_active_manager_of_organization,
     is_user_active_owner_of_organization,
 )
+from booking.api.repositories.room_repository import (
+    has_active_rooms_in_organization,
+)
 from booking.api.repositories.room_type_repository import (
     has_active_room_types_in_organization,
 )
@@ -490,8 +493,12 @@ def check_organization_deletable(*, session: Session, organization_id: int) -> N
     Raises
     ------
     OrganizationHasActiveDependenciesException
-        If the organization still has an active room type.
+        If the organization still has an active room or room type.
     """
+    if has_active_rooms_in_organization(session=session, organization_id=organization_id):
+        raise OrganizationHasActiveDependenciesException(
+            message="Cannot delete an organization that still has active rooms."
+        )
     if has_active_room_types_in_organization(session=session, organization_id=organization_id):
         raise OrganizationHasActiveDependenciesException(
             message="Cannot delete an organization that still has active room types."
