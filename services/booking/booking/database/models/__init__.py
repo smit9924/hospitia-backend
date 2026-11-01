@@ -4,9 +4,13 @@
 # This is required for automatic schema generation, migrations, and metadata discovery.
 from .address import *  # noqa: F403
 from .base import SQLModel
+from .currency_unit import *  # noqa: F403
 from .organization import *  # noqa: F403
 from .organization_type import *  # noqa: F403
 from .organization_user_mapping import *  # noqa: F403
+from .room_amenity import *  # noqa: F403
+from .room_type import *  # noqa: F403
+from .room_type_amenity_mapping import *  # noqa: F403
 from .users import *  # noqa: F403
 
 __all__ = ["SQLModel"]

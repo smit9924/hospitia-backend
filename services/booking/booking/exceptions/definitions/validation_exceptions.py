@@ -80,3 +80,87 @@ class ActiveOrganizationRequiredException(BaseException):
         message: str = "An active organization is required for this request."
     ) -> None:
         super().__init__(ErrorCodes.ACTIVE_ORGANIZATION_REQUIRED, message)
+
+
+class CurrencyUnitAlreadyExistsException(BaseException):
+    """
+    Raised when an active currency unit already uses the requested ISO 4217 alphabetic or numeric code.
+    """
+
+    def __init__(
+        self,
+        message: str = "A currency unit with this code already exists."
+    ) -> None:
+        super().__init__(ErrorCodes.CURRENCY_UNIT_ALREADY_EXISTS, message)
+
+
+class CurrencyUnitInUseException(BaseException):
+    """
+    Raised when attempting to delete a currency unit that is still referenced by an active record (e.g. a room type).
+    """
+
+    def __init__(
+        self,
+        message: str = "Cannot delete a currency unit that is still in use."
+    ) -> None:
+        super().__init__(ErrorCodes.CURRENCY_UNIT_IN_USE, message)
+
+
+class RoomAmenityAlreadyExistsException(BaseException):
+    """
+    Raised when an active room amenity with the same name (case-insensitive) already exists in the same scope, or a custom amenity repeats a default amenity name.
+    """
+
+    def __init__(
+        self,
+        message: str = "A room amenity with this name already exists."
+    ) -> None:
+        super().__init__(ErrorCodes.ROOM_AMENITY_ALREADY_EXISTS, message)
+
+
+class RoomAmenityInUseException(BaseException):
+    """
+    Raised when attempting to delete a room amenity that an active room type still uses.
+    """
+
+    def __init__(
+        self,
+        message: str = "Cannot delete a room amenity that is still in use."
+    ) -> None:
+        super().__init__(ErrorCodes.ROOM_AMENITY_IN_USE, message)
+
+
+class RoomTypeAlreadyExistsException(BaseException):
+    """
+    Raised when an active room type of the same organization already uses the name (case-insensitive).
+    """
+
+    def __init__(
+        self,
+        message: str = "A room type with this name already exists in this organization."
+    ) -> None:
+        super().__init__(ErrorCodes.ROOM_TYPE_ALREADY_EXISTS, message)
+
+
+class RoomTypeAmenityNotAvailableException(BaseException):
+    """
+    Raised when a room type selects an amenity that does not exist, was deleted, or is a custom amenity of another organization.
+    """
+
+    def __init__(
+        self,
+        message: str = "One or more selected amenities are not available for this organization."
+    ) -> None:
+        super().__init__(ErrorCodes.ROOM_TYPE_AMENITY_NOT_AVAILABLE, message)
+
+
+class RoomTypeOrganizationRequiredException(BaseException):
+    """
+    Raised when an admin creates a room type without choosing its organization.
+    """
+
+    def __init__(
+        self,
+        message: str = "Select the organization the room type belongs to."
+    ) -> None:
+        super().__init__(ErrorCodes.ROOM_TYPE_ORGANIZATION_REQUIRED, message)

@@ -224,6 +224,16 @@ async def verify_email_otp_endpoint(
 # An ADMIN can create another ADMIN through the authenticated API, but there
 # is no authenticated user before the first ADMIN exists. This internal API
 # bootstraps the first ADMIN from the local VM.
+#
+# Example:
+#   curl -X POST http://localhost:8000/api/v1/users/internal/admins \
+#     -H 'Content-Type: application/json' \
+#     -d '{
+#       "firstName": "Super",
+#       "lastName": "Admin",
+#       "email": "admin@example.com",
+#       "username": "admin"
+#     }'
 @router.post(
     "/internal/admins",
     responses={
