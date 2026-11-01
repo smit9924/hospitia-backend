@@ -145,6 +145,24 @@ def currency_unit_already_exists_exception_handler(
 ) -> JSONResponse:
     """
     Handle currency unit already exists exceptions.
+
+    Description
+    -----------
+    Generates a standardized API error response when another active
+    currency unit already uses the requested ISO 4217 alphabetic or numeric
+    code. The message says which code clashes.
+
+    Parameters
+    ----------
+    _request : Request
+        The incoming FastAPI request object.
+    exc : CurrencyUnitAlreadyExistsException
+        Exception describing the clashing currency code.
+
+    Returns
+    -------
+    JSONResponse
+        HTTP 409 Conflict response with a structured error payload.
     """
 
     response = ApiErrorResponse(
@@ -165,6 +183,23 @@ def currency_unit_in_use_exception_handler(
 ) -> JSONResponse:
     """
     Handle currency unit in use exceptions.
+
+    Description
+    -----------
+    Generates a standardized API error response when a currency unit
+    cannot be deleted because an active room type is priced in it.
+
+    Parameters
+    ----------
+    _request : Request
+        The incoming FastAPI request object.
+    exc : CurrencyUnitInUseException
+        Exception describing why the currency unit is still in use.
+
+    Returns
+    -------
+    JSONResponse
+        HTTP 409 Conflict response with a structured error payload.
     """
 
     response = ApiErrorResponse(
@@ -185,6 +220,24 @@ def room_amenity_already_exists_exception_handler(
 ) -> JSONResponse:
     """
     Handle room amenity already exists exceptions.
+
+    Description
+    -----------
+    Generates a standardized API error response when the amenity name is
+    already used in its scope (case-insensitively), or a custom amenity
+    repeats a default amenity name.
+
+    Parameters
+    ----------
+    _request : Request
+        The incoming FastAPI request object.
+    exc : RoomAmenityAlreadyExistsException
+        Exception describing the clashing amenity name.
+
+    Returns
+    -------
+    JSONResponse
+        HTTP 409 Conflict response with a structured error payload.
     """
 
     response = ApiErrorResponse(
@@ -205,6 +258,23 @@ def room_amenity_in_use_exception_handler(
 ) -> JSONResponse:
     """
     Handle room amenity in use exceptions.
+
+    Description
+    -----------
+    Generates a standardized API error response when a room amenity
+    cannot be deleted because an active room type still lists it.
+
+    Parameters
+    ----------
+    _request : Request
+        The incoming FastAPI request object.
+    exc : RoomAmenityInUseException
+        Exception describing why the amenity is still in use.
+
+    Returns
+    -------
+    JSONResponse
+        HTTP 409 Conflict response with a structured error payload.
     """
 
     response = ApiErrorResponse(
@@ -225,6 +295,24 @@ def room_type_already_exists_exception_handler(
 ) -> JSONResponse:
     """
     Handle room type already exists exceptions.
+
+    Description
+    -----------
+    Generates a standardized API error response when another active room
+    type of the same organization already uses the name
+    (case-insensitively).
+
+    Parameters
+    ----------
+    _request : Request
+        The incoming FastAPI request object.
+    exc : RoomTypeAlreadyExistsException
+        Exception describing the clashing room type name.
+
+    Returns
+    -------
+    JSONResponse
+        HTTP 409 Conflict response with a structured error payload.
     """
 
     response = ApiErrorResponse(
@@ -245,6 +333,24 @@ def room_type_amenity_not_available_exception_handler(
 ) -> JSONResponse:
     """
     Handle room type amenity not available exceptions.
+
+    Description
+    -----------
+    Generates a standardized API error response when a room type selects
+    an amenity that does not exist, was deleted, or is a custom amenity of
+    another organization.
+
+    Parameters
+    ----------
+    _request : Request
+        The incoming FastAPI request object.
+    exc : RoomTypeAmenityNotAvailableException
+        Exception describing the unavailable amenity selection.
+
+    Returns
+    -------
+    JSONResponse
+        HTTP 400 Bad Request response with a structured error payload.
     """
 
     response = ApiErrorResponse(
@@ -265,6 +371,23 @@ def room_type_organization_required_exception_handler(
 ) -> JSONResponse:
     """
     Handle room type organization required exceptions.
+
+    Description
+    -----------
+    Generates a standardized API error response when an admin creates a
+    room type without choosing the organization it belongs to.
+
+    Parameters
+    ----------
+    _request : Request
+        The incoming FastAPI request object.
+    exc : RoomTypeOrganizationRequiredException
+        Exception describing the missing organization.
+
+    Returns
+    -------
+    JSONResponse
+        HTTP 400 Bad Request response with a structured error payload.
     """
 
     response = ApiErrorResponse(

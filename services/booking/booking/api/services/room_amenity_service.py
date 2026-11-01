@@ -66,7 +66,24 @@ from booking.schemas.room_amenity_schemas import (
 
 
 def _is_visible_to_actor(room_amenity: RoomAmenity, actor: OrganizationScopedActor) -> bool:
-    """Whether the actor may see the amenity (see the module docstring)."""
+    """Whether the actor may see the amenity.
+
+    Defaults are visible to everyone. Admins see the custom amenities of
+    active organizations; owners and managers see only their active
+    organization's custom amenities.
+
+    Parameters
+    ----------
+    room_amenity : RoomAmenity
+        Amenity to check, with its organization loaded.
+    actor : OrganizationScopedActor
+        The caller and, for owners and managers, their active organization.
+
+    Returns
+    -------
+    bool
+        ``True`` when the actor may see the amenity; otherwise ``False``.
+    """
     if room_amenity.is_default:
         return True
     if actor.is_admin:
@@ -83,6 +100,20 @@ def _get_visible_room_amenity_or_raise(
 ) -> RoomAmenity:
     """Fetch an active amenity the actor may see.
 
+    Parameters
+    ----------
+    session : Session
+        Active database session.
+    actor : OrganizationScopedActor
+        The caller and, for owners and managers, their active organization.
+    guid : UUID
+        Room amenity GUID to look up.
+
+    Returns
+    -------
+    RoomAmenity
+        The active amenity, visible to the actor.
+
     Raises
     ------
     RoomAmenityNotFoundException
@@ -97,6 +128,18 @@ def _get_visible_room_amenity_or_raise(
 
 def _ensure_actor_can_modify(actor: OrganizationScopedActor, room_amenity: RoomAmenity) -> None:
     """Block owners and managers from changing default amenities.
+
+    Parameters
+    ----------
+    actor : OrganizationScopedActor
+        The caller.
+    room_amenity : RoomAmenity
+        Amenity the caller wants to edit or delete.
+
+    Returns
+    -------
+    None
+        The actor may modify the amenity.
 
     Raises
     ------
@@ -119,6 +162,20 @@ def _resolve_target_organization_id(
     on the organization chosen with `organization_guid`, or on the default
     amenities when they choose none. Used both to place a new amenity and
     to decide whose custom amenities are selectable for a room type.
+
+    Parameters
+    ----------
+    session : Session
+        Active database session.
+    actor : OrganizationScopedActor
+        The caller and, for owners and managers, their active organization.
+    organization_guid : UUID | None
+        Organization chosen by an admin; ignored for owners and managers.
+
+    Returns
+    -------
+    int | None
+        Internal ID of the organization, or ``None`` for the defaults only.
 
     Raises
     ------
@@ -154,6 +211,11 @@ def _ensure_name_is_free_among_default_amenities(
     conflict_message : str | None
         Error message to use instead of the default one.
 
+    Returns
+    -------
+    None
+        No other default amenity uses the name.
+
     Raises
     ------
     RoomAmenityAlreadyExistsException
@@ -187,6 +249,11 @@ def _ensure_name_is_free_among_organization_amenities(
         Internal ID of the amenity being updated, so it does not conflict
         with itself; ``None`` on create.
 
+    Returns
+    -------
+    None
+        No other custom amenity of the organization uses the name.
+
     Raises
     ------
     RoomAmenityAlreadyExistsException
@@ -211,6 +278,23 @@ def _ensure_room_amenity_name_is_free(
     - A custom amenity is checked against its organization's custom
       amenities, and against the defaults too: the organization sees both
       side by side, so it must never get two amenities with the same name.
+
+    Parameters
+    ----------
+    session : Session
+        Active database session.
+    name : str
+        Amenity name to check.
+    organization_id : int | None
+        Owning organization of a custom amenity; ``None`` for a default.
+    room_amenity_id_being_updated : int | None
+        Internal ID of the amenity being updated, so it does not conflict
+        with itself; ``None`` on create.
+
+    Returns
+    -------
+    None
+        The name is free.
 
     Raises
     ------
@@ -346,6 +430,20 @@ def update_room_amenity(
 def get_room_amenity(*, session: Session, actor: OrganizationScopedActor, guid: UUID) -> RoomAmenityResponse:
     """Return one amenity visible to the actor.
 
+    Parameters
+    ----------
+    session : Session
+        Active database session.
+    actor : OrganizationScopedActor
+        The caller and, for owners and managers, their active organization.
+    guid : UUID
+        Room amenity GUID to look up.
+
+    Returns
+    -------
+    RoomAmenityResponse
+        The amenity.
+
     Raises
     ------
     RoomAmenityNotFoundException
@@ -368,6 +466,11 @@ def ensure_room_amenity_is_not_in_use(*, session: Session, room_amenity_id: int)
     room_amenity_id : int
         Internal ID of the amenity to validate.
 
+    Returns
+    -------
+    None
+        No active record uses the amenity.
+
     Raises
     ------
     RoomAmenityInUseException
@@ -379,6 +482,20 @@ def ensure_room_amenity_is_not_in_use(*, session: Session, room_amenity_id: int)
 
 def delete_room_amenity(*, session: Session, actor: OrganizationScopedActor, guid: UUID) -> None:
     """Soft-delete an amenity the actor may modify and nothing active uses.
+
+    Parameters
+    ----------
+    session : Session
+        Active database session.
+    actor : OrganizationScopedActor
+        The caller and, for owners and managers, their active organization.
+    guid : UUID
+        Room amenity GUID to delete.
+
+    Returns
+    -------
+    None
+        The amenity is marked inactive.
 
     Raises
     ------
@@ -401,7 +518,26 @@ def list_room_amenities(
     actor: OrganizationScopedActor,
     query: RoomAmenityListQueryParams,
 ) -> RoomAmenityListResponse:
-    """Return a paginated, sortable, searchable list of the amenities visible to the actor."""
+    """Return a paginated, sortable, searchable list of the amenities visible to the actor.
+
+    Admins get every default amenity and every active organization's custom
+    amenities; owners and managers get the defaults plus their active
+    organization's custom amenities.
+
+    Parameters
+    ----------
+    session : Session
+        Active database session.
+    actor : OrganizationScopedActor
+        The caller and, for owners and managers, their active organization.
+    query : RoomAmenityListQueryParams
+        Search, sorting, and pagination options.
+
+    Returns
+    -------
+    RoomAmenityListResponse
+        The requested page of amenities and the total matching count.
+    """
     if actor.is_admin:
         return list_room_amenities_for_admin(session=session, query=query)
     return list_room_amenities_for_organization(
@@ -418,6 +554,21 @@ def list_selectable_room_amenity_options(
     organization_guid: UUID | None,
 ) -> list[RoomAmenityOption]:
     """Return the amenities a room type of the organization may use, ordered by name.
+
+    Parameters
+    ----------
+    session : Session
+        Active database session.
+    actor : OrganizationScopedActor
+        The caller and, for owners and managers, their active organization.
+    organization_guid : UUID | None
+        Organization chosen by an admin (defaults only when omitted); ignored
+        for owners and managers.
+
+    Returns
+    -------
+    list[RoomAmenityOption]
+        Default amenities plus the organization's custom amenities.
 
     Raises
     ------

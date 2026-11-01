@@ -184,6 +184,16 @@ def parse_active_organization_header(active_organization_guid: str | None) -> UU
     """
     Parse the `X-Active-Organization-Guid` header value.
 
+    Parameters
+    ----------
+    active_organization_guid : str | None
+        Raw header value sent by the client, if any.
+
+    Returns
+    -------
+    UUID
+        The active organization GUID.
+
     Raises
     ------
     ActiveOrganizationRequiredException

@@ -89,6 +89,11 @@ def _ensure_currency_codes_are_free(
         Internal ID of the currency unit being updated, so it does not
         conflict with itself; ``None`` on create.
 
+    Returns
+    -------
+    None
+        Both codes are free.
+
     Raises
     ------
     CurrencyUnitAlreadyExistsException
@@ -198,6 +203,18 @@ def update_currency_unit(
 def get_currency_unit(*, session: Session, guid: UUID) -> CurrencyUnitResponse:
     """Return a single active currency unit.
 
+    Parameters
+    ----------
+    session : Session
+        Active database session.
+    guid : UUID
+        Currency unit GUID to look up.
+
+    Returns
+    -------
+    CurrencyUnitResponse
+        The currency unit.
+
     Raises
     ------
     CurrencyUnitNotFoundException
@@ -220,6 +237,11 @@ def ensure_currency_unit_is_not_in_use(*, session: Session, currency_unit_id: in
     currency_unit_id : int
         Internal ID of the currency unit to validate.
 
+    Returns
+    -------
+    None
+        No active record uses the currency unit.
+
     Raises
     ------
     CurrencyUnitInUseException
@@ -241,6 +263,11 @@ def delete_currency_unit(*, session: Session, guid: UUID, actor_user_id: int) ->
     actor_user_id : int
         Internal ID of the admin performing the deletion.
 
+    Returns
+    -------
+    None
+        The currency unit is marked inactive.
+
     Raises
     ------
     CurrencyUnitNotFoundException
@@ -258,12 +285,36 @@ def list_currency_units(
     session: Session,
     query: CurrencyUnitListQueryParams,
 ) -> CurrencyUnitListResponse:
-    """Return a paginated, sortable, searchable list of active currency units."""
+    """Return a paginated, sortable, searchable list of active currency units.
+
+    Parameters
+    ----------
+    session : Session
+        Active database session.
+    query : CurrencyUnitListQueryParams
+        Search, sorting, and pagination options.
+
+    Returns
+    -------
+    CurrencyUnitListResponse
+        The requested page of currency units and the total matching count.
+    """
     return list_currency_units_repo(session=session, query=query)
 
 
 def list_currency_unit_options(*, session: Session) -> list[CurrencyUnitOption]:
-    """Return every active currency unit in drop-down form, ordered by code."""
+    """Return every active currency unit in drop-down form, ordered by code.
+
+    Parameters
+    ----------
+    session : Session
+        Active database session.
+
+    Returns
+    -------
+    list[CurrencyUnitOption]
+        Active currency units ordered by ISO 4217 alphabetic code.
+    """
     return [
         CurrencyUnitOption.model_validate(currency_unit, from_attributes=True)
         for currency_unit in list_active_currency_units_sorted_by_code(session=session)

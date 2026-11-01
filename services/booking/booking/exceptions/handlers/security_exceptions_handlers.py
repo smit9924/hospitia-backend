@@ -556,6 +556,24 @@ def room_amenity_modification_forbidden_exception_handler(
 ) -> JSONResponse:
     """
     Handle room amenity modification forbidden exceptions.
+
+    Description
+    -----------
+    Generates a standardized API error response when an owner or manager
+    tries to edit or delete a default room amenity, which only admins
+    manage.
+
+    Parameters
+    ----------
+    _request : Request
+        The incoming FastAPI request object.
+    exc : RoomAmenityModificationForbiddenException
+        Exception describing the forbidden change.
+
+    Returns
+    -------
+    JSONResponse
+        HTTP 403 Forbidden response with a structured error payload.
     """
 
     response = ApiErrorResponse(

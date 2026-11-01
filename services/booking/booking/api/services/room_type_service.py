@@ -65,7 +65,20 @@ from booking.schemas.room_type_schemas import (
 
 
 def _build_room_type_response(room_type: RoomType, amenities: Sequence[RoomAmenity]) -> RoomTypeResponse:
-    """Assemble the API view of a room type from its loaded relations and amenities."""
+    """Assemble the API view of a room type from its loaded relations and amenities.
+
+    Parameters
+    ----------
+    room_type : RoomType
+        Room type with its organization and currency unit loaded.
+    amenities : Sequence[RoomAmenity]
+        The room type's active amenities.
+
+    Returns
+    -------
+    RoomTypeResponse
+        The room type as returned by the API.
+    """
     return RoomTypeResponse(
         guid=room_type.guid,  # type: ignore[arg-type]
         name=room_type.name,
@@ -81,13 +94,40 @@ def _build_room_type_response(room_type: RoomType, amenities: Sequence[RoomAmeni
 
 
 def _to_room_type_response(*, session: Session, room_type: RoomType) -> RoomTypeResponse:
-    """Build the response of one room type, loading its active amenities."""
+    """Build the response of one room type, loading its active amenities.
+
+    Parameters
+    ----------
+    session : Session
+        Active database session.
+    room_type : RoomType
+        Room type with its organization and currency unit loaded.
+
+    Returns
+    -------
+    RoomTypeResponse
+        The room type with its currency and amenities.
+    """
     amenities_by_room_type_id = get_active_amenities_by_room_type_id(session=session, room_type_ids=[room_type.id])  # type: ignore[list-item]
     return _build_room_type_response(room_type, amenities_by_room_type_id.get(room_type.id, []))  # type: ignore[arg-type]
 
 
 def _get_visible_room_type_or_raise(*, session: Session, actor: OrganizationScopedActor, guid: UUID) -> RoomType:
     """Fetch an active room type the actor may manage.
+
+    Parameters
+    ----------
+    session : Session
+        Active database session.
+    actor : OrganizationScopedActor
+        The caller and, for owners and managers, their active organization.
+    guid : UUID
+        Room type GUID to look up.
+
+    Returns
+    -------
+    RoomType
+        The active room type, with its organization and currency loaded.
 
     Raises
     ------
@@ -111,6 +151,23 @@ def _resolve_organization_id_for_new_room_type(
     organization_guid: UUID | None,
 ) -> int:
     """Decide which organization a new room type belongs to.
+
+    Owners and managers create room types in their active organization;
+    admins must choose one.
+
+    Parameters
+    ----------
+    session : Session
+        Active database session.
+    actor : OrganizationScopedActor
+        The caller and, for owners and managers, their active organization.
+    organization_guid : UUID | None
+        Organization chosen by an admin; ignored for owners and managers.
+
+    Returns
+    -------
+    int
+        Internal ID of the organization.
 
     Raises
     ------
@@ -136,6 +193,23 @@ def _ensure_room_type_name_is_free(
 ) -> None:
     """Make sure no other active room type of the organization uses the name.
 
+    Parameters
+    ----------
+    session : Session
+        Active database session.
+    organization_id : int
+        Internal ID of the organization.
+    name : str
+        Room type name to check.
+    room_type_id_being_updated : int | None
+        Internal ID of the room type being updated, so it does not conflict
+        with itself; ``None`` on create.
+
+    Returns
+    -------
+    None
+        The name is free.
+
     Raises
     ------
     RoomTypeAlreadyExistsException
@@ -153,6 +227,23 @@ def _resolve_amenity_ids_available_to_organization(
     amenity_guids: Sequence[UUID],
 ) -> list[int]:
     """Translate selected amenity GUIDs into IDs, checking the organization may use each one.
+
+    The request schema removes duplicate GUIDs, so every GUID must match
+    exactly one available amenity.
+
+    Parameters
+    ----------
+    session : Session
+        Active database session.
+    organization_id : int
+        Internal ID of the room type's organization.
+    amenity_guids : Sequence[UUID]
+        Selected amenity GUIDs, without duplicates.
+
+    Returns
+    -------
+    list[int]
+        Internal IDs of the selected amenities.
 
     Raises
     ------
@@ -303,6 +394,20 @@ def update_room_type(
 def get_room_type(*, session: Session, actor: OrganizationScopedActor, guid: UUID) -> RoomTypeResponse:
     """Return one room type the actor may manage.
 
+    Parameters
+    ----------
+    session : Session
+        Active database session.
+    actor : OrganizationScopedActor
+        The caller and, for owners and managers, their active organization.
+    guid : UUID
+        Room type GUID to look up.
+
+    Returns
+    -------
+    RoomTypeResponse
+        The room type with its currency and amenities.
+
     Raises
     ------
     RoomTypeNotFoundException
@@ -314,6 +419,20 @@ def get_room_type(*, session: Session, actor: OrganizationScopedActor, guid: UUI
 
 def delete_room_type(*, session: Session, actor: OrganizationScopedActor, guid: UUID) -> None:
     """Soft-delete a room type the actor may manage.
+
+    Parameters
+    ----------
+    session : Session
+        Active database session.
+    actor : OrganizationScopedActor
+        The caller and, for owners and managers, their active organization.
+    guid : UUID
+        Room type GUID to delete.
+
+    Returns
+    -------
+    None
+        The room type is marked inactive.
 
     Raises
     ------
@@ -334,6 +453,20 @@ def list_room_types(
 
     Admins get the room types of every active organization; owners and
     managers get those of their active organization.
+
+    Parameters
+    ----------
+    session : Session
+        Active database session.
+    actor : OrganizationScopedActor
+        The caller and, for owners and managers, their active organization.
+    query : RoomTypeListQueryParams
+        Search, sorting, and pagination options.
+
+    Returns
+    -------
+    RoomTypeListResponse
+        The requested page of room types and the total matching count.
     """
     room_types, total_count = list_room_types_page(
         session=session,

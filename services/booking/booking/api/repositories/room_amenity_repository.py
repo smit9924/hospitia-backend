@@ -30,6 +30,11 @@ def _visible_to_organization(organization_id: int | None) -> ColumnElement[bool]
     ----------
     organization_id : int | None
         Internal ID of the organization, or ``None`` to match defaults only.
+
+    Returns
+    -------
+    ColumnElement[bool]
+        SQL filter expression to use in a ``where`` clause.
     """
     if organization_id is None:
         return _IS_DEFAULT
@@ -205,6 +210,16 @@ def soft_delete_room_amenity(*, session: Session, room_amenity: RoomAmenity, act
         Amenity to deactivate.
     actor_id : int | None
         Internal ID of the user performing the deletion, if available.
+
+    Returns
+    -------
+    None
+        The change is committed successfully.
+
+    Raises
+    ------
+    SQLAlchemyError
+        If the change cannot be committed.
     """
     room_amenity.is_active = False
     room_amenity.updated_by = actor_id
@@ -243,7 +258,29 @@ def _list_room_amenities_page(
     query: RoomAmenityListQueryParams,
     visibility_filter: ColumnElement[bool],
 ) -> RoomAmenityListResponse:
-    """List active amenities matching `visibility_filter` with search, sorting and pagination."""
+    """List active amenities matching `visibility_filter` with search, sorting and pagination.
+
+    Parameters
+    ----------
+    session : Session
+        Active database session used to execute the queries.
+    query : RoomAmenityListQueryParams
+        Search, sorting, and pagination options.
+    visibility_filter : ColumnElement[bool]
+        Filter restricting which amenities the caller may see.
+
+    Returns
+    -------
+    RoomAmenityListResponse
+        Paginated amenities and the total matching count.
+
+    Raises
+    ------
+    KeyError
+        If ``query.sort_by`` is not in the supported sort-column map.
+    SQLAlchemyError
+        If either database query cannot be executed.
+    """
     statement = (
         select(RoomAmenity)
         .options(selectinload(RoomAmenity.organization))  # type: ignore[arg-type]

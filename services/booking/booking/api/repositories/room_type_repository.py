@@ -82,8 +82,25 @@ def _replace_room_type_amenities(
 ) -> None:
     """Make the room type's amenity mappings match `room_amenity_ids` (not committed).
 
-    Mappings that are no longer selected are removed; new ones are added;
-    unchanged ones keep their original audit data.
+    Mappings that are no longer selected are removed and new ones are
+    added; unchanged mappings are kept so their original audit data
+    (created_at, created_by) survives.
+
+    Parameters
+    ----------
+    session : Session
+        Active database session; the caller commits.
+    room_type_id : int
+        Internal ID of the room type.
+    room_amenity_ids : Sequence[int]
+        Internal IDs of the amenities the room type should have.
+    actor_id : int | None
+        Internal ID of the user making the change, if available.
+
+    Returns
+    -------
+    None
+        The mapping changes are added to the session.
     """
     existing_amenity_ids = set(
         session.exec(
@@ -232,6 +249,16 @@ def soft_delete_room_type(*, session: Session, room_type: RoomType, actor_id: in
         Room type to deactivate.
     actor_id : int | None
         Internal ID of the user performing the deletion, if available.
+
+    Returns
+    -------
+    None
+        The change is committed successfully.
+
+    Raises
+    ------
+    SQLAlchemyError
+        If the change cannot be committed.
     """
     room_type.is_active = False
     room_type.updated_by = actor_id
@@ -332,13 +359,51 @@ def list_room_types_page(
 
 
 def has_active_room_types_using_currency_unit(*, session: Session, currency_unit_id: int) -> bool:
-    """Check whether an active room type prices in the currency unit."""
+    """Check whether an active room type prices in the currency unit.
+
+    Parameters
+    ----------
+    session : Session
+        Active database session used to execute the count query.
+    currency_unit_id : int
+        Internal ID of the currency unit to check.
+
+    Returns
+    -------
+    bool
+        ``True`` when at least one active room type uses the currency unit;
+        otherwise ``False``.
+
+    Raises
+    ------
+    SQLAlchemyError
+        If the count query cannot be executed.
+    """
     statement = select(func.count()).select_from(RoomType).where(RoomType.currency_unit_id == currency_unit_id, _IS_ACTIVE)
     return session.exec(statement).one() > 0
 
 
 def has_active_room_types_using_amenity(*, session: Session, room_amenity_id: int) -> bool:
-    """Check whether an active room type lists the amenity."""
+    """Check whether an active room type lists the amenity.
+
+    Parameters
+    ----------
+    session : Session
+        Active database session used to execute the count query.
+    room_amenity_id : int
+        Internal ID of the amenity to check.
+
+    Returns
+    -------
+    bool
+        ``True`` when at least one active room type lists the amenity;
+        otherwise ``False``.
+
+    Raises
+    ------
+    SQLAlchemyError
+        If the count query cannot be executed.
+    """
     statement = (
         select(func.count())
         .select_from(RoomTypeAmenityMapping)
@@ -349,6 +414,25 @@ def has_active_room_types_using_amenity(*, session: Session, room_amenity_id: in
 
 
 def has_active_room_types_in_organization(*, session: Session, organization_id: int) -> bool:
-    """Check whether the organization still has an active room type."""
+    """Check whether the organization still has an active room type.
+
+    Parameters
+    ----------
+    session : Session
+        Active database session used to execute the count query.
+    organization_id : int
+        Internal ID of the organization to check.
+
+    Returns
+    -------
+    bool
+        ``True`` when the organization has at least one active room type;
+        otherwise ``False``.
+
+    Raises
+    ------
+    SQLAlchemyError
+        If the count query cannot be executed.
+    """
     statement = select(func.count()).select_from(RoomType).where(RoomType.organization_id == organization_id, _IS_ACTIVE)
     return session.exec(statement).one() > 0

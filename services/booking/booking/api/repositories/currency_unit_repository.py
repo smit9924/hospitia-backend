@@ -188,6 +188,16 @@ def soft_delete_currency_unit(*, session: Session, currency_unit: CurrencyUnit, 
         Currency unit to deactivate.
     actor_id : int | None
         Internal ID of the user performing the deletion, if available.
+
+    Returns
+    -------
+    None
+        The change is committed successfully.
+
+    Raises
+    ------
+    SQLAlchemyError
+        If the change cannot be committed.
     """
     currency_unit.is_active = False
     currency_unit.updated_by = actor_id

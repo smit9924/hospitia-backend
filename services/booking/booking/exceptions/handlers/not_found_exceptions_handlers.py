@@ -139,6 +139,23 @@ def currency_unit_not_found_exception_handler(
 ) -> JSONResponse:
     """
     Handle currency unit not found exceptions.
+
+    Description
+    -----------
+    Generates a standardized API error response when the requested
+    currency unit does not exist or was deleted.
+
+    Parameters
+    ----------
+    _request : Request
+        The incoming FastAPI request object.
+    exc : CurrencyUnitNotFoundException
+        Exception describing the missing currency unit.
+
+    Returns
+    -------
+    JSONResponse
+        HTTP 404 Not Found response with a structured error payload.
     """
 
     response = ApiErrorResponse(
@@ -159,6 +176,24 @@ def room_amenity_not_found_exception_handler(
 ) -> JSONResponse:
     """
     Handle room amenity not found exceptions.
+
+    Description
+    -----------
+    Generates a standardized API error response when the requested room
+    amenity does not exist, was deleted, or belongs to another organization
+    (reported as missing so its existence is never revealed).
+
+    Parameters
+    ----------
+    _request : Request
+        The incoming FastAPI request object.
+    exc : RoomAmenityNotFoundException
+        Exception describing the missing room amenity.
+
+    Returns
+    -------
+    JSONResponse
+        HTTP 404 Not Found response with a structured error payload.
     """
 
     response = ApiErrorResponse(
@@ -179,6 +214,24 @@ def room_type_not_found_exception_handler(
 ) -> JSONResponse:
     """
     Handle room type not found exceptions.
+
+    Description
+    -----------
+    Generates a standardized API error response when the requested room
+    type does not exist, was deleted, or belongs to another organization
+    (reported as missing so its existence is never revealed).
+
+    Parameters
+    ----------
+    _request : Request
+        The incoming FastAPI request object.
+    exc : RoomTypeNotFoundException
+        Exception describing the missing room type.
+
+    Returns
+    -------
+    JSONResponse
+        HTTP 404 Not Found response with a structured error payload.
     """
 
     response = ApiErrorResponse(
