@@ -108,4 +108,19 @@ NOT_FOUND_EXCEPTIONS_DOC = {
             },
         }
     },
+    "RoomNotFoundException": {
+        404: {
+            "description": "The requested room was not found.",
+            "model": ApiErrorResponse[None],
+            "content": {
+                "application/json": {
+                    "example": {
+                        "metadata": None,
+                        "message": "The requested room was not found.",
+                        "errorCode": ErrorCodes.ROOM_NOT_FOUND,
+                    }
+                }
+            },
+        }
+    },
 }

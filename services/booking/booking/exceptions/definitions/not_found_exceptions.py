@@ -100,3 +100,15 @@ class RoomTypeNotFoundException(BaseException):
         message: str = "The requested room type was not found."
     ) -> None:
         super().__init__(ErrorCodes.ROOM_TYPE_NOT_FOUND, message)
+
+
+class RoomNotFoundException(BaseException):
+    """
+    Raised when a requested room does not exist, was deleted, or belongs to another organization.
+    """
+
+    def __init__(
+        self,
+        message: str = "The requested room was not found."
+    ) -> None:
+        super().__init__(ErrorCodes.ROOM_NOT_FOUND, message)

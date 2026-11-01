@@ -197,4 +197,64 @@ VALIDATION_EXCEPTION_DOC = {
             },
         }
     },
+    "RoomAlreadyExistsException": {
+        409: {
+            "description": "A room with this number already exists in this organization.",
+            "model": ApiErrorResponse[None],
+            "content": {
+                "application/json": {
+                    "example": {
+                        "metadata": None,
+                        "message": "A room with this number already exists in this organization.",
+                        "errorCode": ErrorCodes.ROOM_ALREADY_EXISTS,
+                    }
+                }
+            },
+        }
+    },
+    "RoomOrganizationRequiredException": {
+        400: {
+            "description": "Select the organization the room belongs to.",
+            "model": ApiErrorResponse[None],
+            "content": {
+                "application/json": {
+                    "example": {
+                        "metadata": None,
+                        "message": "Select the organization the room belongs to.",
+                        "errorCode": ErrorCodes.ROOM_ORGANIZATION_REQUIRED,
+                    }
+                }
+            },
+        }
+    },
+    "RoomTypeNotAvailableForRoomException": {
+        400: {
+            "description": "The selected room type is not available for this organization.",
+            "model": ApiErrorResponse[None],
+            "content": {
+                "application/json": {
+                    "example": {
+                        "metadata": None,
+                        "message": "The selected room type is not available for this organization.",
+                        "errorCode": ErrorCodes.ROOM_TYPE_NOT_AVAILABLE_FOR_ROOM,
+                    }
+                }
+            },
+        }
+    },
+    "RoomTypeInUseException": {
+        409: {
+            "description": "This room type has rooms and cannot be deleted.",
+            "model": ApiErrorResponse[None],
+            "content": {
+                "application/json": {
+                    "example": {
+                        "metadata": None,
+                        "message": "This room type has rooms and cannot be deleted.",
+                        "errorCode": ErrorCodes.ROOM_TYPE_IN_USE,
+                    }
+                }
+            },
+        }
+    },
 }

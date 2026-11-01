@@ -164,3 +164,51 @@ class RoomTypeOrganizationRequiredException(BaseException):
         message: str = "Select the organization the room type belongs to."
     ) -> None:
         super().__init__(ErrorCodes.ROOM_TYPE_ORGANIZATION_REQUIRED, message)
+
+
+class RoomAlreadyExistsException(BaseException):
+    """
+    Raised when an active room of the same organization already uses the room number (case-insensitive).
+    """
+
+    def __init__(
+        self,
+        message: str = "A room with this number already exists in this organization."
+    ) -> None:
+        super().__init__(ErrorCodes.ROOM_ALREADY_EXISTS, message)
+
+
+class RoomOrganizationRequiredException(BaseException):
+    """
+    Raised when an admin creates a room without choosing its organization.
+    """
+
+    def __init__(
+        self,
+        message: str = "Select the organization the room belongs to."
+    ) -> None:
+        super().__init__(ErrorCodes.ROOM_ORGANIZATION_REQUIRED, message)
+
+
+class RoomTypeNotAvailableForRoomException(BaseException):
+    """
+    Raised when a room selects a room type that does not exist, was deleted, or belongs to another organization.
+    """
+
+    def __init__(
+        self,
+        message: str = "The selected room type is not available for this organization."
+    ) -> None:
+        super().__init__(ErrorCodes.ROOM_TYPE_NOT_AVAILABLE_FOR_ROOM, message)
+
+
+class RoomTypeInUseException(BaseException):
+    """
+    Raised when attempting to delete a room type that active rooms still use.
+    """
+
+    def __init__(
+        self,
+        message: str = "This room type has rooms and cannot be deleted."
+    ) -> None:
+        super().__init__(ErrorCodes.ROOM_TYPE_IN_USE, message)
