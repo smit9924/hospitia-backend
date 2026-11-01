@@ -4,6 +4,7 @@ from booking.api.routes import (
     currency_unit,
     organization,
     organization_type,
+    room,
     room_amenity,
     room_type,
 )
@@ -16,6 +17,7 @@ api_router.include_router(organization.router, prefix="/organization")
 api_router.include_router(currency_unit.router, prefix="/currency-unit")
 api_router.include_router(room_amenity.router, prefix="/room-amenity")
 api_router.include_router(room_type.router, prefix="/room-type")
+api_router.include_router(room.router, prefix="/room")
 
 
 # if settings.ENVIRONMENT == "local":

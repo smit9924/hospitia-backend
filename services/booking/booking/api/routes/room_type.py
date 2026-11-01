@@ -8,6 +8,7 @@ from booking.api.services.room_type_service import (
     create_room_type,
     delete_room_type,
     get_room_type,
+    list_room_type_options,
     list_room_types,
     update_room_type,
 )
@@ -19,6 +20,8 @@ from booking.schemas.room_type_schemas import (
     RoomTypeCreateRequest,
     RoomTypeListQueryParams,
     RoomTypeListResponse,
+    RoomTypeOption,
+    RoomTypeOptionsQueryParams,
     RoomTypeResponse,
     RoomTypeUpdateRequest,
 )
@@ -85,14 +88,14 @@ async def update_room_type_route(
     return update_room_type(session=session, actor=actor, payload=payload)
 
 
-@router.delete("/delete", status_code=204, responses={**_AUTH_RESPONSES, **NOT_FOUND_EXCEPTIONS_DOC["RoomTypeNotFoundException"]})
+@router.delete("/delete", status_code=204, responses={**_AUTH_RESPONSES, **NOT_FOUND_EXCEPTIONS_DOC["RoomTypeNotFoundException"], **VALIDATION_EXCEPTION_DOC["RoomTypeInUseException"]})
 async def delete_room_type_route(
     session: SessionDep,
     guid: Annotated[UUID, Query()],
     actor: _RoomTypeActorDep,
 ) -> None:
     """
-    Soft-delete a room type.
+    Soft-delete a room type. Refused while active rooms still use it.
     """
     delete_room_type(session=session, actor=actor, guid=guid)
 
@@ -121,3 +124,18 @@ async def get_room_type_route(
     Fetch a single room type visible to the caller.
     """
     return get_room_type(session=session, actor=actor, guid=guid)
+
+
+@router.get("/options", responses={**_AUTH_RESPONSES, **NOT_FOUND_EXCEPTIONS_DOC["OrganizationNotFoundException"]})
+async def list_room_type_options_route(
+    session: SessionDep,
+    query: Annotated[RoomTypeOptionsQueryParams, Query()],
+    actor: _RoomTypeActorDep,
+) -> list[RoomTypeOption]:
+    """
+    Return the active room types a room of the organization may use,
+    ordered by name. Not paginated. Admins choose the organization with
+    `organizationGuid` (empty list when omitted); owners and managers get
+    their active organization's room types.
+    """
+    return list_room_type_options(session=session, actor=actor, organization_guid=query.organization_guid)

@@ -9,10 +9,14 @@ from booking.exceptions.definitions.validation_exceptions import (
     OrganizationMustHaveActiveOwnerException,
     OrganizationTypeAlreadyExistsException,
     OrganizationTypeHasActiveOrganizationsException,
+    RoomAlreadyExistsException,
     RoomAmenityAlreadyExistsException,
     RoomAmenityInUseException,
+    RoomOrganizationRequiredException,
     RoomTypeAlreadyExistsException,
     RoomTypeAmenityNotAvailableException,
+    RoomTypeInUseException,
+    RoomTypeNotAvailableForRoomException,
     RoomTypeOrganizationRequiredException,
     UserRoleMismatchForOrganizationException,
 )
@@ -398,5 +402,152 @@ def room_type_organization_required_exception_handler(
 
     return JSONResponse(
         status_code=status.HTTP_400_BAD_REQUEST,
+        content=response.model_dump(),
+    )
+
+
+def room_already_exists_exception_handler(
+    _request: Request,
+    exc: RoomAlreadyExistsException,
+) -> JSONResponse:
+    """
+    Handle room already exists exceptions.
+
+    Description
+    -----------
+    Generates a standardized API error response when another active room of the same organization already uses the room
+    number (case-insensitively).
+
+    Parameters
+    ----------
+    _request : Request
+        The incoming FastAPI request object.
+    exc : RoomAlreadyExistsException
+        Exception describing the clashing room number.
+
+    Returns
+    -------
+    JSONResponse
+        HTTP 409 Conflict response with a structured error payload.
+    """
+
+    response = ApiErrorResponse(
+        metadata=None,
+        errorCode=exc.errorCode,
+        message=exc.message,
+    )
+
+    return JSONResponse(
+        status_code=status.HTTP_409_CONFLICT,
+        content=response.model_dump(),
+    )
+
+
+def room_organization_required_exception_handler(
+    _request: Request,
+    exc: RoomOrganizationRequiredException,
+) -> JSONResponse:
+    """
+    Handle room organization required exceptions.
+
+    Description
+    -----------
+    Generates a standardized API error response when an admin creates a room without choosing the organization it belongs
+    to.
+
+    Parameters
+    ----------
+    _request : Request
+        The incoming FastAPI request object.
+    exc : RoomOrganizationRequiredException
+        Exception describing the missing organization.
+
+    Returns
+    -------
+    JSONResponse
+        HTTP 400 Bad Request response with a structured error payload.
+    """
+
+    response = ApiErrorResponse(
+        metadata=None,
+        errorCode=exc.errorCode,
+        message=exc.message,
+    )
+
+    return JSONResponse(
+        status_code=status.HTTP_400_BAD_REQUEST,
+        content=response.model_dump(),
+    )
+
+
+def room_type_not_available_for_room_exception_handler(
+    _request: Request,
+    exc: RoomTypeNotAvailableForRoomException,
+) -> JSONResponse:
+    """
+    Handle room type not available for room exceptions.
+
+    Description
+    -----------
+    Generates a standardized API error response when a room selects a room type that does not exist, was deleted, or
+    belongs to another organization.
+
+    Parameters
+    ----------
+    _request : Request
+        The incoming FastAPI request object.
+    exc : RoomTypeNotAvailableForRoomException
+        Exception describing the unavailable room type.
+
+    Returns
+    -------
+    JSONResponse
+        HTTP 400 Bad Request response with a structured error payload.
+    """
+
+    response = ApiErrorResponse(
+        metadata=None,
+        errorCode=exc.errorCode,
+        message=exc.message,
+    )
+
+    return JSONResponse(
+        status_code=status.HTTP_400_BAD_REQUEST,
+        content=response.model_dump(),
+    )
+
+
+def room_type_in_use_exception_handler(
+    _request: Request,
+    exc: RoomTypeInUseException,
+) -> JSONResponse:
+    """
+    Handle room type in use exceptions.
+
+    Description
+    -----------
+    Generates a standardized API error response when a room type cannot be deleted because active rooms still use it.
+
+    Parameters
+    ----------
+    _request : Request
+        The incoming FastAPI request object.
+    exc : RoomTypeInUseException
+        Exception describing the room type that is still in use.
+
+    Returns
+    -------
+    JSONResponse
+        HTTP 409 Conflict response with a structured error payload.
+    """
+
+    response = ApiErrorResponse(
+        metadata=None,
+        errorCode=exc.errorCode,
+        message=exc.message,
+    )
+
+    return JSONResponse(
+        status_code=status.HTTP_409_CONFLICT,
         content=response.model_dump(),
     )
