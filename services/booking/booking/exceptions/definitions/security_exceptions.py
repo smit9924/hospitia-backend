@@ -55,11 +55,11 @@ class ActiveOrganizationInvalidException(BaseException):
 
 class RoomAmenityModificationForbiddenException(BaseException):
     """
-    Raised when an owner or manager tries to edit or delete a default room amenity, which only admins manage.
+    Raised when an owner or manager tries to open, edit or delete a default room amenity, which only admins manage.
     """
 
     def __init__(
         self,
-        message: str = "Only admins can change default room amenities."
+        message: str = "Only admins can manage default room amenities."
     ) -> None:
         super().__init__(ErrorCodes.ROOM_AMENITY_MODIFICATION_FORBIDDEN, message)

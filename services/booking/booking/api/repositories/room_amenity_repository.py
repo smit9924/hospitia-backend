@@ -341,7 +341,7 @@ def list_room_amenities_for_organization(
     query: RoomAmenityListQueryParams,
     organization_id: int,
 ) -> RoomAmenityListResponse:
-    """List the default amenities plus the custom amenities of one organization.
+    """List the custom amenities of one organization (default amenities excluded).
 
     Parameters
     ----------
@@ -360,5 +360,5 @@ def list_room_amenities_for_organization(
     return _list_room_amenities_page(
         session=session,
         query=query,
-        visibility_filter=_visible_to_organization(organization_id),
+        visibility_filter=RoomAmenity.organization_id == organization_id,
     )

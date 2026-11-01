@@ -560,8 +560,8 @@ def room_amenity_modification_forbidden_exception_handler(
     Description
     -----------
     Generates a standardized API error response when an owner or manager
-    tries to edit or delete a default room amenity, which only admins
-    manage.
+    tries to open, edit or delete a default room amenity, which only
+    admins manage.
 
     Parameters
     ----------

@@ -92,8 +92,8 @@ async def list_room_amenities_route(
 ) -> RoomAmenityListResponse:
     """
     Return a paginated, sortable, searchable list of room amenities: every
-    amenity for admins; the defaults plus the active organization's custom
-    amenities for owners and managers.
+    amenity for admins; only the active organization's custom amenities for
+    owners and managers (defaults reach them as room type form options).
     """
     return list_room_amenities(session=session, actor=actor, query=query)
 
@@ -116,13 +116,14 @@ async def list_selectable_room_amenities_route(
     )
 
 
-@router.get("/detail", responses={**_AUTH_RESPONSES, **NOT_FOUND_EXCEPTIONS_DOC["RoomAmenityNotFoundException"]})
+@router.get("/detail", responses={**_AUTH_RESPONSES, **NOT_FOUND_EXCEPTIONS_DOC["RoomAmenityNotFoundException"], **SECURITY_EXCEPTION_DOC["RoomAmenityModificationForbiddenException"]})
 async def get_room_amenity_route(
     session: SessionDep,
     guid: Annotated[UUID, Query()],
     actor: _RoomAmenityActorDep,
 ) -> RoomAmenityResponse:
     """
-    Fetch a single room amenity visible to the caller.
+    Fetch a single room amenity the caller manages. Owners and managers
+    cannot open default amenities.
     """
     return get_room_amenity(session=session, actor=actor, guid=guid)

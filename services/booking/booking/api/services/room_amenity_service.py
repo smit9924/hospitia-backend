@@ -5,17 +5,18 @@ An amenity is either a default (system-wide, managed by admins, offered to
 every organization) or a custom amenity of one organization (managed by
 its owners and managers, and by admins).
 
-Visibility:
-- Admins see every default amenity and every custom amenity of an active
-  organization.
-- Owners and managers see the defaults plus the custom amenities of their
-  active organization. Other organizations' amenities are reported as not
+Management (listing, detail, edit, delete):
+- Admins manage every default amenity and every custom amenity of an
+  active organization.
+- Owners and managers manage only the custom amenities of their active
+  organization. Defaults are refused even when called directly with a
+  known GUID, and other organizations' amenities are reported as not
   found, so their existence is never revealed.
 
-Modification:
-- Admins may edit or delete any amenity they can see.
-- Owners and managers may edit or delete only their organization's custom
-  amenities; defaults are read-only for them.
+Selection:
+- Default amenities reach owners and managers only as options in the room
+  type form (`list_selectable_room_amenity_options`), next to their
+  organization's custom amenities.
 """
 
 from uuid import UUID
@@ -126,20 +127,23 @@ def _get_visible_room_amenity_or_raise(
     return room_amenity
 
 
-def _ensure_actor_can_modify(actor: OrganizationScopedActor, room_amenity: RoomAmenity) -> None:
-    """Block owners and managers from changing default amenities.
+def _ensure_actor_can_manage(actor: OrganizationScopedActor, room_amenity: RoomAmenity) -> None:
+    """Block owners and managers from opening, editing or deleting default amenities.
+
+    Default amenities are managed by admins only; owners and managers see
+    them solely as options in the room type form.
 
     Parameters
     ----------
     actor : OrganizationScopedActor
         The caller.
     room_amenity : RoomAmenity
-        Amenity the caller wants to edit or delete.
+        Amenity the caller wants to open, edit or delete.
 
     Returns
     -------
     None
-        The actor may modify the amenity.
+        The actor may manage the amenity.
 
     Raises
     ------
@@ -320,7 +324,10 @@ def _ensure_room_amenity_name_is_free(
         name=name,
         # A custom amenity is never a default, so nothing to exclude here.
         room_amenity_id_being_updated=None,
-        conflict_message="A default room amenity with this name already exists.",
+        conflict_message=(
+            "A default room amenity with this name already exists. "
+            "Default amenities are already available in the room type form."
+        ),
     )
 
 
@@ -410,7 +417,7 @@ def update_room_amenity(
         If the name is already used in the amenity's scope.
     """
     existing_room_amenity = _get_visible_room_amenity_or_raise(session=session, actor=actor, guid=payload.guid)
-    _ensure_actor_can_modify(actor, existing_room_amenity)
+    _ensure_actor_can_manage(actor, existing_room_amenity)
     _ensure_room_amenity_name_is_free(
         session=session,
         name=payload.name,
@@ -428,7 +435,7 @@ def update_room_amenity(
 
 
 def get_room_amenity(*, session: Session, actor: OrganizationScopedActor, guid: UUID) -> RoomAmenityResponse:
-    """Return one amenity visible to the actor.
+    """Return one amenity the actor may manage.
 
     Parameters
     ----------
@@ -448,8 +455,11 @@ def get_room_amenity(*, session: Session, actor: OrganizationScopedActor, guid: 
     ------
     RoomAmenityNotFoundException
         If the amenity is missing, deleted, or not visible to the actor.
+    RoomAmenityModificationForbiddenException
+        If an owner or manager opens a default amenity.
     """
     room_amenity = _get_visible_room_amenity_or_raise(session=session, actor=actor, guid=guid)
+    _ensure_actor_can_manage(actor, room_amenity)
     return RoomAmenityResponse.model_validate(room_amenity, from_attributes=True)
 
 
@@ -507,7 +517,7 @@ def delete_room_amenity(*, session: Session, actor: OrganizationScopedActor, gui
         If an active record still uses the amenity.
     """
     room_amenity = _get_visible_room_amenity_or_raise(session=session, actor=actor, guid=guid)
-    _ensure_actor_can_modify(actor, room_amenity)
+    _ensure_actor_can_manage(actor, room_amenity)
     ensure_room_amenity_is_not_in_use(session=session, room_amenity_id=room_amenity.id)
     soft_delete_room_amenity(session=session, room_amenity=room_amenity, actor_id=actor.user_id)
 
@@ -518,11 +528,11 @@ def list_room_amenities(
     actor: OrganizationScopedActor,
     query: RoomAmenityListQueryParams,
 ) -> RoomAmenityListResponse:
-    """Return a paginated, sortable, searchable list of the amenities visible to the actor.
+    """Return a paginated, sortable, searchable list of the amenities the actor manages.
 
     Admins get every default amenity and every active organization's custom
-    amenities; owners and managers get the defaults plus their active
-    organization's custom amenities.
+    amenities; owners and managers get only their active organization's
+    custom amenities.
 
     Parameters
     ----------
