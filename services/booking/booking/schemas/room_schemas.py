@@ -97,3 +97,30 @@ class RoomListResponse(BaseSchema):
     total_count: int
     page_number: int
     page_size: int
+
+
+class RoomStatusUpdateRequest(BaseSchema):
+    """Request payload for changing only the status of the room identified by `guid`."""
+
+    guid: UUID
+    status: RoomStatus
+
+
+class RoomFloorOverviewItem(BaseSchema):
+    """A room as drawn on the dashboard floor chart."""
+
+    guid: UUID
+    room_number: str
+    floor: int
+    status: RoomStatus
+    notes: str | None
+    room_type: RoomTypeOption
+
+
+class RoomFloorOverviewResponse(BaseSchema):
+    """
+    Every active room of the active organization, ordered by floor (top
+    floor first) and then room number. Not paginated.
+    """
+
+    rooms: list[RoomFloorOverviewItem]

@@ -12,6 +12,9 @@ to one of that organization's room types. Its organization never changes.
 
 Room numbers are unique, case-insensitively, among the active rooms of one
 organization.
+
+The dashboard floor chart (owners and managers) reads every room of the
+active organization at once and may change a room's status on its own.
 """
 
 from uuid import UUID
@@ -24,11 +27,15 @@ from booking.api.repositories.room_repository import (
 from booking.api.repositories.room_repository import (
     find_active_room_by_number,
     get_active_room_by_guid,
+    list_active_rooms_of_organization,
     list_rooms_page,
     soft_delete_room,
 )
 from booking.api.repositories.room_repository import (
     update_room as update_room_repo,
+)
+from booking.api.repositories.room_repository import (
+    update_room_status as update_room_status_repo,
 )
 from booking.api.repositories.room_type_repository import get_active_room_type_by_guid
 from booking.api.services.organization_service import (
@@ -48,9 +55,12 @@ from booking.schemas.organization_schemas import (
 )
 from booking.schemas.room_schemas import (
     RoomCreateRequest,
+    RoomFloorOverviewItem,
+    RoomFloorOverviewResponse,
     RoomListQueryParams,
     RoomListResponse,
     RoomResponse,
+    RoomStatusUpdateRequest,
     RoomUpdateRequest,
 )
 from booking.schemas.room_type_schemas import RoomTypeOption
@@ -410,3 +420,59 @@ def list_rooms(*, session: Session, actor: OrganizationScopedActor, query: RoomL
         page_number=query.page_number,
         page_size=query.page_size,
     )
+
+
+def get_room_floor_overview(*, session: Session, actor: OrganizationScopedActor) -> RoomFloorOverviewResponse:
+    """Return every active room of the member's active organization for the floor chart.
+
+    Parameters
+    ----------
+    session : Session
+        Active database session.
+    actor : OrganizationScopedActor
+        An owner or manager and their active organization.
+
+    Returns
+    -------
+    RoomFloorOverviewResponse
+        Rooms ordered by floor (top floor first), then room number.
+    """
+    rooms = list_active_rooms_of_organization(
+        session=session,
+        organization_id=get_member_active_organization_id(actor),
+    )
+    return RoomFloorOverviewResponse(
+        rooms=[RoomFloorOverviewItem.model_validate(room, from_attributes=True) for room in rooms]
+    )
+
+
+def update_room_status(
+    *,
+    session: Session,
+    actor: OrganizationScopedActor,
+    payload: RoomStatusUpdateRequest,
+) -> RoomResponse:
+    """Change only the status of a room the actor may manage.
+
+    Parameters
+    ----------
+    session : Session
+        Active database session.
+    actor : OrganizationScopedActor
+        The caller and, for owners and managers, their active organization.
+    payload : RoomStatusUpdateRequest
+        GUID of the room and its new status.
+
+    Returns
+    -------
+    RoomResponse
+        The updated room.
+
+    Raises
+    ------
+    RoomNotFoundException
+        If the room is missing, deleted, or not visible to the actor.
+    """
+    room = _get_visible_room_or_raise(session=session, actor=actor, guid=payload.guid)
+    room = update_room_status_repo(session=session, room=room, status=payload.status, actor_id=actor.user_id)
+    return _to_room_response(room)

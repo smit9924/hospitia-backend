@@ -300,3 +300,56 @@ def has_active_rooms_in_organization(*, session: Session, organization_id: int) 
     """
     statement = select(func.count()).select_from(Room).where(Room.organization_id == organization_id, _IS_ACTIVE)
     return session.exec(statement).one() > 0
+
+
+def list_active_rooms_of_organization(*, session: Session, organization_id: int) -> list[Room]:
+    """List every active room of one organization for the floor chart.
+
+    Parameters
+    ----------
+    session : Session
+        Active database session used to execute the query.
+    organization_id : int
+        Internal ID of the organization.
+
+    Returns
+    -------
+    list[Room]
+        Active rooms with their room type loaded, ordered by floor from the
+        top floor down, then by room number (case-insensitive).
+    """
+    return list(
+        session.exec(
+            select(Room)
+            .options(selectinload(Room.room_type))  # type: ignore[arg-type]
+            .where(Room.organization_id == organization_id, _IS_ACTIVE)
+            .order_by(col(Room.floor).desc(), func.lower(Room.room_number))
+        ).all()
+    )
+
+
+def update_room_status(*, session: Session, room: Room, status: RoomStatus, actor_id: int | None) -> Room:
+    """Update and commit only the status of a room.
+
+    Parameters
+    ----------
+    session : Session
+        Active database session used to persist the update.
+    room : Room
+        Room instance to update.
+    status : RoomStatus
+        New operational status.
+    actor_id : int | None
+        Internal ID of the user performing the update, if available.
+
+    Returns
+    -------
+    Room
+        Updated and refreshed room.
+    """
+    room.status = status
+    room.updated_by = actor_id
+    session.add(room)
+    session.commit()
+    session.refresh(room)
+    return room
