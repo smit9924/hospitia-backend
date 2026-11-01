@@ -125,3 +125,22 @@ class LogLevelName(StrEnum):
     WARNING = "WARNING"
     ERROR = "ERROR"
     CRITICAL = "CRITICAL"
+
+
+class RoomStatus(StrEnum):
+    """
+    Operational status of a room. Stored as text in `rooms.status`.
+
+    Attributes
+    ----------
+    AVAILABLE : str
+        The room can be used. Default for new rooms.
+    UNDER_MAINTENANCE : str
+        The room is temporarily unusable (cleaning, repairs).
+    OUT_OF_SERVICE : str
+        The room is not in use until further notice.
+    """
+
+    AVAILABLE = "available"
+    UNDER_MAINTENANCE = "under_maintenance"
+    OUT_OF_SERVICE = "out_of_service"
