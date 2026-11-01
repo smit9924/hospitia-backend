@@ -8,8 +8,10 @@ from booking.api.services.room_service import (
     create_room,
     delete_room,
     get_room,
+    get_room_floor_overview,
     list_rooms,
     update_room,
+    update_room_status,
 )
 from booking.doc.not_found_exceptions_doc import NOT_FOUND_EXCEPTIONS_DOC
 from booking.doc.security_exceptions_doc import SECURITY_EXCEPTION_DOC
@@ -17,9 +19,11 @@ from booking.doc.validation_exception_doc import VALIDATION_EXCEPTION_DOC
 from booking.schemas.organization_schemas import OrganizationScopedActor
 from booking.schemas.room_schemas import (
     RoomCreateRequest,
+    RoomFloorOverviewResponse,
     RoomListQueryParams,
     RoomListResponse,
     RoomResponse,
+    RoomStatusUpdateRequest,
     RoomUpdateRequest,
 )
 from booking.types.enums import UserType
@@ -29,6 +33,12 @@ _ADMIN_OWNER_MANAGER = [UserType.ADMIN, UserType.OWNER, UserType.MANAGER]
 # Admins act on any organization; owners and managers are scoped to the
 # active organization sent in the X-Active-Organization-Guid header.
 _RoomActorDep = Annotated[OrganizationScopedActor, Depends(OrganizationScopedActorDep(_ADMIN_OWNER_MANAGER))]
+
+# The dashboard floor chart belongs to an organization's members only.
+_RoomMemberActorDep = Annotated[
+    OrganizationScopedActor,
+    Depends(OrganizationScopedActorDep([UserType.OWNER, UserType.MANAGER])),
+]
 
 router = APIRouter(tags=["room"])
 
@@ -118,3 +128,28 @@ async def get_room_route(
     Fetch a single room visible to the caller.
     """
     return get_room(session=session, actor=actor, guid=guid)
+
+
+@router.get("/floor-overview", responses={**_AUTH_RESPONSES})
+async def get_room_floor_overview_route(
+    session: SessionDep,
+    actor: _RoomMemberActorDep,
+) -> RoomFloorOverviewResponse:
+    """
+    Return every active room of the active organization for the dashboard
+    floor chart, top floor first. Not paginated. Owners and managers only.
+    """
+    return get_room_floor_overview(session=session, actor=actor)
+
+
+@router.put("/update-status", responses={**_AUTH_RESPONSES, **NOT_FOUND_EXCEPTIONS_DOC["RoomNotFoundException"]})
+async def update_room_status_route(
+    session: SessionDep,
+    payload: RoomStatusUpdateRequest,
+    actor: _RoomMemberActorDep,
+) -> RoomResponse:
+    """
+    Change only the status of a room of the active organization (the
+    dashboard floor chart's quick status change). Owners and managers only.
+    """
+    return update_room_status(session=session, actor=actor, payload=payload)
