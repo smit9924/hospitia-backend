@@ -62,6 +62,7 @@ from booking.schemas.organization_schemas import (
     OrganizationMembershipSummary,
     OrganizationMemberSummary,
     OrganizationResponse,
+    OrganizationScopedActor,
 )
 from booking.schemas.organization_type_schemas import OrganizationTypeResponse
 from booking.types.enums import UserType
@@ -423,6 +424,22 @@ def upsert_organization_as_owner(
         is_active=payload.is_active,
         actor_user_id=actor_user_id,
     )
+
+
+def get_member_active_organization_id(actor: OrganizationScopedActor) -> int:
+    """Internal ID of an owner's or manager's active organization.
+
+    Use only for non-admin actors: `OrganizationScopedActorDep` always
+    resolves the active organization for them.
+
+    Raises
+    ------
+    RuntimeError
+        If called for an actor without an active organization (an admin).
+    """
+    if actor.active_organization is None:
+        raise RuntimeError("Organization member resolved without an active organization.")
+    return actor.active_organization.id
 
 
 def get_active_organization_or_raise(*, session: Session, guid: UUID) -> Organization:

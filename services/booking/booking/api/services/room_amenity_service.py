@@ -39,7 +39,10 @@ from booking.api.repositories.room_amenity_repository import (
 from booking.api.repositories.room_type_repository import (
     has_active_room_types_using_amenity,
 )
-from booking.api.services.organization_service import get_active_organization_or_raise
+from booking.api.services.organization_service import (
+    get_active_organization_or_raise,
+    get_member_active_organization_id,
+)
 from booking.database.models.room_amenity import RoomAmenity
 from booking.exceptions.definitions.not_found_exceptions import (
     RoomAmenityNotFoundException,
@@ -62,14 +65,6 @@ from booking.schemas.room_amenity_schemas import (
 )
 
 
-def _member_organization_id(actor: OrganizationScopedActor) -> int:
-    """Internal ID of an owner's or manager's active organization."""
-    if actor.active_organization is None:
-        # OrganizationScopedActorDep always resolves it for non-admins.
-        raise RuntimeError("Organization member resolved without an active organization.")
-    return actor.active_organization.id
-
-
 def _is_visible_to_actor(room_amenity: RoomAmenity, actor: OrganizationScopedActor) -> bool:
     """Whether the actor may see the amenity (see the module docstring)."""
     if room_amenity.is_default:
@@ -77,7 +72,7 @@ def _is_visible_to_actor(room_amenity: RoomAmenity, actor: OrganizationScopedAct
     if actor.is_admin:
         # Custom amenities of a deleted organization are hidden from admins too.
         return room_amenity.organization is not None and room_amenity.organization.is_active
-    return room_amenity.organization_id == _member_organization_id(actor)
+    return room_amenity.organization_id == get_member_active_organization_id(actor)
 
 
 def _get_visible_room_amenity_or_raise(
@@ -112,17 +107,18 @@ def _ensure_actor_can_modify(actor: OrganizationScopedActor, room_amenity: RoomA
         raise RoomAmenityModificationForbiddenException()
 
 
-def _resolve_organization_id_for_new_amenity(
+def _resolve_target_organization_id(
     *,
     session: Session,
     actor: OrganizationScopedActor,
     organization_guid: UUID | None,
 ) -> int | None:
-    """Decide which scope a new amenity belongs to.
+    """Decide which organization a request acts on; ``None`` means the defaults only.
 
-    Admins create a default amenity (no `organization_guid`) or a custom
-    amenity of the chosen active organization. Owners and managers always
-    create custom amenities of their active organization.
+    Owners and managers always act on their active organization. Admins act
+    on the organization chosen with `organization_guid`, or on the default
+    amenities when they choose none. Used both to place a new amenity and
+    to decide whose custom amenities are selectable for a room type.
 
     Raises
     ------
@@ -131,10 +127,74 @@ def _resolve_organization_id_for_new_amenity(
         inactive.
     """
     if not actor.is_admin:
-        return _member_organization_id(actor)
+        return get_member_active_organization_id(actor)
     if organization_guid is None:
         return None
     return get_active_organization_or_raise(session=session, guid=organization_guid).id
+
+
+def _ensure_name_is_free_among_default_amenities(
+    *,
+    session: Session,
+    name: str,
+    room_amenity_id_being_updated: int | None,
+    conflict_message: str | None = None,
+) -> None:
+    """Make sure no other active default amenity uses the name (case-insensitively).
+
+    Parameters
+    ----------
+    session : Session
+        Active database session.
+    name : str
+        Amenity name to check.
+    room_amenity_id_being_updated : int | None
+        Internal ID of the amenity being updated, so it does not conflict
+        with itself; ``None`` on create.
+    conflict_message : str | None
+        Error message to use instead of the default one.
+
+    Raises
+    ------
+    RoomAmenityAlreadyExistsException
+        If a default amenity already uses the name.
+    """
+    name_owner = find_active_room_amenity_by_name(session=session, name=name, organization_id=None)
+    if name_owner is not None and name_owner.id != room_amenity_id_being_updated:
+        if conflict_message is None:
+            raise RoomAmenityAlreadyExistsException()
+        raise RoomAmenityAlreadyExistsException(message=conflict_message)
+
+
+def _ensure_name_is_free_among_organization_amenities(
+    *,
+    session: Session,
+    name: str,
+    organization_id: int,
+    room_amenity_id_being_updated: int | None,
+) -> None:
+    """Make sure no other active custom amenity of the organization uses the name (case-insensitively).
+
+    Parameters
+    ----------
+    session : Session
+        Active database session.
+    name : str
+        Amenity name to check.
+    organization_id : int
+        Internal ID of the organization whose custom amenities are checked.
+    room_amenity_id_being_updated : int | None
+        Internal ID of the amenity being updated, so it does not conflict
+        with itself; ``None`` on create.
+
+    Raises
+    ------
+    RoomAmenityAlreadyExistsException
+        If a custom amenity of the organization already uses the name.
+    """
+    name_owner = find_active_room_amenity_by_name(session=session, name=name, organization_id=organization_id)
+    if name_owner is not None and name_owner.id != room_amenity_id_being_updated:
+        raise RoomAmenityAlreadyExistsException()
 
 
 def _ensure_room_amenity_name_is_free(
@@ -144,31 +204,40 @@ def _ensure_room_amenity_name_is_free(
     organization_id: int | None,
     room_amenity_id_being_updated: int | None,
 ) -> None:
-    """Make sure the name is not already used in the amenity's scope.
+    """Make sure the name is free where the amenity is shown.
 
-    A default name must be unique among defaults. A custom name must be
-    unique within its organization and must not repeat a default name, so
-    an organization never sees two amenities with the same name.
+    - A default amenity (``organization_id`` is ``None``) is checked against
+      the other defaults.
+    - A custom amenity is checked against its organization's custom
+      amenities, and against the defaults too: the organization sees both
+      side by side, so it must never get two amenities with the same name.
 
     Raises
     ------
     RoomAmenityAlreadyExistsException
         If the name is taken (case-insensitively).
     """
-    scopes_to_check: list[int | None] = [organization_id]
-    if organization_id is not None:
-        scopes_to_check.append(None)
-
-    for scope_organization_id in scopes_to_check:
-        name_owner = find_active_room_amenity_by_name(
+    if organization_id is None:
+        _ensure_name_is_free_among_default_amenities(
             session=session,
             name=name,
-            organization_id=scope_organization_id,
+            room_amenity_id_being_updated=room_amenity_id_being_updated,
         )
-        if name_owner is not None and name_owner.id != room_amenity_id_being_updated:
-            if scope_organization_id is None and organization_id is not None:
-                raise RoomAmenityAlreadyExistsException(message="A default room amenity with this name already exists.")
-            raise RoomAmenityAlreadyExistsException()
+        return
+
+    _ensure_name_is_free_among_organization_amenities(
+        session=session,
+        name=name,
+        organization_id=organization_id,
+        room_amenity_id_being_updated=room_amenity_id_being_updated,
+    )
+    _ensure_name_is_free_among_default_amenities(
+        session=session,
+        name=name,
+        # A custom amenity is never a default, so nothing to exclude here.
+        room_amenity_id_being_updated=None,
+        conflict_message="A default room amenity with this name already exists.",
+    )
 
 
 def create_room_amenity(
@@ -204,7 +273,7 @@ def create_room_amenity(
     RoomAmenityAlreadyExistsException
         If the name is already used in the amenity's scope.
     """
-    organization_id = _resolve_organization_id_for_new_amenity(
+    organization_id = _resolve_target_organization_id(
         session=session,
         actor=actor,
         organization_guid=payload.organization_guid,
@@ -338,32 +407,8 @@ def list_room_amenities(
     return list_room_amenities_for_organization(
         session=session,
         query=query,
-        organization_id=_member_organization_id(actor),
+        organization_id=get_member_active_organization_id(actor),
     )
-
-
-def resolve_selectable_organization_id(
-    *,
-    session: Session,
-    actor: OrganizationScopedActor,
-    organization_guid: UUID | None,
-) -> int | None:
-    """Decide whose custom amenities are selectable next to the defaults.
-
-    Owners and managers always get their active organization. Admins choose
-    an organization with `organization_guid` (defaults only when omitted).
-
-    Raises
-    ------
-    OrganizationNotFoundException
-        If an admin chooses an organization that does not exist or is
-        inactive.
-    """
-    if not actor.is_admin:
-        return _member_organization_id(actor)
-    if organization_guid is None:
-        return None
-    return get_active_organization_or_raise(session=session, guid=organization_guid).id
 
 
 def list_selectable_room_amenity_options(
@@ -380,7 +425,7 @@ def list_selectable_room_amenity_options(
         If an admin chooses an organization that does not exist or is
         inactive.
     """
-    organization_id = resolve_selectable_organization_id(
+    organization_id = _resolve_target_organization_id(
         session=session,
         actor=actor,
         organization_guid=organization_guid,

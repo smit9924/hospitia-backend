@@ -35,7 +35,10 @@ from booking.api.repositories.room_type_repository import (
     update_room_type as update_room_type_repo,
 )
 from booking.api.services.currency_unit_service import get_active_currency_unit_or_raise
-from booking.api.services.organization_service import get_active_organization_or_raise
+from booking.api.services.organization_service import (
+    get_active_organization_or_raise,
+    get_member_active_organization_id,
+)
 from booking.database.models.room_amenity import RoomAmenity
 from booking.database.models.room_type import RoomType
 from booking.exceptions.definitions.not_found_exceptions import (
@@ -59,14 +62,6 @@ from booking.schemas.room_type_schemas import (
     RoomTypeResponse,
     RoomTypeUpdateRequest,
 )
-
-
-def _member_organization_id(actor: OrganizationScopedActor) -> int:
-    """Internal ID of an owner's or manager's active organization."""
-    if actor.active_organization is None:
-        # OrganizationScopedActorDep always resolves it for non-admins.
-        raise RuntimeError("Organization member resolved without an active organization.")
-    return actor.active_organization.id
 
 
 def _build_room_type_response(room_type: RoomType, amenities: Sequence[RoomAmenity]) -> RoomTypeResponse:
@@ -104,7 +99,7 @@ def _get_visible_room_type_or_raise(*, session: Session, actor: OrganizationScop
     room_type = get_active_room_type_by_guid(session=session, guid=guid)
     if room_type is None or not room_type.organization.is_active:
         raise RoomTypeNotFoundException()
-    if not actor.is_admin and room_type.organization_id != _member_organization_id(actor):
+    if not actor.is_admin and room_type.organization_id != get_member_active_organization_id(actor):
         raise RoomTypeNotFoundException()
     return room_type
 
@@ -126,7 +121,7 @@ def _resolve_organization_id_for_new_room_type(
         inactive.
     """
     if not actor.is_admin:
-        return _member_organization_id(actor)
+        return get_member_active_organization_id(actor)
     if organization_guid is None:
         raise RoomTypeOrganizationRequiredException()
     return get_active_organization_or_raise(session=session, guid=organization_guid).id  # type: ignore[return-value]
@@ -343,7 +338,7 @@ def list_room_types(
     room_types, total_count = list_room_types_page(
         session=session,
         query=query,
-        organization_id=None if actor.is_admin else _member_organization_id(actor),
+        organization_id=None if actor.is_admin else get_member_active_organization_id(actor),
     )
     amenities_by_room_type_id = get_active_amenities_by_room_type_id(
         session=session,
