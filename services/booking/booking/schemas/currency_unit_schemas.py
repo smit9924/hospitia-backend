@@ -35,24 +35,28 @@ CurrencyName = Annotated[
 ]
 
 
-class CurrencyUnitUpsertRequest(BaseSchema):
+class CurrencyUnitCreateRequest(BaseSchema):
     """
-    Request payload for creating or updating a currency unit.
-
-    When `guid` is omitted (or null), a new currency unit is created.
-    When `guid` is present, the existing currency unit identified by that
-    guid is updated.
+    Request payload for creating a currency unit.
 
     `currency_code` is normalized to uppercase, so "inr" is stored as "INR".
     `minor_unit` is the number of decimal places defined by ISO 4217
     (0 to 4); null means ISO 4217 defines none ("N.A.").
     """
 
-    guid: UUID | None = None
     currency_code: CurrencyCode
     numeric_code: CurrencyNumericCode
     currency_name: CurrencyName
     minor_unit: int | None = Field(default=None, ge=0, le=4)
+
+
+class CurrencyUnitUpdateRequest(CurrencyUnitCreateRequest):
+    """
+    Request payload for updating the currency unit identified by `guid`.
+    Takes the same fields as `CurrencyUnitCreateRequest`.
+    """
+
+    guid: UUID
 
 
 class CurrencyUnitResponse(BaseSchema):

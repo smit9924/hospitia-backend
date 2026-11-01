@@ -5,20 +5,22 @@ from fastapi import APIRouter, Depends, Query
 
 from booking.api.dependencies import OrganizationScopedActorDep, SessionDep
 from booking.api.services.room_type_service import (
+    create_room_type,
     delete_room_type,
     get_room_type,
     list_room_types,
-    upsert_room_type,
+    update_room_type,
 )
 from booking.doc.not_found_exceptions_doc import NOT_FOUND_EXCEPTIONS_DOC
 from booking.doc.security_exceptions_doc import SECURITY_EXCEPTION_DOC
 from booking.doc.validation_exception_doc import VALIDATION_EXCEPTION_DOC
 from booking.schemas.organization_schemas import OrganizationScopedActor
 from booking.schemas.room_type_schemas import (
+    RoomTypeCreateRequest,
     RoomTypeListQueryParams,
     RoomTypeListResponse,
     RoomTypeResponse,
-    RoomTypeUpsertRequest,
+    RoomTypeUpdateRequest,
 )
 from booking.types.enums import UserType
 
@@ -38,9 +40,8 @@ _AUTH_RESPONSES = {
     **SECURITY_EXCEPTION_DOC["ActiveOrganizationInvalidException"],
 }
 
-_UPSERT_RESPONSES = {
+_CREATE_RESPONSES = {
     **_AUTH_RESPONSES,
-    **NOT_FOUND_EXCEPTIONS_DOC["RoomTypeNotFoundException"],
     **NOT_FOUND_EXCEPTIONS_DOC["OrganizationNotFoundException"],
     **NOT_FOUND_EXCEPTIONS_DOC["CurrencyUnitNotFoundException"],
     **VALIDATION_EXCEPTION_DOC["RoomTypeAlreadyExistsException"],
@@ -49,22 +50,39 @@ _UPSERT_RESPONSES = {
     **VALIDATION_EXCEPTION_DOC["RoomTypeAmenityNotAvailableException"],
 }
 
+_UPDATE_RESPONSES = {
+    **_AUTH_RESPONSES,
+    **NOT_FOUND_EXCEPTIONS_DOC["RoomTypeNotFoundException"],
+    **NOT_FOUND_EXCEPTIONS_DOC["CurrencyUnitNotFoundException"],
+    **VALIDATION_EXCEPTION_DOC["RoomTypeAlreadyExistsException"],
+    **VALIDATION_EXCEPTION_DOC["RoomTypeAmenityNotAvailableException"],
+}
 
-@router.post("/create", responses=_UPSERT_RESPONSES)
-@router.put("/create", responses=_UPSERT_RESPONSES)
-async def upsert_room_type_route(
+
+@router.post("/create", responses=_CREATE_RESPONSES)
+async def create_room_type_route(
     session: SessionDep,
-    payload: RoomTypeUpsertRequest,
+    payload: RoomTypeCreateRequest,
     actor: _RoomTypeActorDep,
 ) -> RoomTypeResponse:
     """
-    Create a room type, or update the one identified by `guid`.
-
-    Admins must pass `organizationGuid` when creating; owners and managers
-    create room types in their active organization. `amenityGuids`
-    replaces the room type's amenities.
+    Create a room type. Admins must pass `organizationGuid`; owners and
+    managers create room types in their active organization.
     """
-    return upsert_room_type(session=session, actor=actor, payload=payload)
+    return create_room_type(session=session, actor=actor, payload=payload)
+
+
+@router.put("/update", responses=_UPDATE_RESPONSES)
+async def update_room_type_route(
+    session: SessionDep,
+    payload: RoomTypeUpdateRequest,
+    actor: _RoomTypeActorDep,
+) -> RoomTypeResponse:
+    """
+    Update the room type identified by `guid`; `amenityGuids` replaces its
+    amenities. The organization never changes.
+    """
+    return update_room_type(session=session, actor=actor, payload=payload)
 
 
 @router.delete("/delete", status_code=204, responses={**_AUTH_RESPONSES, **NOT_FOUND_EXCEPTIONS_DOC["RoomTypeNotFoundException"]})

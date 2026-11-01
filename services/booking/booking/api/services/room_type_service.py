@@ -22,13 +22,17 @@ from booking.api.repositories.room_amenity_repository import (
     get_active_room_amenities_by_guids,
 )
 from booking.api.repositories.room_type_repository import (
-    create_room_type,
+    create_room_type as create_room_type_repo,
+)
+from booking.api.repositories.room_type_repository import (
     find_active_room_type_by_name,
     get_active_amenities_by_room_type_id,
     get_active_room_type_by_guid,
     list_room_types_page,
     soft_delete_room_type,
-    update_room_type,
+)
+from booking.api.repositories.room_type_repository import (
+    update_room_type as update_room_type_repo,
 )
 from booking.api.services.currency_unit_service import get_active_currency_unit_or_raise
 from booking.api.services.organization_service import get_active_organization_or_raise
@@ -49,10 +53,11 @@ from booking.schemas.organization_schemas import (
 )
 from booking.schemas.room_amenity_schemas import RoomAmenityOption
 from booking.schemas.room_type_schemas import (
+    RoomTypeCreateRequest,
     RoomTypeListQueryParams,
     RoomTypeListResponse,
     RoomTypeResponse,
-    RoomTypeUpsertRequest,
+    RoomTypeUpdateRequest,
 )
 
 
@@ -169,13 +174,16 @@ def _resolve_amenity_ids_available_to_organization(
     return [amenity.id for amenity in available_amenities]  # type: ignore[misc]
 
 
-def upsert_room_type(
+def create_room_type(
     *,
     session: Session,
     actor: OrganizationScopedActor,
-    payload: RoomTypeUpsertRequest,
+    payload: RoomTypeCreateRequest,
 ) -> RoomTypeResponse:
-    """Create a room type, or update the one identified by `payload.guid`.
+    """Create a room type with its amenities.
+
+    Admins create it in `payload.organization_guid`; owners and managers in
+    their active organization.
 
     Parameters
     ----------
@@ -183,20 +191,18 @@ def upsert_room_type(
         Active database session.
     actor : OrganizationScopedActor
         The caller and, for owners and managers, their active organization.
-    payload : RoomTypeUpsertRequest
+    payload : RoomTypeCreateRequest
         Validated room type fields.
 
     Returns
     -------
     RoomTypeResponse
-        The saved room type with its currency and amenities.
+        The created room type with its currency and amenities.
 
     Raises
     ------
-    RoomTypeNotFoundException
-        On update, if the room type is missing or not visible to the actor.
     RoomTypeOrganizationRequiredException
-        If an admin creates a room type without an organization.
+        If an admin does not choose an organization.
     OrganizationNotFoundException
         If an admin's chosen organization is missing or inactive.
     CurrencyUnitNotFoundException
@@ -206,17 +212,11 @@ def upsert_room_type(
     RoomTypeAlreadyExistsException
         If the organization already has an active room type with this name.
     """
-    existing_room_type = None
-    if payload.guid is None:
-        organization_id = _resolve_organization_id_for_new_room_type(
-            session=session,
-            actor=actor,
-            organization_guid=payload.organization_guid,
-        )
-    else:
-        existing_room_type = _get_visible_room_type_or_raise(session=session, actor=actor, guid=payload.guid)
-        organization_id = existing_room_type.organization_id
-
+    organization_id = _resolve_organization_id_for_new_room_type(
+        session=session,
+        actor=actor,
+        organization_guid=payload.organization_guid,
+    )
     currency_unit = get_active_currency_unit_or_raise(session=session, guid=payload.currency_unit_guid)
     room_amenity_ids = _resolve_amenity_ids_available_to_organization(
         session=session,
@@ -227,23 +227,81 @@ def upsert_room_type(
         session=session,
         organization_id=organization_id,
         name=payload.name,
-        room_type_id_being_updated=existing_room_type.id if existing_room_type else None,
+        room_type_id_being_updated=None,
     )
+    room_type = create_room_type_repo(
+        session=session,
+        organization_id=organization_id,
+        name=payload.name,
+        description=payload.description,
+        capacity=payload.capacity,
+        cost_per_night=payload.cost_per_night,
+        currency_unit_id=currency_unit.id,  # type: ignore[arg-type]
+        room_amenity_ids=room_amenity_ids,
+        actor_id=actor.user_id,
+    )
+    return _to_room_type_response(session=session, room_type=room_type)
 
-    room_type_fields = {
-        "name": payload.name,
-        "description": payload.description,
-        "capacity": payload.capacity,
-        "cost_per_night": payload.cost_per_night,
-        "currency_unit_id": currency_unit.id,
-        "room_amenity_ids": room_amenity_ids,
-        "actor_id": actor.user_id,
-    }
-    if existing_room_type is None:
-        room_type = create_room_type(session=session, organization_id=organization_id, **room_type_fields)  # type: ignore[arg-type]
-    else:
-        room_type = update_room_type(session=session, room_type=existing_room_type, **room_type_fields)  # type: ignore[arg-type]
 
+def update_room_type(
+    *,
+    session: Session,
+    actor: OrganizationScopedActor,
+    payload: RoomTypeUpdateRequest,
+) -> RoomTypeResponse:
+    """Update the room type identified by `payload.guid` and replace its amenities.
+
+    The room type stays in its organization.
+
+    Parameters
+    ----------
+    session : Session
+        Active database session.
+    actor : OrganizationScopedActor
+        The caller and, for owners and managers, their active organization.
+    payload : RoomTypeUpdateRequest
+        GUID of the room type and its new field values.
+
+    Returns
+    -------
+    RoomTypeResponse
+        The updated room type with its currency and amenities.
+
+    Raises
+    ------
+    RoomTypeNotFoundException
+        If the room type is missing or not visible to the actor.
+    CurrencyUnitNotFoundException
+        If the currency unit is missing or deleted.
+    RoomTypeAmenityNotAvailableException
+        If an amenity is not available to the organization.
+    RoomTypeAlreadyExistsException
+        If another active room type of the organization uses this name.
+    """
+    existing_room_type = _get_visible_room_type_or_raise(session=session, actor=actor, guid=payload.guid)
+    currency_unit = get_active_currency_unit_or_raise(session=session, guid=payload.currency_unit_guid)
+    room_amenity_ids = _resolve_amenity_ids_available_to_organization(
+        session=session,
+        organization_id=existing_room_type.organization_id,
+        amenity_guids=payload.amenity_guids,
+    )
+    _ensure_room_type_name_is_free(
+        session=session,
+        organization_id=existing_room_type.organization_id,
+        name=payload.name,
+        room_type_id_being_updated=existing_room_type.id,
+    )
+    room_type = update_room_type_repo(
+        session=session,
+        room_type=existing_room_type,
+        name=payload.name,
+        description=payload.description,
+        capacity=payload.capacity,
+        cost_per_night=payload.cost_per_night,
+        currency_unit_id=currency_unit.id,  # type: ignore[arg-type]
+        room_amenity_ids=room_amenity_ids,
+        actor_id=actor.user_id,
+    )
     return _to_room_type_response(session=session, room_type=room_type)
 
 

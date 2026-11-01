@@ -23,14 +23,18 @@ from uuid import UUID
 from sqlmodel import Session
 
 from booking.api.repositories.room_amenity_repository import (
-    create_room_amenity,
+    create_room_amenity as create_room_amenity_repo,
+)
+from booking.api.repositories.room_amenity_repository import (
     find_active_room_amenity_by_name,
     get_active_room_amenity_by_guid,
     list_room_amenities_for_admin,
     list_room_amenities_for_organization,
     list_selectable_room_amenities,
     soft_delete_room_amenity,
-    update_room_amenity,
+)
+from booking.api.repositories.room_amenity_repository import (
+    update_room_amenity as update_room_amenity_repo,
 )
 from booking.api.repositories.room_type_repository import (
     has_active_room_types_using_amenity,
@@ -49,11 +53,12 @@ from booking.exceptions.definitions.validation_exceptions import (
 )
 from booking.schemas.organization_schemas import OrganizationScopedActor
 from booking.schemas.room_amenity_schemas import (
+    RoomAmenityCreateRequest,
     RoomAmenityListQueryParams,
     RoomAmenityListResponse,
     RoomAmenityOption,
     RoomAmenityResponse,
-    RoomAmenityUpsertRequest,
+    RoomAmenityUpdateRequest,
 )
 
 
@@ -166,13 +171,17 @@ def _ensure_room_amenity_name_is_free(
             raise RoomAmenityAlreadyExistsException()
 
 
-def upsert_room_amenity(
+def create_room_amenity(
     *,
     session: Session,
     actor: OrganizationScopedActor,
-    payload: RoomAmenityUpsertRequest,
+    payload: RoomAmenityCreateRequest,
 ) -> RoomAmenityResponse:
-    """Create a room amenity, or update the one identified by `payload.guid`.
+    """Create a room amenity.
+
+    Admins create a default amenity, or a custom amenity of
+    `payload.organization_guid`; owners and managers create a custom
+    amenity of their active organization.
 
     Parameters
     ----------
@@ -180,61 +189,88 @@ def upsert_room_amenity(
         Active database session.
     actor : OrganizationScopedActor
         The caller and, for owners and managers, their active organization.
-    payload : RoomAmenityUpsertRequest
+    payload : RoomAmenityCreateRequest
         Validated amenity fields.
 
     Returns
     -------
     RoomAmenityResponse
-        The saved amenity.
+        The created amenity.
 
     Raises
     ------
-    RoomAmenityNotFoundException
-        On update, if the amenity is missing or not visible to the actor.
-    RoomAmenityModificationForbiddenException
-        If an owner or manager tries to update a default amenity.
     OrganizationNotFoundException
         If an admin creates an amenity for a missing or inactive organization.
     RoomAmenityAlreadyExistsException
         If the name is already used in the amenity's scope.
     """
-    if payload.guid is None:
-        organization_id = _resolve_organization_id_for_new_amenity(
-            session=session,
-            actor=actor,
-            organization_guid=payload.organization_guid,
-        )
-        _ensure_room_amenity_name_is_free(
-            session=session,
-            name=payload.name,
-            organization_id=organization_id,
-            room_amenity_id_being_updated=None,
-        )
-        room_amenity = create_room_amenity(
-            session=session,
-            name=payload.name,
-            description=payload.description,
-            organization_id=organization_id,
-            actor_id=actor.user_id,
-        )
-    else:
-        existing_room_amenity = _get_visible_room_amenity_or_raise(session=session, actor=actor, guid=payload.guid)
-        _ensure_actor_can_modify(actor, existing_room_amenity)
-        _ensure_room_amenity_name_is_free(
-            session=session,
-            name=payload.name,
-            organization_id=existing_room_amenity.organization_id,
-            room_amenity_id_being_updated=existing_room_amenity.id,
-        )
-        room_amenity = update_room_amenity(
-            session=session,
-            room_amenity=existing_room_amenity,
-            name=payload.name,
-            description=payload.description,
-            actor_id=actor.user_id,
-        )
+    organization_id = _resolve_organization_id_for_new_amenity(
+        session=session,
+        actor=actor,
+        organization_guid=payload.organization_guid,
+    )
+    _ensure_room_amenity_name_is_free(
+        session=session,
+        name=payload.name,
+        organization_id=organization_id,
+        room_amenity_id_being_updated=None,
+    )
+    room_amenity = create_room_amenity_repo(
+        session=session,
+        name=payload.name,
+        description=payload.description,
+        organization_id=organization_id,
+        actor_id=actor.user_id,
+    )
+    return RoomAmenityResponse.model_validate(room_amenity, from_attributes=True)
 
+
+def update_room_amenity(
+    *,
+    session: Session,
+    actor: OrganizationScopedActor,
+    payload: RoomAmenityUpdateRequest,
+) -> RoomAmenityResponse:
+    """Update the name and description of the room amenity identified by `payload.guid`.
+
+    Parameters
+    ----------
+    session : Session
+        Active database session.
+    actor : OrganizationScopedActor
+        The caller and, for owners and managers, their active organization.
+    payload : RoomAmenityUpdateRequest
+        GUID of the amenity and its new field values.
+
+    Returns
+    -------
+    RoomAmenityResponse
+        The updated amenity.
+
+    Raises
+    ------
+    RoomAmenityNotFoundException
+        If the amenity is missing or not visible to the actor.
+    RoomAmenityModificationForbiddenException
+        If an owner or manager tries to update a default amenity.
+    RoomAmenityAlreadyExistsException
+        If the name is already used in the amenity's scope.
+    """
+    existing_room_amenity = _get_visible_room_amenity_or_raise(session=session, actor=actor, guid=payload.guid)
+    _ensure_actor_can_modify(actor, existing_room_amenity)
+    _ensure_room_amenity_name_is_free(
+        session=session,
+        name=payload.name,
+        organization_id=existing_room_amenity.organization_id,
+        room_amenity_id_being_updated=existing_room_amenity.id,
+    )
+    room_amenity = update_room_amenity_repo(
+        session=session,
+        room_amenity=existing_room_amenity,
+        name=payload.name,
+        description=payload.description,
+        actor_id=actor.user_id,
+    )
     return RoomAmenityResponse.model_validate(room_amenity, from_attributes=True)
 
 

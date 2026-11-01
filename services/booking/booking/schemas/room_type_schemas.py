@@ -38,25 +38,15 @@ RoomTypeDescription = Annotated[
 ]
 
 
-class RoomTypeUpsertRequest(BaseSchema):
+class RoomTypeAttributes(BaseSchema):
     """
-    Request payload for creating or updating a room type.
-
-    When `guid` is omitted (or null), a new room type is created; otherwise
-    the room type identified by `guid` is updated.
-
-    `organization_guid` is read only when an admin creates a room type, and
-    is then required. Owners and managers always create room types in their
-    active organization, and a room type never moves to another
-    organization.
+    Room type fields shared by the create and update requests.
 
     `cost_per_night` accepts at most two decimal places (e.g. 1500 or
-    1499.50) and may be 0 for free stays. `amenity_guids` replaces the room
-    type's amenities; duplicates are ignored.
+    1499.50) and may be 0 for free stays. `amenity_guids` is the full list
+    of the room type's amenities; duplicates are ignored.
     """
 
-    guid: UUID | None = None
-    organization_guid: UUID | None = None
     name: RoomTypeName
     description: RoomTypeDescription = None
     capacity: int = Field(strict=True, ge=ROOM_TYPE_MIN_CAPACITY, le=ROOM_TYPE_MAX_CAPACITY)
@@ -69,6 +59,27 @@ class RoomTypeUpsertRequest(BaseSchema):
     def remove_duplicate_amenity_guids(cls, amenity_guids: list[UUID]) -> list[UUID]:
         """Keep the first occurrence of each amenity GUID, preserving order."""
         return list(dict.fromkeys(amenity_guids))
+
+
+class RoomTypeCreateRequest(RoomTypeAttributes):
+    """
+    Request payload for creating a room type.
+
+    `organization_guid` is read only for admins, who must choose the
+    organization; owners and managers always create room types in their
+    active organization.
+    """
+
+    organization_guid: UUID | None = None
+
+
+class RoomTypeUpdateRequest(RoomTypeAttributes):
+    """
+    Request payload for updating the room type identified by `guid`.
+    A room type never moves to another organization.
+    """
+
+    guid: UUID
 
 
 class RoomTypeResponse(BaseSchema):

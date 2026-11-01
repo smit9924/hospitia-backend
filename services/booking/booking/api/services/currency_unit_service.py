@@ -3,16 +3,20 @@ from uuid import UUID
 from sqlmodel import Session
 
 from booking.api.repositories.currency_unit_repository import (
-    create_currency_unit,
+    create_currency_unit as create_currency_unit_repo,
+)
+from booking.api.repositories.currency_unit_repository import (
     get_active_currency_unit_by_currency_code,
     get_active_currency_unit_by_guid,
     get_active_currency_unit_by_numeric_code,
     list_active_currency_units_sorted_by_code,
     soft_delete_currency_unit,
-    update_currency_unit,
 )
 from booking.api.repositories.currency_unit_repository import (
     list_currency_units as list_currency_units_repo,
+)
+from booking.api.repositories.currency_unit_repository import (
+    update_currency_unit as update_currency_unit_repo,
 )
 from booking.api.repositories.room_type_repository import (
     has_active_room_types_using_currency_unit,
@@ -26,11 +30,12 @@ from booking.exceptions.definitions.validation_exceptions import (
     CurrencyUnitInUseException,
 )
 from booking.schemas.currency_unit_schemas import (
+    CurrencyUnitCreateRequest,
     CurrencyUnitListQueryParams,
     CurrencyUnitListResponse,
     CurrencyUnitOption,
     CurrencyUnitResponse,
-    CurrencyUnitUpsertRequest,
+    CurrencyUnitUpdateRequest,
 )
 
 
@@ -98,66 +103,95 @@ def _ensure_currency_codes_are_free(
         raise CurrencyUnitAlreadyExistsException(message="A currency unit with this numeric code already exists.")
 
 
-def upsert_currency_unit(
+def create_currency_unit(
     *,
     session: Session,
-    payload: CurrencyUnitUpsertRequest,
+    payload: CurrencyUnitCreateRequest,
     actor_user_id: int,
 ) -> CurrencyUnitResponse:
-    """Create a currency unit, or update the one identified by `payload.guid`.
+    """Create a currency unit.
 
     Parameters
     ----------
     session : Session
         Active database session.
-    payload : CurrencyUnitUpsertRequest
+    payload : CurrencyUnitCreateRequest
         Validated currency unit fields.
     actor_user_id : int
-        Internal ID of the admin performing the operation.
+        Internal ID of the admin creating the currency unit.
 
     Returns
     -------
     CurrencyUnitResponse
-        The saved currency unit.
+        The created currency unit.
 
     Raises
     ------
-    CurrencyUnitNotFoundException
-        On update, if `payload.guid` does not match an active currency unit.
     CurrencyUnitAlreadyExistsException
-        If another active currency unit already uses either ISO 4217 code.
+        If an active currency unit already uses either ISO 4217 code.
     """
-    existing_currency_unit = None
-    if payload.guid is not None:
-        existing_currency_unit = get_active_currency_unit_or_raise(session=session, guid=payload.guid)
-
     _ensure_currency_codes_are_free(
         session=session,
         currency_code=payload.currency_code,
         numeric_code=payload.numeric_code,
-        currency_unit_id_being_updated=existing_currency_unit.id if existing_currency_unit else None,
+        currency_unit_id_being_updated=None,
     )
+    currency_unit = create_currency_unit_repo(
+        session=session,
+        currency_code=payload.currency_code,
+        numeric_code=payload.numeric_code,
+        currency_name=payload.currency_name,
+        minor_unit=payload.minor_unit,
+        actor_id=actor_user_id,
+    )
+    return CurrencyUnitResponse.model_validate(currency_unit, from_attributes=True)
 
-    if existing_currency_unit is None:
-        currency_unit = create_currency_unit(
-            session=session,
-            currency_code=payload.currency_code,
-            numeric_code=payload.numeric_code,
-            currency_name=payload.currency_name,
-            minor_unit=payload.minor_unit,
-            actor_id=actor_user_id,
-        )
-    else:
-        currency_unit = update_currency_unit(
-            session=session,
-            currency_unit=existing_currency_unit,
-            currency_code=payload.currency_code,
-            numeric_code=payload.numeric_code,
-            currency_name=payload.currency_name,
-            minor_unit=payload.minor_unit,
-            actor_id=actor_user_id,
-        )
 
+def update_currency_unit(
+    *,
+    session: Session,
+    payload: CurrencyUnitUpdateRequest,
+    actor_user_id: int,
+) -> CurrencyUnitResponse:
+    """Update the currency unit identified by `payload.guid`.
+
+    Parameters
+    ----------
+    session : Session
+        Active database session.
+    payload : CurrencyUnitUpdateRequest
+        GUID of the currency unit and its new field values.
+    actor_user_id : int
+        Internal ID of the admin updating the currency unit.
+
+    Returns
+    -------
+    CurrencyUnitResponse
+        The updated currency unit.
+
+    Raises
+    ------
+    CurrencyUnitNotFoundException
+        If `payload.guid` does not match an active currency unit.
+    CurrencyUnitAlreadyExistsException
+        If another active currency unit already uses either ISO 4217 code.
+    """
+    existing_currency_unit = get_active_currency_unit_or_raise(session=session, guid=payload.guid)
+    _ensure_currency_codes_are_free(
+        session=session,
+        currency_code=payload.currency_code,
+        numeric_code=payload.numeric_code,
+        currency_unit_id_being_updated=existing_currency_unit.id,
+    )
+    currency_unit = update_currency_unit_repo(
+        session=session,
+        currency_unit=existing_currency_unit,
+        currency_code=payload.currency_code,
+        numeric_code=payload.numeric_code,
+        currency_name=payload.currency_name,
+        minor_unit=payload.minor_unit,
+        actor_id=actor_user_id,
+    )
     return CurrencyUnitResponse.model_validate(currency_unit, from_attributes=True)
 
 

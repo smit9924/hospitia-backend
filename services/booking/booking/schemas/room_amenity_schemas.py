@@ -26,24 +26,30 @@ RoomAmenityDescription = Annotated[
 ]
 
 
-class RoomAmenityUpsertRequest(BaseSchema):
+class RoomAmenityCreateRequest(BaseSchema):
     """
-    Request payload for creating or updating a room amenity.
+    Request payload for creating a room amenity.
 
-    When `guid` is omitted (or null), a new amenity is created; otherwise
-    the amenity identified by `guid` is updated.
-
-    `organization_guid` is read only when an admin creates an amenity:
-    null creates a default amenity offered to every organization, a value
-    creates a custom amenity of that organization. Owners and managers
-    always create custom amenities of their active organization, and an
-    amenity's scope never changes on update.
+    `organization_guid` is read only for admins: null creates a default
+    amenity offered to every organization, a value creates a custom
+    amenity of that organization. Owners and managers always create custom
+    amenities of their active organization.
     """
 
-    guid: UUID | None = None
     name: RoomAmenityName
     description: RoomAmenityDescription = None
     organization_guid: UUID | None = None
+
+
+class RoomAmenityUpdateRequest(BaseSchema):
+    """
+    Request payload for updating the room amenity identified by `guid`.
+    An amenity's scope (default or owning organization) never changes.
+    """
+
+    guid: UUID
+    name: RoomAmenityName
+    description: RoomAmenityDescription = None
 
 
 class RoomAmenityResponse(BaseSchema):

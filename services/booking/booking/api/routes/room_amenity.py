@@ -5,23 +5,25 @@ from fastapi import APIRouter, Depends, Query
 
 from booking.api.dependencies import OrganizationScopedActorDep, SessionDep
 from booking.api.services.room_amenity_service import (
+    create_room_amenity,
     delete_room_amenity,
     get_room_amenity,
     list_room_amenities,
     list_selectable_room_amenity_options,
-    upsert_room_amenity,
+    update_room_amenity,
 )
 from booking.doc.not_found_exceptions_doc import NOT_FOUND_EXCEPTIONS_DOC
 from booking.doc.security_exceptions_doc import SECURITY_EXCEPTION_DOC
 from booking.doc.validation_exception_doc import VALIDATION_EXCEPTION_DOC
 from booking.schemas.organization_schemas import OrganizationScopedActor
 from booking.schemas.room_amenity_schemas import (
+    RoomAmenityCreateRequest,
     RoomAmenityListQueryParams,
     RoomAmenityListResponse,
     RoomAmenityOption,
     RoomAmenityResponse,
     RoomAmenitySelectableQueryParams,
-    RoomAmenityUpsertRequest,
+    RoomAmenityUpdateRequest,
 )
 from booking.types.enums import UserType
 
@@ -42,21 +44,31 @@ _AUTH_RESPONSES = {
 }
 
 
-@router.post("/create", responses={**_AUTH_RESPONSES, **NOT_FOUND_EXCEPTIONS_DOC["RoomAmenityNotFoundException"], **NOT_FOUND_EXCEPTIONS_DOC["OrganizationNotFoundException"], **SECURITY_EXCEPTION_DOC["RoomAmenityModificationForbiddenException"], **VALIDATION_EXCEPTION_DOC["RoomAmenityAlreadyExistsException"]})
-@router.put("/create", responses={**_AUTH_RESPONSES, **NOT_FOUND_EXCEPTIONS_DOC["RoomAmenityNotFoundException"], **NOT_FOUND_EXCEPTIONS_DOC["OrganizationNotFoundException"], **SECURITY_EXCEPTION_DOC["RoomAmenityModificationForbiddenException"], **VALIDATION_EXCEPTION_DOC["RoomAmenityAlreadyExistsException"]})
-async def upsert_room_amenity_route(
+@router.post("/create", responses={**_AUTH_RESPONSES, **NOT_FOUND_EXCEPTIONS_DOC["OrganizationNotFoundException"], **VALIDATION_EXCEPTION_DOC["RoomAmenityAlreadyExistsException"]})
+async def create_room_amenity_route(
     session: SessionDep,
-    payload: RoomAmenityUpsertRequest,
+    payload: RoomAmenityCreateRequest,
     actor: _RoomAmenityActorDep,
 ) -> RoomAmenityResponse:
     """
-    Create a room amenity, or update the one identified by `guid`.
-
-    Admins create a default amenity, or a custom one of `organizationGuid`.
-    Owners and managers create custom amenities of their active
-    organization and cannot change default amenities.
+    Create a room amenity. Admins create a default amenity, or a custom one
+    of `organizationGuid`; owners and managers create custom amenities of
+    their active organization.
     """
-    return upsert_room_amenity(session=session, actor=actor, payload=payload)
+    return create_room_amenity(session=session, actor=actor, payload=payload)
+
+
+@router.put("/update", responses={**_AUTH_RESPONSES, **NOT_FOUND_EXCEPTIONS_DOC["RoomAmenityNotFoundException"], **SECURITY_EXCEPTION_DOC["RoomAmenityModificationForbiddenException"], **VALIDATION_EXCEPTION_DOC["RoomAmenityAlreadyExistsException"]})
+async def update_room_amenity_route(
+    session: SessionDep,
+    payload: RoomAmenityUpdateRequest,
+    actor: _RoomAmenityActorDep,
+) -> RoomAmenityResponse:
+    """
+    Update the room amenity identified by `guid`. Owners and managers cannot
+    change default amenities.
+    """
+    return update_room_amenity(session=session, actor=actor, payload=payload)
 
 
 @router.delete("/delete", status_code=204, responses={**_AUTH_RESPONSES, **NOT_FOUND_EXCEPTIONS_DOC["RoomAmenityNotFoundException"], **SECURITY_EXCEPTION_DOC["RoomAmenityModificationForbiddenException"], **VALIDATION_EXCEPTION_DOC["RoomAmenityInUseException"]})

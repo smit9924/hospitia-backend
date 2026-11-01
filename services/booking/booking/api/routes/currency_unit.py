@@ -5,11 +5,12 @@ from fastapi import APIRouter, Depends, Query
 
 from booking.api.dependencies import RoleValidationDep, SessionDep
 from booking.api.services.currency_unit_service import (
+    create_currency_unit,
     delete_currency_unit,
     get_currency_unit,
     list_currency_unit_options,
     list_currency_units,
-    upsert_currency_unit,
+    update_currency_unit,
 )
 from booking.api.services.organization_service import get_user_id_from_user_guid
 from booking.doc.not_found_exceptions_doc import NOT_FOUND_EXCEPTIONS_DOC
@@ -17,11 +18,12 @@ from booking.doc.security_exceptions_doc import SECURITY_EXCEPTION_DOC
 from booking.doc.validation_exception_doc import VALIDATION_EXCEPTION_DOC
 from booking.schemas.auth_schemas import ParsedJWTPayload
 from booking.schemas.currency_unit_schemas import (
+    CurrencyUnitCreateRequest,
     CurrencyUnitListQueryParams,
     CurrencyUnitListResponse,
     CurrencyUnitOption,
     CurrencyUnitResponse,
-    CurrencyUnitUpsertRequest,
+    CurrencyUnitUpdateRequest,
 )
 from booking.types.enums import UserType
 
@@ -36,19 +38,30 @@ _AUTH_RESPONSES = {
 }
 
 
-@router.post("/create", responses={**_AUTH_RESPONSES, **NOT_FOUND_EXCEPTIONS_DOC["UserNotFoundException"], **NOT_FOUND_EXCEPTIONS_DOC["CurrencyUnitNotFoundException"], **VALIDATION_EXCEPTION_DOC["CurrencyUnitAlreadyExistsException"]})
-@router.put("/create", responses={**_AUTH_RESPONSES, **NOT_FOUND_EXCEPTIONS_DOC["UserNotFoundException"], **NOT_FOUND_EXCEPTIONS_DOC["CurrencyUnitNotFoundException"], **VALIDATION_EXCEPTION_DOC["CurrencyUnitAlreadyExistsException"]})
-async def upsert_currency_unit_route(
+@router.post("/create", responses={**_AUTH_RESPONSES, **NOT_FOUND_EXCEPTIONS_DOC["UserNotFoundException"], **VALIDATION_EXCEPTION_DOC["CurrencyUnitAlreadyExistsException"]})
+async def create_currency_unit_route(
     session: SessionDep,
-    payload: CurrencyUnitUpsertRequest,
+    payload: CurrencyUnitCreateRequest,
     token: Annotated[ParsedJWTPayload, Depends(RoleValidationDep(_ADMIN_ONLY))],
 ) -> CurrencyUnitResponse:
     """
-    Create a new currency unit, or update an existing one when `guid` is
-    supplied. Admin-only.
+    Create a new currency unit. Admin-only.
     """
     actor_user_id = get_user_id_from_user_guid(session=session, guid=token.parsed_subject.user_guid)
-    return upsert_currency_unit(session=session, payload=payload, actor_user_id=actor_user_id)
+    return create_currency_unit(session=session, payload=payload, actor_user_id=actor_user_id)
+
+
+@router.put("/update", responses={**_AUTH_RESPONSES, **NOT_FOUND_EXCEPTIONS_DOC["UserNotFoundException"], **NOT_FOUND_EXCEPTIONS_DOC["CurrencyUnitNotFoundException"], **VALIDATION_EXCEPTION_DOC["CurrencyUnitAlreadyExistsException"]})
+async def update_currency_unit_route(
+    session: SessionDep,
+    payload: CurrencyUnitUpdateRequest,
+    token: Annotated[ParsedJWTPayload, Depends(RoleValidationDep(_ADMIN_ONLY))],
+) -> CurrencyUnitResponse:
+    """
+    Update the currency unit identified by `guid`. Admin-only.
+    """
+    actor_user_id = get_user_id_from_user_guid(session=session, guid=token.parsed_subject.user_guid)
+    return update_currency_unit(session=session, payload=payload, actor_user_id=actor_user_id)
 
 
 @router.delete("/delete", status_code=204, responses={**_AUTH_RESPONSES, **NOT_FOUND_EXCEPTIONS_DOC["UserNotFoundException"], **NOT_FOUND_EXCEPTIONS_DOC["CurrencyUnitNotFoundException"], **VALIDATION_EXCEPTION_DOC["CurrencyUnitInUseException"]})
