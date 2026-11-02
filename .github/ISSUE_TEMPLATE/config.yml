@@ -1,0 +1,11 @@
+blank_issues_enabled: false
+contact_links:
+  - name: Documentation
+    url: https://github.com/smit9924/hospitia-master/blob/main/docs/index.md
+    about: Setup, architecture, guides and reference.
+  - name: Questions and support
+    url: https://github.com/smit9924/hospitia-master/blob/main/docs/community/support.md
+    about: Where to ask questions and which repository to report a problem in.
+  - name: Security vulnerability
+    url: https://github.com/smit9924/hospitia-master/blob/main/SECURITY.md
+    about: Report vulnerabilities privately, never in a public issue.

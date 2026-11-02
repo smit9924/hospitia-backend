@@ -1,0 +1,22 @@
+name: Documentation issue
+description: Something in the documentation is missing, wrong or unclear.
+title: "[Docs]: "
+labels: ["documentation"]
+body:
+  - type: input
+    id: page
+    attributes:
+      label: Page
+      description: Path or link of the page, for example docs/getting-started/local-setup.md.
+    validations:
+      required: true
+  - type: textarea
+    id: problem
+    attributes:
+      label: What's wrong or missing?
+    validations:
+      required: true
+  - type: textarea
+    id: suggestion
+    attributes:
+      label: Suggested fix
