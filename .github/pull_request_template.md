@@ -21,5 +21,5 @@
 - [ ] Database changes have a reviewed Alembic migration with a working downgrade.
 - [ ] UI changes pass AXE checks, work in light and dark theme, and are responsive.
 - [ ] No secrets, `.env` files or credentials are included.
-- [ ] Docs in `hospitia-master/docs/` are updated (or `/doc-sync` was run, if available), and the API reference is regenerated for API changes (`bash scripts/export_openapi.sh`).
+- [ ] Docs in `hospitia-master/docs/` are updated (or the `/doc-sync` skill was run), and the API reference is regenerated for API changes (`bash scripts/export_openapi.sh`).
 - [ ] `CHANGELOG.md` in `hospitia-master` has an `[Unreleased]` entry for user-visible changes.
