@@ -58,6 +58,27 @@ class Settings(BaseSettings):
     WELCOME_EMAIL_QUEUE_ROUTING_KEY: str = ... # type: ignore
     WELCOME_DEAD_LETTER_EMAIL_QUEUE: str = ... # type: ignore
     WELCOME_DEAD_LETTER_EMAIL_QUEUE_ROUTING_KEY: str = ... # type: ignore
+
+    # Booking emails (confirmed, updated, cancelled) share one retry limit
+    BOOKING_EMAIL_RETRY_COUNT: int = ... # type: ignore
+
+    # Booking confirmed email
+    BOOKING_CONFIRMED_EMAIL_QUEUE: str = ... # type: ignore
+    BOOKING_CONFIRMED_EMAIL_QUEUE_ROUTING_KEY: str = ... # type: ignore
+    BOOKING_CONFIRMED_DEAD_LETTER_EMAIL_QUEUE: str = ... # type: ignore
+    BOOKING_CONFIRMED_DEAD_LETTER_EMAIL_QUEUE_ROUTING_KEY: str = ... # type: ignore
+
+    # Booking updated email
+    BOOKING_UPDATED_EMAIL_QUEUE: str = ... # type: ignore
+    BOOKING_UPDATED_EMAIL_QUEUE_ROUTING_KEY: str = ... # type: ignore
+    BOOKING_UPDATED_DEAD_LETTER_EMAIL_QUEUE: str = ... # type: ignore
+    BOOKING_UPDATED_DEAD_LETTER_EMAIL_QUEUE_ROUTING_KEY: str = ... # type: ignore
+
+    # Booking cancelled email
+    BOOKING_CANCELLED_EMAIL_QUEUE: str = ... # type: ignore
+    BOOKING_CANCELLED_EMAIL_QUEUE_ROUTING_KEY: str = ... # type: ignore
+    BOOKING_CANCELLED_DEAD_LETTER_EMAIL_QUEUE: str = ... # type: ignore
+    BOOKING_CANCELLED_DEAD_LETTER_EMAIL_QUEUE_ROUTING_KEY: str = ... # type: ignore
     WELCOME_EMAIL_RETRY_COUNT: int = ... # type: ignore
 
     # Email (SMTP)

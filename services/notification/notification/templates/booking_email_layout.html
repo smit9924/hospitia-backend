@@ -1,0 +1,89 @@
+{% extends "base.html" %}
+
+{#
+  Shared layout of the booking emails sent to a booking's primary guest.
+  Child templates fill `heading`, `subheading`, `intro` and, optionally,
+  `after_details`. Expects the fields of MqBookingEmailMessage plus the
+  formatted `check_in_label`, `check_out_label` and `total_label`.
+#}
+
+{% block content %}
+<table width="100%" cellpadding="0" cellspacing="0" border="0" style="background-color:#f3f8f7;padding:40px 16px;">
+  <tr>
+    <td align="center">
+
+      <table width="100%" cellpadding="0" cellspacing="0" border="0" style="max-width:600px;background-color:#ffffff;border-radius:18px;overflow:hidden;border:1px solid #d7efe7;">
+
+        <!-- Header -->
+        <tr>
+          <td align="center" style="background-color:#bff4e7;padding:36px 24px 30px;">
+            <p style="margin:0;font-family:Arial,Helvetica,sans-serif;font-size:14px;line-height:20px;color:#2f5d55;letter-spacing:1px;text-transform:uppercase;font-weight:bold;">
+              {{ organization_name }}
+            </p>
+
+            <div style="width:52px;height:3px;background:#d4a63a;margin:16px auto;border-radius:2px;"></div>
+
+            <h1 style="margin:0;font-family:Arial,Helvetica,sans-serif;font-size:28px;line-height:34px;color:#0f3d35;font-weight:bold;">
+              {% block heading %}{% endblock %}
+            </h1>
+
+            <p style="margin:10px 0 0;font-family:Arial,Helvetica,sans-serif;font-size:15px;line-height:22px;color:#2f5d55;">
+              {% block subheading %}Booking {{ booking_reference }}{% endblock %}
+            </p>
+          </td>
+        </tr>
+
+        <!-- Body -->
+        <tr>
+          <td style="padding:36px 32px;font-family:Arial,Helvetica,sans-serif;color:#334155;">
+
+            <p style="margin:0 0 18px;font-size:16px;line-height:26px;">
+              Hello <strong>{{ guest_first_name }}</strong>,
+            </p>
+
+            <p style="margin:0 0 16px;font-size:15px;line-height:26px;color:#475569;">
+              {% block intro %}{% endblock %}
+            </p>
+
+            <!-- Stay details -->
+            <table width="100%" cellpadding="0" cellspacing="0" style="background-color:#f0fdf9;border:1px solid #b7eadb;border-radius:10px;margin:24px 0;">
+              <tr>
+                <td style="padding:20px 24px;">
+                  <p style="margin:0 0 12px;font-size:13px;color:#64748b;text-transform:uppercase;letter-spacing:1px;font-weight:bold;">
+                    Your stay
+                  </p>
+                  <p style="margin:0 0 8px;font-size:15px;line-height:24px;"><strong>Booking reference:</strong> {{ booking_reference }}</p>
+                  <p style="margin:0 0 8px;font-size:15px;line-height:24px;"><strong>Room:</strong> {{ room_number }} ({{ room_type_name }})</p>
+                  <p style="margin:0 0 8px;font-size:15px;line-height:24px;"><strong>Check-in:</strong> {{ check_in_label }}</p>
+                  <p style="margin:0 0 8px;font-size:15px;line-height:24px;"><strong>Check-out:</strong> {{ check_out_label }}</p>
+                  <p style="margin:0 0 8px;font-size:15px;line-height:24px;"><strong>Nights:</strong> {{ nights }}</p>
+                  <p style="margin:0 0 8px;font-size:15px;line-height:24px;"><strong>Guests:</strong> {{ guest_count }}</p>
+                  <p style="margin:0;font-size:15px;line-height:24px;"><strong>Total:</strong> {{ total_label }}</p>
+                </td>
+              </tr>
+            </table>
+
+            {% block after_details %}{% endblock %}
+
+            <p style="margin:0;font-size:14px;line-height:24px;color:#64748b;">
+              If you have any questions about your booking, please contact {{ organization_name }}.
+            </p>
+
+          </td>
+        </tr>
+
+        <!-- Footer -->
+        <tr>
+          <td style="background-color:#f8fafc;padding:24px 32px;border-top:1px solid #e2e8f0;">
+            <p style="margin:0;font-family:Arial,Helvetica,sans-serif;font-size:13px;line-height:20px;color:#94a3b8;text-align:center;">
+              Sent by Hospitia on behalf of {{ organization_name }}.
+            </p>
+          </td>
+        </tr>
+
+      </table>
+
+    </td>
+  </tr>
+</table>
+{% endblock %}

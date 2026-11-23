@@ -58,6 +58,9 @@ class RabbitMQConsumer(MQConsumer):
             settings.FORGOT_PASSWORD_EMAIL_QUEUE: get_handler(settings.FORGOT_PASSWORD_EMAIL_QUEUE),
             settings.VERIFY_EMAIL_OTP_EMAIL_QUEUE: get_handler(settings.VERIFY_EMAIL_OTP_EMAIL_QUEUE),
             settings.WELCOME_EMAIL_QUEUE: get_handler(settings.WELCOME_EMAIL_QUEUE),
+            settings.BOOKING_CONFIRMED_EMAIL_QUEUE: get_handler(settings.BOOKING_CONFIRMED_EMAIL_QUEUE),
+            settings.BOOKING_UPDATED_EMAIL_QUEUE: get_handler(settings.BOOKING_UPDATED_EMAIL_QUEUE),
+            settings.BOOKING_CANCELLED_EMAIL_QUEUE: get_handler(settings.BOOKING_CANCELLED_EMAIL_QUEUE),
         }
 
         self._exchanges: dict[str, RabbitMQExchange] = {
@@ -100,6 +103,39 @@ class RabbitMQConsumer(MQConsumer):
                 name=settings.WELCOME_DEAD_LETTER_EMAIL_QUEUE,
                 exchange_name=settings.EMAIL_NOTIFICATION_EXCHANGE,
                 routing_key=settings.WELCOME_DEAD_LETTER_EMAIL_QUEUE_ROUTING_KEY,
+            ),
+            settings.BOOKING_CONFIRMED_EMAIL_QUEUE: RabbitMQQueue(
+                name=settings.BOOKING_CONFIRMED_EMAIL_QUEUE,
+                exchange_name=settings.EMAIL_NOTIFICATION_EXCHANGE,
+                routing_key=settings.BOOKING_CONFIRMED_EMAIL_QUEUE_ROUTING_KEY,
+                dead_letter_queue=settings.BOOKING_CONFIRMED_DEAD_LETTER_EMAIL_QUEUE,
+            ),
+            settings.BOOKING_CONFIRMED_DEAD_LETTER_EMAIL_QUEUE: RabbitMQQueue(
+                name=settings.BOOKING_CONFIRMED_DEAD_LETTER_EMAIL_QUEUE,
+                exchange_name=settings.EMAIL_NOTIFICATION_EXCHANGE,
+                routing_key=settings.BOOKING_CONFIRMED_DEAD_LETTER_EMAIL_QUEUE_ROUTING_KEY,
+            ),
+            settings.BOOKING_UPDATED_EMAIL_QUEUE: RabbitMQQueue(
+                name=settings.BOOKING_UPDATED_EMAIL_QUEUE,
+                exchange_name=settings.EMAIL_NOTIFICATION_EXCHANGE,
+                routing_key=settings.BOOKING_UPDATED_EMAIL_QUEUE_ROUTING_KEY,
+                dead_letter_queue=settings.BOOKING_UPDATED_DEAD_LETTER_EMAIL_QUEUE,
+            ),
+            settings.BOOKING_UPDATED_DEAD_LETTER_EMAIL_QUEUE: RabbitMQQueue(
+                name=settings.BOOKING_UPDATED_DEAD_LETTER_EMAIL_QUEUE,
+                exchange_name=settings.EMAIL_NOTIFICATION_EXCHANGE,
+                routing_key=settings.BOOKING_UPDATED_DEAD_LETTER_EMAIL_QUEUE_ROUTING_KEY,
+            ),
+            settings.BOOKING_CANCELLED_EMAIL_QUEUE: RabbitMQQueue(
+                name=settings.BOOKING_CANCELLED_EMAIL_QUEUE,
+                exchange_name=settings.EMAIL_NOTIFICATION_EXCHANGE,
+                routing_key=settings.BOOKING_CANCELLED_EMAIL_QUEUE_ROUTING_KEY,
+                dead_letter_queue=settings.BOOKING_CANCELLED_DEAD_LETTER_EMAIL_QUEUE,
+            ),
+            settings.BOOKING_CANCELLED_DEAD_LETTER_EMAIL_QUEUE: RabbitMQQueue(
+                name=settings.BOOKING_CANCELLED_DEAD_LETTER_EMAIL_QUEUE,
+                exchange_name=settings.EMAIL_NOTIFICATION_EXCHANGE,
+                routing_key=settings.BOOKING_CANCELLED_DEAD_LETTER_EMAIL_QUEUE_ROUTING_KEY,
             ),
         }
 

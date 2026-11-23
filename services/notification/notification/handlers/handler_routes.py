@@ -6,6 +6,9 @@ from notification.exceptions.definitions.messaging_queue_exceptions import (
     HandlerNotFoundError,
 )
 from notification.handlers.email_handlers import (
+    booking_cancelled_email_handler,
+    booking_confirmed_email_handler,
+    booking_updated_email_handler,
     forgot_password_email_handler,
     verify_email_otp_email_handler,
     welcome_email_handler,
@@ -17,6 +20,9 @@ MESSAGE_ROUTES: dict[str, MESSAGE_HANDLER] = {
     settings.FORGOT_PASSWORD_EMAIL_QUEUE: forgot_password_email_handler,
     settings.VERIFY_EMAIL_OTP_EMAIL_QUEUE: verify_email_otp_email_handler,
     settings.WELCOME_EMAIL_QUEUE: welcome_email_handler,
+    settings.BOOKING_CONFIRMED_EMAIL_QUEUE: booking_confirmed_email_handler,
+    settings.BOOKING_UPDATED_EMAIL_QUEUE: booking_updated_email_handler,
+    settings.BOOKING_CANCELLED_EMAIL_QUEUE: booking_cancelled_email_handler,
 }
 
 
