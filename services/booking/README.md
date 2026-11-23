@@ -43,10 +43,40 @@ active, and the creator is an admin or an active owner of it. Otherwise the
 mapping is skipped with a warning and an admin can map the manager later
 through `POST /organization/manager`.
 
+## Bookings
+
+Admins, owners and managers book one room of an organization for a stay
+(`check_in_date` up to, not including, `check_out_date`) with exactly one
+primary guest and secondary guests up to the room type's capacity. Owners and
+managers work in their active organization; admins pass `organizationGuid`.
+
+| Method | Path | Access | Purpose |
+|---|---|---|---|
+| `POST` | `/booking/create` | Admin, Owner, Manager | Create a booking with its guests (`recordAsCompletedStay` saves an ended stay as checked out). |
+| `PUT` | `/booking/update` | Admin, Owner, Manager | Update a booking and its complete guest list; what may change depends on the status. |
+| `GET` | `/booking` | Admin, Owner, Manager | Paginated listing: search (reference, primary guest name/phone, room number), status and stay-date filters. ID numbers are masked. |
+| `GET` | `/booking/detail` | Admin, Owner, Manager | One booking with its guests (full ID numbers) and status history. |
+| `GET` | `/booking/available-rooms` | Admin, Owner, Manager | Available rooms free for a stay, with capacity and nightly cost. |
+| `POST` | `/booking/check-in`, `/booking/check-out`, `/booking/cancel` | Admin, Owner, Manager | Lifecycle: confirmed → checked in → checked out, or confirmed → cancelled. |
+| `GET` | `/booking/today-summary` | Owner, Manager | Arrivals, departures and in-house counts for the dashboard. |
+| `GET` | `/room/floor-overview?onDate=` | Owner, Manager | Each room also carries the booking occupying it that day. |
+
+- The pure rules (dates, price, capacity, transitions, masking, occupancy) live in
+  `booking.api.services.booking_rules`; `booking_service` applies them.
+- A room never holds two confirmed or checked-in bookings for overlapping stays:
+  the overlap check and the save run under the room's row lock
+  (`booking_repository.room_booking_lock`).
+- Confirmation, update and cancellation emails go to the primary guest through
+  the notification service. They are published by `BackgroundPublisher`
+  (`booking.messaging.background_publisher`) after the response, so a broker
+  outage never slows or fails a booking.
+- A room with confirmed or checked-in bookings can't be deleted.
+
 ## Tests
 
 ```bash
 uv run pytest
 ```
 
-Tests run on in-memory SQLite and need no running Postgres or RabbitMQ.
+Tests need no running Postgres or RabbitMQ. The booking rules and request
+schemas are covered in `tests/`.

@@ -14,7 +14,9 @@ Room numbers are unique, case-insensitively, among the active rooms of one
 organization.
 
 The dashboard floor chart (owners and managers) reads every room of the
-active organization at once and may change a room's status on its own.
+active organization at once, with the booking occupying each room that
+day, and may change a room's status on its own. A room with confirmed or
+checked-in bookings can't be deleted.
 """
 
 from uuid import UUID
@@ -38,6 +40,11 @@ from booking.api.repositories.room_repository import (
     update_room_status as update_room_status_repo,
 )
 from booking.api.repositories.room_type_repository import get_active_room_type_by_guid
+from booking.api.services.booking_rules import utc_today
+from booking.api.services.booking_service import (
+    ensure_room_has_no_active_bookings,
+    get_room_occupancies,
+)
 from booking.api.services.organization_service import (
     get_active_organization_or_raise,
     get_member_active_organization_id,
@@ -56,6 +63,7 @@ from booking.schemas.organization_schemas import (
 from booking.schemas.room_schemas import (
     RoomCreateRequest,
     RoomFloorOverviewItem,
+    RoomFloorOverviewQueryParams,
     RoomFloorOverviewResponse,
     RoomListQueryParams,
     RoomListResponse,
@@ -387,8 +395,11 @@ def delete_room(*, session: Session, actor: OrganizationScopedActor, guid: UUID)
     ------
     RoomNotFoundException
         If the room is missing, deleted, or not visible to the actor.
+    RoomHasActiveBookingsException
+        If the room still has confirmed or checked-in bookings.
     """
     room = _get_visible_room_or_raise(session=session, actor=actor, guid=guid)
+    ensure_room_has_no_active_bookings(session=session, room=room)
     soft_delete_room(session=session, room=room, actor_id=actor.user_id)
 
 
@@ -422,8 +433,15 @@ def list_rooms(*, session: Session, actor: OrganizationScopedActor, query: RoomL
     )
 
 
-def get_room_floor_overview(*, session: Session, actor: OrganizationScopedActor) -> RoomFloorOverviewResponse:
+def get_room_floor_overview(
+    *,
+    session: Session,
+    actor: OrganizationScopedActor,
+    query: RoomFloorOverviewQueryParams,
+) -> RoomFloorOverviewResponse:
     """Return every active room of the member's active organization for the floor chart.
+
+    Each room carries the booking that occupies it on `query.on_date`, if any.
 
     Parameters
     ----------
@@ -431,18 +449,28 @@ def get_room_floor_overview(*, session: Session, actor: OrganizationScopedActor)
         Active database session.
     actor : OrganizationScopedActor
         An owner or manager and their active organization.
+    query : RoomFloorOverviewQueryParams
+        The day to show occupancy for (defaults to the server's date).
 
     Returns
     -------
     RoomFloorOverviewResponse
         Rooms ordered by floor (top floor first), then room number.
     """
-    rooms = list_active_rooms_of_organization(
+    organization_id = get_member_active_organization_id(actor)
+    rooms = list_active_rooms_of_organization(session=session, organization_id=organization_id)
+    occupancies = get_room_occupancies(
         session=session,
-        organization_id=get_member_active_organization_id(actor),
+        organization_id=organization_id,
+        on_date=query.on_date or utc_today(),
     )
     return RoomFloorOverviewResponse(
-        rooms=[RoomFloorOverviewItem.model_validate(room, from_attributes=True) for room in rooms]
+        rooms=[
+            RoomFloorOverviewItem.model_validate(room, from_attributes=True).model_copy(
+                update={"occupancy": occupancies.get(room.id)}  # type: ignore[arg-type]
+            )
+            for room in rooms
+        ]
     )
 
 

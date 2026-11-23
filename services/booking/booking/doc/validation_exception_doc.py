@@ -257,4 +257,124 @@ VALIDATION_EXCEPTION_DOC = {
             },
         }
     },
+    "BookingOrganizationRequiredException": {
+        400: {
+            "description": "Select the organization the booking belongs to.",
+            "model": ApiErrorResponse[None],
+            "content": {
+                "application/json": {
+                    "example": {
+                        "metadata": None,
+                        "message": "Select the organization the booking belongs to.",
+                        "errorCode": ErrorCodes.BOOKING_ORGANIZATION_REQUIRED,
+                    }
+                }
+            },
+        }
+    },
+    "BookingRoomUnavailableException": {
+        409: {
+            "description": "This room is not available for the selected dates.",
+            "model": ApiErrorResponse[None],
+            "content": {
+                "application/json": {
+                    "example": {
+                        "metadata": None,
+                        "message": "This room is not available for the selected dates.",
+                        "errorCode": ErrorCodes.BOOKING_ROOM_UNAVAILABLE,
+                    }
+                }
+            },
+        }
+    },
+    "BookingGuestCapacityExceededException": {
+        400: {
+            "description": "This room does not fit that many guests.",
+            "model": ApiErrorResponse[None],
+            "content": {
+                "application/json": {
+                    "example": {
+                        "metadata": None,
+                        "message": "This room does not fit that many guests.",
+                        "errorCode": ErrorCodes.BOOKING_GUEST_CAPACITY_EXCEEDED,
+                    }
+                }
+            },
+        }
+    },
+    "BookingPrimaryGuestRequiredException": {
+        400: {
+            "description": "Add the primary guest with a phone number and an ID proof.",
+            "model": ApiErrorResponse[None],
+            "content": {
+                "application/json": {
+                    "example": {
+                        "metadata": None,
+                        "message": "Add the primary guest with a phone number and an ID proof.",
+                        "errorCode": ErrorCodes.BOOKING_PRIMARY_GUEST_REQUIRED,
+                    }
+                }
+            },
+        }
+    },
+    "BookingInvalidDatesException": {
+        400: {
+            "description": "The check-in and check-out dates are not valid.",
+            "model": ApiErrorResponse[None],
+            "content": {
+                "application/json": {
+                    "example": {
+                        "metadata": None,
+                        "message": "The check-in and check-out dates are not valid.",
+                        "errorCode": ErrorCodes.BOOKING_INVALID_DATES,
+                    }
+                }
+            },
+        }
+    },
+    "BookingInvalidStatusTransitionException": {
+        409: {
+            "description": "This action is not possible for the booking's current status.",
+            "model": ApiErrorResponse[None],
+            "content": {
+                "application/json": {
+                    "example": {
+                        "metadata": None,
+                        "message": "This action is not possible for the booking's current status.",
+                        "errorCode": ErrorCodes.BOOKING_INVALID_STATUS_TRANSITION,
+                    }
+                }
+            },
+        }
+    },
+    "BookingNotEditableException": {
+        409: {
+            "description": "This booking can no longer be changed.",
+            "model": ApiErrorResponse[None],
+            "content": {
+                "application/json": {
+                    "example": {
+                        "metadata": None,
+                        "message": "This booking can no longer be changed.",
+                        "errorCode": ErrorCodes.BOOKING_NOT_EDITABLE,
+                    }
+                }
+            },
+        }
+    },
+    "RoomHasActiveBookingsException": {
+        409: {
+            "description": "This room has active bookings and can't be deleted.",
+            "model": ApiErrorResponse[None],
+            "content": {
+                "application/json": {
+                    "example": {
+                        "metadata": None,
+                        "message": "This room has active bookings and can't be deleted.",
+                        "errorCode": ErrorCodes.ROOM_HAS_ACTIVE_BOOKINGS,
+                    }
+                }
+            },
+        }
+    },
 }

@@ -144,3 +144,86 @@ class RoomStatus(StrEnum):
     AVAILABLE = "available"
     UNDER_MAINTENANCE = "under_maintenance"
     OUT_OF_SERVICE = "out_of_service"
+
+
+class BookingStatus(StrEnum):
+    """
+    Lifecycle status of a booking. Stored as text in `bookings.status`.
+
+    Allowed transitions: CONFIRMED -> CHECKED_IN -> CHECKED_OUT, and
+    CONFIRMED -> CANCELLED. CHECKED_OUT and CANCELLED are final.
+
+    Attributes
+    ----------
+    CONFIRMED : str
+        The stay is booked. Default for new bookings.
+    CHECKED_IN : str
+        The guests have arrived and are in house.
+    CHECKED_OUT : str
+        The stay has ended.
+    CANCELLED : str
+        The booking was withdrawn; its room is free again for its dates.
+    """
+
+    CONFIRMED = "confirmed"
+    CHECKED_IN = "checked_in"
+    CHECKED_OUT = "checked_out"
+    CANCELLED = "cancelled"
+
+
+class Gender(StrEnum):
+    """
+    Gender of a booking guest. Stored as text in `guest_details.gender`.
+
+    Attributes
+    ----------
+    MALE : str
+    FEMALE : str
+    OTHER : str
+    PREFER_NOT_TO_SAY : str
+    """
+
+    MALE = "male"
+    FEMALE = "female"
+    OTHER = "other"
+    PREFER_NOT_TO_SAY = "prefer_not_to_say"
+
+
+class IdProofType(StrEnum):
+    """
+    Kind of identity document recorded for a booking guest. Stored as text
+    in `guest_details.id_proof_type`.
+
+    Attributes
+    ----------
+    AADHAAR : str
+    PASSPORT : str
+    DRIVING_LICENCE : str
+    VOTER_ID : str
+    OTHER : str
+    """
+
+    AADHAAR = "aadhaar"
+    PASSPORT = "passport"
+    DRIVING_LICENCE = "driving_licence"
+    VOTER_ID = "voter_id"
+    OTHER = "other"
+
+
+class BookingAction(StrEnum):
+    """
+    Actions a booking's current status and dates allow, returned to clients
+    so they only offer what the API will accept.
+
+    Attributes
+    ----------
+    EDIT : str
+    CHECK_IN : str
+    CHECK_OUT : str
+    CANCEL : str
+    """
+
+    EDIT = "edit"
+    CHECK_IN = "check_in"
+    CHECK_OUT = "check_out"
+    CANCEL = "cancel"

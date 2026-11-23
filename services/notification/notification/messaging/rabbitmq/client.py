@@ -80,6 +80,39 @@ class RabbitMQClient(MQClient):
                 exchange_name=settings.EMAIL_NOTIFICATION_EXCHANGE,
                 routing_key=settings.WELCOME_DEAD_LETTER_EMAIL_QUEUE_ROUTING_KEY,
             ),
+            settings.BOOKING_CONFIRMED_EMAIL_QUEUE: RabbitMQQueue(
+                name=settings.BOOKING_CONFIRMED_EMAIL_QUEUE,
+                exchange_name=settings.EMAIL_NOTIFICATION_EXCHANGE,
+                routing_key=settings.BOOKING_CONFIRMED_EMAIL_QUEUE_ROUTING_KEY,
+                dead_letter_queue=settings.BOOKING_CONFIRMED_DEAD_LETTER_EMAIL_QUEUE,
+            ),
+            settings.BOOKING_CONFIRMED_DEAD_LETTER_EMAIL_QUEUE: RabbitMQQueue(
+                name=settings.BOOKING_CONFIRMED_DEAD_LETTER_EMAIL_QUEUE,
+                exchange_name=settings.EMAIL_NOTIFICATION_EXCHANGE,
+                routing_key=settings.BOOKING_CONFIRMED_DEAD_LETTER_EMAIL_QUEUE_ROUTING_KEY,
+            ),
+            settings.BOOKING_UPDATED_EMAIL_QUEUE: RabbitMQQueue(
+                name=settings.BOOKING_UPDATED_EMAIL_QUEUE,
+                exchange_name=settings.EMAIL_NOTIFICATION_EXCHANGE,
+                routing_key=settings.BOOKING_UPDATED_EMAIL_QUEUE_ROUTING_KEY,
+                dead_letter_queue=settings.BOOKING_UPDATED_DEAD_LETTER_EMAIL_QUEUE,
+            ),
+            settings.BOOKING_UPDATED_DEAD_LETTER_EMAIL_QUEUE: RabbitMQQueue(
+                name=settings.BOOKING_UPDATED_DEAD_LETTER_EMAIL_QUEUE,
+                exchange_name=settings.EMAIL_NOTIFICATION_EXCHANGE,
+                routing_key=settings.BOOKING_UPDATED_DEAD_LETTER_EMAIL_QUEUE_ROUTING_KEY,
+            ),
+            settings.BOOKING_CANCELLED_EMAIL_QUEUE: RabbitMQQueue(
+                name=settings.BOOKING_CANCELLED_EMAIL_QUEUE,
+                exchange_name=settings.EMAIL_NOTIFICATION_EXCHANGE,
+                routing_key=settings.BOOKING_CANCELLED_EMAIL_QUEUE_ROUTING_KEY,
+                dead_letter_queue=settings.BOOKING_CANCELLED_DEAD_LETTER_EMAIL_QUEUE,
+            ),
+            settings.BOOKING_CANCELLED_DEAD_LETTER_EMAIL_QUEUE: RabbitMQQueue(
+                name=settings.BOOKING_CANCELLED_DEAD_LETTER_EMAIL_QUEUE,
+                exchange_name=settings.EMAIL_NOTIFICATION_EXCHANGE,
+                routing_key=settings.BOOKING_CANCELLED_DEAD_LETTER_EMAIL_QUEUE_ROUTING_KEY,
+            ),
         }
 
     # ******************

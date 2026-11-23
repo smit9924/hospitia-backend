@@ -2,6 +2,7 @@ from collections.abc import Callable
 
 from notification.core.config import settings
 from notification.exceptions.handlers.handler_exceptions_handlers import (
+    booking_email_notification_exception_handler,
     forgot_password_email_notification_exception_handler,
     verify_email_otp_email_notification_exception_handler,
     welcome_email_notification_exception_handler,
@@ -14,6 +15,9 @@ EXCEPTION_ROUTES: dict[str, QUEUE_EXCEPTION_HANDLER] = {
     settings.FORGOT_PASSWORD_EMAIL_QUEUE: forgot_password_email_notification_exception_handler,
     settings.VERIFY_EMAIL_OTP_EMAIL_QUEUE: verify_email_otp_email_notification_exception_handler,
     settings.WELCOME_EMAIL_QUEUE: welcome_email_notification_exception_handler,
+    settings.BOOKING_CONFIRMED_EMAIL_QUEUE: booking_email_notification_exception_handler,
+    settings.BOOKING_UPDATED_EMAIL_QUEUE: booking_email_notification_exception_handler,
+    settings.BOOKING_CANCELLED_EMAIL_QUEUE: booking_email_notification_exception_handler,
 }
 
 

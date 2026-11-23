@@ -1,4 +1,4 @@
-from datetime import datetime
+from datetime import date, datetime
 from typing import Annotated, Literal
 from uuid import UUID
 
@@ -15,6 +15,7 @@ from booking.types.enums import RoomStatus
 from booking.utils.text_utils import blank_text_to_none, strip_text
 
 from .base_schemas import BaseSchema
+from .booking_schemas import RoomOccupancy
 from .organization_schemas import OrganizationReference
 from .room_type_schemas import RoomTypeOption
 
@@ -115,6 +116,14 @@ class RoomFloorOverviewItem(BaseSchema):
     status: RoomStatus
     notes: str | None
     room_type: RoomTypeOption
+    # The booking holding the room on the requested date, if any.
+    occupancy: RoomOccupancy | None = None
+
+
+class RoomFloorOverviewQueryParams(BaseSchema):
+    """`on_date` is the caller's local date; it defaults to the server's (UTC) date."""
+
+    on_date: date | None = None
 
 
 class RoomFloorOverviewResponse(BaseSchema):

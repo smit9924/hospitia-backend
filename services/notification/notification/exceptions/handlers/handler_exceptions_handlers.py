@@ -125,3 +125,47 @@ def welcome_email_notification_exception_handler(
             retry_count,
             exc,
         )
+
+
+def booking_email_notification_exception_handler(
+    *,
+    original_queue: str,
+    dead_letter_queue: str,
+    data: dict[str, Any],
+    exc: Exception,
+) -> None:
+    """
+    Requeue or dead-letter a failed booking email (confirmed, updated or cancelled).
+
+    Injects ``retry_count`` into the payload on first failure and publishes
+    back to the original queue while under ``BOOKING_EMAIL_RETRY_COUNT``;
+    otherwise publishes to the dead-letter queue. Only the queue and booking
+    reference are logged, never guest data.
+    """
+    payload: dict[str, Any] = dict(data)
+    retry_count = int(payload.get("retry_count") or 0)
+    max_retry_count = settings.BOOKING_EMAIL_RETRY_COUNT
+    booking_reference = payload.get("booking_reference")
+
+    mq_client = get_mq_client()
+
+    if retry_count < max_retry_count:
+        payload["retry_count"] = retry_count + 1
+        mq_client.publish(original_queue, payload)
+        log.warning(
+            "Requeued booking email queue=%s booking_reference=%s (retry_count=%s/%s): %s",
+            original_queue,
+            booking_reference,
+            payload["retry_count"],
+            max_retry_count,
+            exc,
+        )
+    else:
+        mq_client.publish(dead_letter_queue, payload)
+        log.error(
+            "Moved booking email to dead letter queue queue=%s booking_reference=%s (retry_count=%s): %s",
+            original_queue,
+            booking_reference,
+            retry_count,
+            exc,
+        )

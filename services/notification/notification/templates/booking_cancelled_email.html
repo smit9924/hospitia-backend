@@ -1,0 +1,20 @@
+{% extends "booking_email_layout.html" %}
+
+{% block heading %}Booking cancelled{% endblock %}
+
+{% block intro %}
+Your booking with <strong>{{ organization_name }}</strong> has been cancelled. The cancelled stay is shown below.
+{% endblock %}
+
+{% block after_details %}
+{% if cancellation_reason %}
+<table width="100%" cellpadding="0" cellspacing="0" style="background-color:#fff7ed;border:1px solid #fed7aa;border-radius:10px;margin-bottom:24px;">
+  <tr>
+    <td style="padding:16px 24px;">
+      <p style="margin:0;font-size:14px;line-height:22px;color:#c2410c;font-weight:bold;">Reason</p>
+      <p style="margin:6px 0 0;font-size:14px;line-height:22px;color:#475569;">{{ cancellation_reason }}</p>
+    </td>
+  </tr>
+</table>
+{% endif %}
+{% endblock %}

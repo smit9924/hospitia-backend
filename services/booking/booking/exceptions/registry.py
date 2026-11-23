@@ -20,6 +20,7 @@ from booking.exceptions.definitions.messaging_queue_exceptions import (
 )
 from booking.exceptions.definitions.not_found_exceptions import (
     AddressNotFoundException,
+    BookingNotFoundException,
     CurrencyUnitNotFoundException,
     OrganizationNotFoundException,
     OrganizationTypeNotFoundException,
@@ -37,6 +38,13 @@ from booking.exceptions.definitions.security_exceptions import (
 )
 from booking.exceptions.definitions.validation_exceptions import (
     ActiveOrganizationRequiredException,
+    BookingGuestCapacityExceededException,
+    BookingInvalidDatesException,
+    BookingInvalidStatusTransitionException,
+    BookingNotEditableException,
+    BookingOrganizationRequiredException,
+    BookingPrimaryGuestRequiredException,
+    BookingRoomUnavailableException,
     CurrencyUnitAlreadyExistsException,
     CurrencyUnitInUseException,
     OrganizationHasActiveDependenciesException,
@@ -46,6 +54,7 @@ from booking.exceptions.definitions.validation_exceptions import (
     RoomAlreadyExistsException,
     RoomAmenityAlreadyExistsException,
     RoomAmenityInUseException,
+    RoomHasActiveBookingsException,
     RoomOrganizationRequiredException,
     RoomTypeAlreadyExistsException,
     RoomTypeAmenityNotAvailableException,
@@ -60,6 +69,7 @@ from booking.exceptions.handlers.messaging_queue_exceptions_handlers import (
 )
 from booking.exceptions.handlers.not_found_exceptions_handlers import (
     address_not_found_exception_handler,
+    booking_not_found_exception_handler,
     currency_unit_not_found_exception_handler,
     organization_not_found_exception_handler,
     organization_type_not_found_exception_handler,
@@ -88,6 +98,13 @@ from booking.exceptions.handlers.security_exceptions_handlers import (
 )
 from booking.exceptions.handlers.validation_exception_handlers import (
     active_organization_required_exception_handler,
+    booking_guest_capacity_exceeded_exception_handler,
+    booking_invalid_dates_exception_handler,
+    booking_invalid_status_transition_exception_handler,
+    booking_not_editable_exception_handler,
+    booking_organization_required_exception_handler,
+    booking_primary_guest_required_exception_handler,
+    booking_room_unavailable_exception_handler,
     currency_unit_already_exists_exception_handler,
     currency_unit_in_use_exception_handler,
     organization_has_active_dependencies_exception_handler,
@@ -97,6 +114,7 @@ from booking.exceptions.handlers.validation_exception_handlers import (
     room_already_exists_exception_handler,
     room_amenity_already_exists_exception_handler,
     room_amenity_in_use_exception_handler,
+    room_has_active_bookings_exception_handler,
     room_organization_required_exception_handler,
     room_type_already_exists_exception_handler,
     room_type_amenity_not_available_exception_handler,
@@ -142,6 +160,7 @@ def get_exception_handlers() -> dict[Any, Any]:
         RoomAmenityNotFoundException: room_amenity_not_found_exception_handler,
         RoomTypeNotFoundException: room_type_not_found_exception_handler,
         RoomNotFoundException: room_not_found_exception_handler,
+        BookingNotFoundException: booking_not_found_exception_handler,
 
         # Register VALIDATION EXCEPTION handlers
         OrganizationTypeAlreadyExistsException: organization_type_already_exists_exception_handler,
@@ -161,6 +180,14 @@ def get_exception_handlers() -> dict[Any, Any]:
         RoomOrganizationRequiredException: room_organization_required_exception_handler,
         RoomTypeNotAvailableForRoomException: room_type_not_available_for_room_exception_handler,
         RoomTypeInUseException: room_type_in_use_exception_handler,
+        BookingOrganizationRequiredException: booking_organization_required_exception_handler,
+        BookingRoomUnavailableException: booking_room_unavailable_exception_handler,
+        BookingGuestCapacityExceededException: booking_guest_capacity_exceeded_exception_handler,
+        BookingPrimaryGuestRequiredException: booking_primary_guest_required_exception_handler,
+        BookingInvalidDatesException: booking_invalid_dates_exception_handler,
+        BookingInvalidStatusTransitionException: booking_invalid_status_transition_exception_handler,
+        BookingNotEditableException: booking_not_editable_exception_handler,
+        RoomHasActiveBookingsException: room_has_active_bookings_exception_handler,
 
         # Register MESSAGING QUEUE EXCEPTION handlers
         MQNotFoundException: mq_not_found_exception_handler,
