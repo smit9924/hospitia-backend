@@ -20,6 +20,7 @@ dependencies = [
 
 [dependency-groups]
 dev = [
+    "pytest>=9.2.0",
     "ruff>=0.14.8",
 ]
 
@@ -59,3 +60,7 @@ ignore = [
 [tool.ruff.lint.pyupgrade]
 # Preserve types, even if a file imports `from __future__ import annotations`.
 keep-runtime-typing = true
+
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
