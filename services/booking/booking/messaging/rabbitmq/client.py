@@ -57,6 +57,21 @@ class RabbitMQClient(MQClient):
                 exchange_name=settings.EMAIL_NOTIFICATION_EXCHANGE,
                 routing_key=settings.FORGOT_PASSWORD_EMAIL_QUEUE_ROUTING_KEY,
             ),
+            settings.BOOKING_CONFIRMED_EMAIL_QUEUE: RabbitMQQueue(
+                name=settings.BOOKING_CONFIRMED_EMAIL_QUEUE,
+                exchange_name=settings.EMAIL_NOTIFICATION_EXCHANGE,
+                routing_key=settings.BOOKING_CONFIRMED_EMAIL_QUEUE_ROUTING_KEY,
+            ),
+            settings.BOOKING_UPDATED_EMAIL_QUEUE: RabbitMQQueue(
+                name=settings.BOOKING_UPDATED_EMAIL_QUEUE,
+                exchange_name=settings.EMAIL_NOTIFICATION_EXCHANGE,
+                routing_key=settings.BOOKING_UPDATED_EMAIL_QUEUE_ROUTING_KEY,
+            ),
+            settings.BOOKING_CANCELLED_EMAIL_QUEUE: RabbitMQQueue(
+                name=settings.BOOKING_CANCELLED_EMAIL_QUEUE,
+                exchange_name=settings.EMAIL_NOTIFICATION_EXCHANGE,
+                routing_key=settings.BOOKING_CANCELLED_EMAIL_QUEUE_ROUTING_KEY,
+            ),
             settings.USER_CREATED_QUEUE: RabbitMQQueue(
                 name=settings.USER_CREATED_QUEUE,
                 exchange_name=settings.USER_EVENTS_EXCHANGE,

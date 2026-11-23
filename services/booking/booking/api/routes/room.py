@@ -19,6 +19,7 @@ from booking.doc.validation_exception_doc import VALIDATION_EXCEPTION_DOC
 from booking.schemas.organization_schemas import OrganizationScopedActor
 from booking.schemas.room_schemas import (
     RoomCreateRequest,
+    RoomFloorOverviewQueryParams,
     RoomFloorOverviewResponse,
     RoomListQueryParams,
     RoomListResponse,
@@ -92,14 +93,22 @@ async def update_room_route(
     return update_room(session=session, actor=actor, payload=payload)
 
 
-@router.delete("/delete", status_code=204, responses={**_AUTH_RESPONSES, **NOT_FOUND_EXCEPTIONS_DOC["RoomNotFoundException"]})
+@router.delete(
+    "/delete",
+    status_code=204,
+    responses={
+        **_AUTH_RESPONSES,
+        **NOT_FOUND_EXCEPTIONS_DOC["RoomNotFoundException"],
+        **VALIDATION_EXCEPTION_DOC["RoomHasActiveBookingsException"],
+    },
+)
 async def delete_room_route(
     session: SessionDep,
     guid: Annotated[UUID, Query()],
     actor: _RoomActorDep,
 ) -> None:
     """
-    Soft-delete a room.
+    Soft-delete a room. A room with confirmed or checked-in bookings can't be deleted.
     """
     delete_room(session=session, actor=actor, guid=guid)
 
@@ -133,13 +142,15 @@ async def get_room_route(
 @router.get("/floor-overview", responses={**_AUTH_RESPONSES})
 async def get_room_floor_overview_route(
     session: SessionDep,
+    query: Annotated[RoomFloorOverviewQueryParams, Query()],
     actor: _RoomMemberActorDep,
 ) -> RoomFloorOverviewResponse:
     """
     Return every active room of the active organization for the dashboard
-    floor chart, top floor first. Not paginated. Owners and managers only.
+    floor chart, top floor first, each with the booking occupying it on
+    `onDate` (the caller's local date). Not paginated. Owners and managers only.
     """
-    return get_room_floor_overview(session=session, actor=actor)
+    return get_room_floor_overview(session=session, actor=actor, query=query)
 
 
 @router.put("/update-status", responses={**_AUTH_RESPONSES, **NOT_FOUND_EXCEPTIONS_DOC["RoomNotFoundException"]})

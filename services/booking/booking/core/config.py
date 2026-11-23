@@ -70,6 +70,12 @@ class Settings(BaseSettings):
     EMAIL_NOTIFICATION_EXCHANGE_TYPE: ExchangeType = ... # type: ignore
     FORGOT_PASSWORD_EMAIL_QUEUE: str = ... # type: ignore
     FORGOT_PASSWORD_EMAIL_QUEUE_ROUTING_KEY: str = ... # type: ignore
+    BOOKING_CONFIRMED_EMAIL_QUEUE: str = ... # type: ignore
+    BOOKING_CONFIRMED_EMAIL_QUEUE_ROUTING_KEY: str = ... # type: ignore
+    BOOKING_UPDATED_EMAIL_QUEUE: str = ... # type: ignore
+    BOOKING_UPDATED_EMAIL_QUEUE_ROUTING_KEY: str = ... # type: ignore
+    BOOKING_CANCELLED_EMAIL_QUEUE: str = ... # type: ignore
+    BOOKING_CANCELLED_EMAIL_QUEUE_ROUTING_KEY: str = ... # type: ignore
 
     USER_EVENTS_EXCHANGE: str = ... # type: ignore
     USER_EVENTS_EXCHANGE_TYPE: ExchangeType = ... # type: ignore

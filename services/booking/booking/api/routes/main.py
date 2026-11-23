@@ -1,6 +1,7 @@
 from fastapi import APIRouter
 
 from booking.api.routes import (
+    booking,
     currency_unit,
     organization,
     organization_type,
@@ -18,6 +19,7 @@ api_router.include_router(currency_unit.router, prefix="/currency-unit")
 api_router.include_router(room_amenity.router, prefix="/room-amenity")
 api_router.include_router(room_type.router, prefix="/room-type")
 api_router.include_router(room.router, prefix="/room")
+api_router.include_router(booking.router, prefix="/booking")
 
 
 # if settings.ENVIRONMENT == "local":
