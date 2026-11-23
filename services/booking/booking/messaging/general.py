@@ -21,13 +21,29 @@ def get_mq_client() -> MQClient:
 
     global _mq_client
 
-    if _mq_client is not None:
-        return _mq_client
+    if _mq_client is None:
+        _mq_client = create_mq_client()
+    return _mq_client
+
+
+def create_mq_client() -> MQClient:
+    """
+    Creates a new message queue client of the configured type.
+
+    Each client owns its own broker connection; use `get_mq_client` for the
+    shared one, and a separate client only for a component that publishes
+    from its own thread (connections are not thread-safe).
+
+    Returns:
+        A new, not yet connected, message queue client.
+
+    Raises:
+        ValueError: If the configured message queue client type is not supported.
+    """
 
     mq_client_type = settings.MQ_CLIENT_TYPE
 
     if mq_client_type is None or mq_client_type == 'rabbitmq':
-        _mq_client = RabbitMQClient()
-        return _mq_client
+        return RabbitMQClient()
 
     raise ValueError(f'Unsupported message queue client type: {mq_client_type}')

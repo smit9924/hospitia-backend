@@ -7,6 +7,7 @@ from booking.api.routes.main import api_router
 from booking.core.config import settings
 from booking.exceptions.registry import get_exception_handlers
 from booking.logging import configure_logging
+from booking.messaging.background_publisher import get_background_publisher
 from booking.messaging.base import MQClient
 from booking.messaging.general import get_mq_client
 from booking.messaging.mq_consumer_general import get_mq_consumer
@@ -31,6 +32,8 @@ def on_shutdown() -> None:
     """
     Perform cleanup tasks on application shutdown.
     """
+    get_background_publisher().shutdown()
+
     mq_client: MQClient = get_mq_client()
     mq_client.close()
 
