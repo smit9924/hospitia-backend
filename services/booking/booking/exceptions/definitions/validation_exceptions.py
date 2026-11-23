@@ -212,3 +212,99 @@ class RoomTypeInUseException(BaseException):
         message: str = "This room type has rooms and cannot be deleted."
     ) -> None:
         super().__init__(ErrorCodes.ROOM_TYPE_IN_USE, message)
+
+
+class BookingOrganizationRequiredException(BaseException):
+    """
+    Raised when an admin creates a booking or looks up free rooms without choosing the organization.
+    """
+
+    def __init__(
+        self,
+        message: str = "Select the organization the booking belongs to."
+    ) -> None:
+        super().__init__(ErrorCodes.BOOKING_ORGANIZATION_REQUIRED, message)
+
+
+class BookingRoomUnavailableException(BaseException):
+    """
+    Raised when the chosen room is not bookable: it is not available, belongs to another organization, or already has an overlapping confirmed or checked-in booking.
+    """
+
+    def __init__(
+        self,
+        message: str = "This room is not available for the selected dates."
+    ) -> None:
+        super().__init__(ErrorCodes.BOOKING_ROOM_UNAVAILABLE, message)
+
+
+class BookingGuestCapacityExceededException(BaseException):
+    """
+    Raised when a booking has more guests (primary + secondary) than its room's capacity.
+    """
+
+    def __init__(
+        self,
+        message: str = "This room does not fit that many guests."
+    ) -> None:
+        super().__init__(ErrorCodes.BOOKING_GUEST_CAPACITY_EXCEEDED, message)
+
+
+class BookingPrimaryGuestRequiredException(BaseException):
+    """
+    Raised when a booking has no valid primary guest (phone and ID proof are required for the primary guest).
+    """
+
+    def __init__(
+        self,
+        message: str = "Add the primary guest with a phone number and an ID proof."
+    ) -> None:
+        super().__init__(ErrorCodes.BOOKING_PRIMARY_GUEST_REQUIRED, message)
+
+
+class BookingInvalidDatesException(BaseException):
+    """
+    Raised when the stay dates break a booking rule (order, length, how far ahead, or a completed stay that has not ended).
+    """
+
+    def __init__(
+        self,
+        message: str = "The check-in and check-out dates are not valid."
+    ) -> None:
+        super().__init__(ErrorCodes.BOOKING_INVALID_DATES, message)
+
+
+class BookingInvalidStatusTransitionException(BaseException):
+    """
+    Raised when a check-in, check-out or cancellation is not allowed from the booking's current status or date.
+    """
+
+    def __init__(
+        self,
+        message: str = "This action is not possible for the booking's current status."
+    ) -> None:
+        super().__init__(ErrorCodes.BOOKING_INVALID_STATUS_TRANSITION, message)
+
+
+class BookingNotEditableException(BaseException):
+    """
+    Raised when an update changes fields that the booking's status no longer allows to change.
+    """
+
+    def __init__(
+        self,
+        message: str = "This booking can no longer be changed."
+    ) -> None:
+        super().__init__(ErrorCodes.BOOKING_NOT_EDITABLE, message)
+
+
+class RoomHasActiveBookingsException(BaseException):
+    """
+    Raised when deleting a room that still has confirmed or checked-in bookings.
+    """
+
+    def __init__(
+        self,
+        message: str = "This room has active bookings and can't be deleted."
+    ) -> None:
+        super().__init__(ErrorCodes.ROOM_HAS_ACTIVE_BOOKINGS, message)

@@ -112,3 +112,15 @@ class RoomNotFoundException(BaseException):
         message: str = "The requested room was not found."
     ) -> None:
         super().__init__(ErrorCodes.ROOM_NOT_FOUND, message)
+
+
+class BookingNotFoundException(BaseException):
+    """
+    Raised when a requested booking does not exist or belongs to another organization.
+    """
+
+    def __init__(
+        self,
+        message: str = "The requested booking was not found."
+    ) -> None:
+        super().__init__(ErrorCodes.BOOKING_NOT_FOUND, message)

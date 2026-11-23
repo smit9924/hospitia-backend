@@ -3,6 +3,13 @@ from fastapi.responses import JSONResponse
 
 from booking.exceptions.definitions.validation_exceptions import (
     ActiveOrganizationRequiredException,
+    BookingGuestCapacityExceededException,
+    BookingInvalidDatesException,
+    BookingInvalidStatusTransitionException,
+    BookingNotEditableException,
+    BookingOrganizationRequiredException,
+    BookingPrimaryGuestRequiredException,
+    BookingRoomUnavailableException,
     CurrencyUnitAlreadyExistsException,
     CurrencyUnitInUseException,
     OrganizationHasActiveDependenciesException,
@@ -12,6 +19,7 @@ from booking.exceptions.definitions.validation_exceptions import (
     RoomAlreadyExistsException,
     RoomAmenityAlreadyExistsException,
     RoomAmenityInUseException,
+    RoomHasActiveBookingsException,
     RoomOrganizationRequiredException,
     RoomTypeAlreadyExistsException,
     RoomTypeAmenityNotAvailableException,
@@ -534,6 +542,295 @@ def room_type_in_use_exception_handler(
         The incoming FastAPI request object.
     exc : RoomTypeInUseException
         Exception describing the room type that is still in use.
+
+    Returns
+    -------
+    JSONResponse
+        HTTP 409 Conflict response with a structured error payload.
+    """
+
+    response = ApiErrorResponse(
+        metadata=None,
+        errorCode=exc.errorCode,
+        message=exc.message,
+    )
+
+    return JSONResponse(
+        status_code=status.HTTP_409_CONFLICT,
+        content=response.model_dump(),
+    )
+
+
+def booking_organization_required_exception_handler(
+    _request: Request,
+    exc: BookingOrganizationRequiredException,
+) -> JSONResponse:
+    """
+    Handle booking organization required exceptions.
+
+    Description
+    -----------
+    Generates a standardized API error response when an admin creates a booking or looks up free rooms without choosing the organization.
+
+    Parameters
+    ----------
+    _request : Request
+        The incoming FastAPI request object.
+    exc : BookingOrganizationRequiredException
+        Exception describing the error.
+
+    Returns
+    -------
+    JSONResponse
+        HTTP 400 Bad Request response with a structured error payload.
+    """
+
+    response = ApiErrorResponse(
+        metadata=None,
+        errorCode=exc.errorCode,
+        message=exc.message,
+    )
+
+    return JSONResponse(
+        status_code=status.HTTP_400_BAD_REQUEST,
+        content=response.model_dump(),
+    )
+
+
+def booking_room_unavailable_exception_handler(
+    _request: Request,
+    exc: BookingRoomUnavailableException,
+) -> JSONResponse:
+    """
+    Handle booking room unavailable exceptions.
+
+    Description
+    -----------
+    Generates a standardized API error response when the chosen room is not bookable for the selected dates (not available, of another organization, or
+    already booked).
+
+    Parameters
+    ----------
+    _request : Request
+        The incoming FastAPI request object.
+    exc : BookingRoomUnavailableException
+        Exception describing the error.
+
+    Returns
+    -------
+    JSONResponse
+        HTTP 409 Conflict response with a structured error payload.
+    """
+
+    response = ApiErrorResponse(
+        metadata=None,
+        errorCode=exc.errorCode,
+        message=exc.message,
+    )
+
+    return JSONResponse(
+        status_code=status.HTTP_409_CONFLICT,
+        content=response.model_dump(),
+    )
+
+
+def booking_guest_capacity_exceeded_exception_handler(
+    _request: Request,
+    exc: BookingGuestCapacityExceededException,
+) -> JSONResponse:
+    """
+    Handle booking guest capacity exceeded exceptions.
+
+    Description
+    -----------
+    Generates a standardized API error response when a booking has more guests than its room's capacity.
+
+    Parameters
+    ----------
+    _request : Request
+        The incoming FastAPI request object.
+    exc : BookingGuestCapacityExceededException
+        Exception describing the error.
+
+    Returns
+    -------
+    JSONResponse
+        HTTP 400 Bad Request response with a structured error payload.
+    """
+
+    response = ApiErrorResponse(
+        metadata=None,
+        errorCode=exc.errorCode,
+        message=exc.message,
+    )
+
+    return JSONResponse(
+        status_code=status.HTTP_400_BAD_REQUEST,
+        content=response.model_dump(),
+    )
+
+
+def booking_primary_guest_required_exception_handler(
+    _request: Request,
+    exc: BookingPrimaryGuestRequiredException,
+) -> JSONResponse:
+    """
+    Handle booking primary guest required exceptions.
+
+    Description
+    -----------
+    Generates a standardized API error response when a booking has no valid primary guest.
+
+    Parameters
+    ----------
+    _request : Request
+        The incoming FastAPI request object.
+    exc : BookingPrimaryGuestRequiredException
+        Exception describing the error.
+
+    Returns
+    -------
+    JSONResponse
+        HTTP 400 Bad Request response with a structured error payload.
+    """
+
+    response = ApiErrorResponse(
+        metadata=None,
+        errorCode=exc.errorCode,
+        message=exc.message,
+    )
+
+    return JSONResponse(
+        status_code=status.HTTP_400_BAD_REQUEST,
+        content=response.model_dump(),
+    )
+
+
+def booking_invalid_dates_exception_handler(
+    _request: Request,
+    exc: BookingInvalidDatesException,
+) -> JSONResponse:
+    """
+    Handle booking invalid dates exceptions.
+
+    Description
+    -----------
+    Generates a standardized API error response when the stay dates break a booking rule.
+
+    Parameters
+    ----------
+    _request : Request
+        The incoming FastAPI request object.
+    exc : BookingInvalidDatesException
+        Exception describing the error.
+
+    Returns
+    -------
+    JSONResponse
+        HTTP 400 Bad Request response with a structured error payload.
+    """
+
+    response = ApiErrorResponse(
+        metadata=None,
+        errorCode=exc.errorCode,
+        message=exc.message,
+    )
+
+    return JSONResponse(
+        status_code=status.HTTP_400_BAD_REQUEST,
+        content=response.model_dump(),
+    )
+
+
+def booking_invalid_status_transition_exception_handler(
+    _request: Request,
+    exc: BookingInvalidStatusTransitionException,
+) -> JSONResponse:
+    """
+    Handle booking invalid status transition exceptions.
+
+    Description
+    -----------
+    Generates a standardized API error response when a check-in, check-out or cancellation is not allowed from the booking's current status or date.
+
+    Parameters
+    ----------
+    _request : Request
+        The incoming FastAPI request object.
+    exc : BookingInvalidStatusTransitionException
+        Exception describing the error.
+
+    Returns
+    -------
+    JSONResponse
+        HTTP 409 Conflict response with a structured error payload.
+    """
+
+    response = ApiErrorResponse(
+        metadata=None,
+        errorCode=exc.errorCode,
+        message=exc.message,
+    )
+
+    return JSONResponse(
+        status_code=status.HTTP_409_CONFLICT,
+        content=response.model_dump(),
+    )
+
+
+def booking_not_editable_exception_handler(
+    _request: Request,
+    exc: BookingNotEditableException,
+) -> JSONResponse:
+    """
+    Handle booking not editable exceptions.
+
+    Description
+    -----------
+    Generates a standardized API error response when an update changes fields that the booking's status no longer allows to change.
+
+    Parameters
+    ----------
+    _request : Request
+        The incoming FastAPI request object.
+    exc : BookingNotEditableException
+        Exception describing the error.
+
+    Returns
+    -------
+    JSONResponse
+        HTTP 409 Conflict response with a structured error payload.
+    """
+
+    response = ApiErrorResponse(
+        metadata=None,
+        errorCode=exc.errorCode,
+        message=exc.message,
+    )
+
+    return JSONResponse(
+        status_code=status.HTTP_409_CONFLICT,
+        content=response.model_dump(),
+    )
+
+
+def room_has_active_bookings_exception_handler(
+    _request: Request,
+    exc: RoomHasActiveBookingsException,
+) -> JSONResponse:
+    """
+    Handle room has active bookings exceptions.
+
+    Description
+    -----------
+    Generates a standardized API error response when deleting a room that still has confirmed or checked-in bookings.
+
+    Parameters
+    ----------
+    _request : Request
+        The incoming FastAPI request object.
+    exc : RoomHasActiveBookingsException
+        Exception describing the error.
 
     Returns
     -------

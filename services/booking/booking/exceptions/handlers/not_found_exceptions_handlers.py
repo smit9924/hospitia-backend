@@ -3,6 +3,7 @@ from fastapi.responses import JSONResponse
 
 from booking.exceptions.definitions.not_found_exceptions import (
     AddressNotFoundException,
+    BookingNotFoundException,
     CurrencyUnitNotFoundException,
     OrganizationNotFoundException,
     OrganizationTypeNotFoundException,
@@ -265,6 +266,43 @@ def room_not_found_exception_handler(
         The incoming FastAPI request object.
     exc : RoomNotFoundException
         Exception describing the missing room.
+
+    Returns
+    -------
+    JSONResponse
+        HTTP 404 Not Found response with a structured error payload.
+    """
+
+    response = ApiErrorResponse(
+        metadata=None,
+        errorCode=exc.errorCode,
+        message=exc.message,
+    )
+
+    return JSONResponse(
+        status_code=status.HTTP_404_NOT_FOUND,
+        content=response.model_dump(),
+    )
+
+
+def booking_not_found_exception_handler(
+    _request: Request,
+    exc: BookingNotFoundException,
+) -> JSONResponse:
+    """
+    Handle booking not found exceptions.
+
+    Description
+    -----------
+    Generates a standardized API error response when the requested booking does not exist or belongs to another organization (reported as missing so its
+    existence is never revealed).
+
+    Parameters
+    ----------
+    _request : Request
+        The incoming FastAPI request object.
+    exc : BookingNotFoundException
+        Exception describing the error.
 
     Returns
     -------

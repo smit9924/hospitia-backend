@@ -1,7 +1,6 @@
 from booking.schemas.common_schemas import ApiErrorResponse
 from booking.types.error_codes import ErrorCodes
 
-
 NOT_FOUND_EXCEPTIONS_DOC = {
     "UserNotFoundException": {
         404: {
@@ -118,6 +117,21 @@ NOT_FOUND_EXCEPTIONS_DOC = {
                         "metadata": None,
                         "message": "The requested room was not found.",
                         "errorCode": ErrorCodes.ROOM_NOT_FOUND,
+                    }
+                }
+            },
+        }
+    },
+    "BookingNotFoundException": {
+        404: {
+            "description": "The requested booking was not found.",
+            "model": ApiErrorResponse[None],
+            "content": {
+                "application/json": {
+                    "example": {
+                        "metadata": None,
+                        "message": "The requested booking was not found.",
+                        "errorCode": ErrorCodes.BOOKING_NOT_FOUND,
                     }
                 }
             },
